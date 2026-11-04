@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "InspireVideo Manifest",
+  "type": "object",
+  "required": ["project_id", "settings", "source", "copy", "video", "subtitles", "provenance"],
+  "properties": {
+    "project_id": {"type": "string", "minLength": 1},
+    "theme": {"enum": ["light", "mist", "ivory", "ink", "sage"]},
+    "settings": {
+      "type": "object",
+      "required": ["width", "height", "fps"],
+      "properties": {
+        "width": {"type": "integer", "const": 1080},
+        "height": {"type": "integer", "const": 1920},
+        "fps": {"type": "integer", "const": 30},
+        "duration_target_seconds": {"type": "integer", "minimum": 40, "maximum": 150}
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["path", "start_seconds", "end_seconds"],
+      "properties": {
+        "path": {"type": "string"},
+        "start_seconds": {"type": "number", "minimum": 0},
+        "end_seconds": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "copy": {
+      "type": "object",
+      "required": ["headline_zh", "subtitle_en", "quote_en", "quote_zh"],
+      "properties": {
+        "headline_zh": {"type": "string"},
+        "subtitle_en": {"type": "string"},
+        "quote_en": {"type": "string"},
+        "quote_zh": {"type": "string"},
+        "speaker_name": {"type": "string"},
+        "speaker_credential": {"type": "string"},
+        "speakers": {
+          "type": "array",
+          "description": "Everyone named on screen when more than one person appears. Names must be verified from the source, never guessed from a voice.",
+          "items": {"type": "object", "required": ["id", "name"],
+            "properties": {"id": {"type": "string"}, "name": {"type": "string"}, "name_zh": {"type": "string"},
+              "title": {"type": "string"}, "title_zh": {"type": "string"}, "org": {"type": "string"}}}
+        },
+        "speaker_name_zh": {"type": "string"},
+        "speaker_title": {"type": "string"},
+        "speaker_title_zh": {"type": "string"},
+        "speaker_org": {"type": "string"},
+        "talk_title": {"type": "string"},
+        "excerpt_label": {"type": "string"},
+        "source_name": {"type": "string"},
+        "year": {"type": ["integer", "null"]},
+        "category": {"type": "string"}
+      }
+    },
+    "video": {
+      "type": "object",
+      "required": ["clip_path"],
+      "properties": {
+        "clip_path": {"type": "string"},
+        "fit": {"enum": ["cover", "contain"]},
+        "crop_x": {"type": "number", "minimum": 0, "maximum": 1},
+        "crop_y": {"type": "number", "minimum": 0, "maximum": 1},
+        "crop_scale": {"type": "number", "minimum": 1}
+      }
+    },
+    "subtitles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["start", "end", "en", "zh"],
+        "properties": {
+          "start": {"type": "number", "minimum": 0},
+          "end": {"type": "number", "exclusiveMinimum": 0},
+          "en": {"type": "string"},
+          "zh": {"type": "string"},
+          "speaker": {"type": "string"}
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["rights_confirmed", "source_reference"],
+      "properties": {
+        "rights_confirmed": {"type": "boolean"},
+        "source_reference": {"type": "string"},
+        "edit_notes": {"type": "string"},
+        "review_status": {"enum": ["pending", "approved", "rejected"]}
+      }
+    }
+  }
+}

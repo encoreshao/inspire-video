@@ -1,0 +1,43 @@
+# Reference defaults. The renderer does not read this file: the values that drive the layout live in
+# video/src/Video.tsx (themes, font sizes) and scripts/render.py (validation limits). Keep them in sync.
+project:
+  name: inspire-video
+  language_source: auto
+  language_output: zh-CN
+  output_dir: output
+  overwrite: false
+
+video:
+  width: 1080
+  height: 1920
+  fps: 30
+  target_duration_min: 40      # seconds; render.py rejects shorter clips
+  target_duration_max: 150     # seconds (2 min 30 s)
+  codec: h264
+  audio_codec: aac
+  pixel_format: yuv420p
+
+style:
+  theme: light                 # light | mist | ivory | sage | ink
+  heading_font_size: 42        # Chinese headline and English subtitle share this size
+  caption_max_font_size: 34    # English caption; Chinese is +2
+  caption_max_chars: 100       # per cue (English), enforced by render.py
+  video_fit: cover             # cover | contain (manifest video.fit)
+  video_height_px: 700
+
+transcription:
+  provider: faster-whisper
+  model: small.en              # large-v3 is more accurate (about 3 GB download)
+  device: auto
+  compute_type: int8
+  word_timestamps: true
+
+editorial:
+  candidate_count: 3
+  minimum_confidence: 0.75
+  require_rights_confirmation: true
+  background_music: false
+
+render:
+  preview_scale: 0.5
+  final_crf: 18
