@@ -82,7 +82,7 @@ def main() -> int:
         "category": cp.get("category") or "INSPIRATION / 向上生长",
         "cues": [{k: c[k] for k in ("start", "end", "en", "zh", "speaker") if k in c} for c in m["subtitles"]],
         "people": cp.get("speakers", []),
-        "theme": a.theme or m.get("theme", "light"), "videoFit": m["video"].get("fit", "contain"), "cropX": m["video"].get("crop_x", 0.5), "cropY": m["video"].get("crop_y", 0.5),
+        "theme": a.theme or m.get("theme", "light"), "videoFit": m["video"].get("fit", "cover"), "cropX": m["video"].get("crop_x", 0.5), "cropY": m["video"].get("crop_y", 0.5),
         "talkTitle": cp.get("talk_title", ""), "excerptLabel": cp.get("excerpt_label", ""),
     }
     poster = proj / "assets/poster.jpg"

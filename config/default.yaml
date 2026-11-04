@@ -22,9 +22,10 @@ style:
   heading_font_size: 42        # Chinese headline and English subtitle share this size
   caption_max_font_size: 34    # English caption; Chinese is +2
   caption_max_chars: 100       # per cue (English), enforced by render.py
-  video_fit: contain           # contain | cover (manifest video.fit)
-  safe_x_px: 120               # left/right safe margin (platforms crop the sides of tall screens)
-  safe_top_px: 190
+  video_fit: cover             # cover | contain (manifest video.fit)
+  safe_x_px: 114               # left/right safe margin (platforms crop the sides of tall screens)
+  title_top_px: 256            # title is top-anchored here (label top edge at about y = 259)
+  line_gap_px: 26              # space above and below each divider line
   safe_bottom_px: 330
 
 transcription:
