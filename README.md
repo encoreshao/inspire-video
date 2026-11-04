@@ -1,5 +1,7 @@
 # InspireVideo
 
+**English** | [简体中文](README.zh-CN.md)
+
 A Claude Code / Codex skill that turns authorized podcast or interview footage (a local file or a video URL) into a 9:16 bilingual Chinese-English short video with synced captions, plus a cover image.
 
 The agent follows `SKILL.md` to transcribe, pick a segment, write the copy and translation, and cut the clip. Layout and typography are then rendered deterministically with [Remotion](https://www.remotion.dev/), so on-screen text is always exact.
@@ -10,13 +12,14 @@ The agent follows `SKILL.md` to transcribe, pick a segment, write the copy and t
 
 - **Output:** 1080×1920 MP4 (H.264 + AAC, 30 fps), 40 seconds to 2 min 30 s, plus a 1080×1920 cover PNG.
 - **Synced bilingual captions:** one short sentence (or one clause of a long sentence) at a time, English first and Chinese second, appearing as it is spoken. Each cue is at most 100 English characters, and two sentences never share a cue.
-- **Platform-safe layout:** WeChat Channels and Douyin crop the sides of 9:16 video on tall phones (about 100 px per side). All content stays 120 px inside the left and right edges, and clear of the top (190 px) and bottom (330 px) button zones.
+- **Platform-safe layout:** WeChat Channels and Douyin crop the sides of 9:16 video on tall phones (about 100 px per side). All content stays 114 px inside the left and right edges, the title is anchored at a fixed distance from the top (so it is never too high), and the lowest content ends above the bottom button zone (y = 1590).
+- **Divider lines and depth:** a centered line between the title and the video and the same line after the video, bright in the middle and fading out toward both ends, with a small margin above and below each; plus a soft theme-matched shadow around the video panel.
 - **Joined panel:** the video and its caption area form one rounded panel with no gap. The caption area is only as tall as its text.
 - **Title block:** category label, Chinese headline and English subtitle at the same size.
 - **Bottom block:** speaker name in English and Chinese, job title, company, talk title, source, year, excerpt range and a progress bar.
 - **Several people on screen:** list them in `copy.speakers` and tag cues with a `speaker` id. All names show at the bottom and the current speaker is highlighted.
 - **Themes:** `light` (default), `mist`, `ivory`, `sage` and a dark `ink`.
-- **URL input:** download with `yt-dlp` after a rights confirmation, cached by video id so the same video is never downloaded twice.
+- **URL or file input:** download with `yt-dlp` after a rights confirmation, or import a file you downloaded yourself (`--file`). Everything is cached, so the same video is never fetched twice. For YouTube pages that demand a sign-in, there are opt-in `--cookies` and `--cookies-from-browser` options.
 - **Publishing copy:** a WeChat Channels short title and description, a Douyin title and description, and hashtags, validated against editable length limits and written to ready-to-paste files, with a source credit and a "not cleared" banner when the rights are unresolved.
 - **Safety checks:** `render.py` validates the manifest and refuses to render when rights are not confirmed, captions are malformed, or speech could be cut off.
 
@@ -24,7 +27,8 @@ The agent follows `SKILL.md` to transcribe, pick a segment, write the copy and t
 
 - macOS (tested) or Linux
 - Python 3.11+
-- Node.js 20+ (20.19+ recommended; npm prints an engine warning on 20.15 but it works)
+- Node.js 20+ for the Remotion renderer (20.19+ recommended; npm prints an engine warning on 20.15 but it works)
+- YouTube URLs only: [Deno](https://deno.com/) or [Bun](https://bun.sh/) (or Node.js 20.19+), which `yt-dlp` needs to solve YouTube's player script. Node 20.15 is reported as unsupported.
 - FFmpeg and ffprobe (`brew install ffmpeg` or `apt install ffmpeg`)
 - Linux only: a CJK font such as `fonts-noto-cjk` (macOS ships Songti SC). Fonts are system fonts and are not bundled.
 - About 4 GB of free disk for the Whisper model, Chrome and the project files
@@ -93,7 +97,7 @@ bash ~/.inspire-video/scripts/install.sh claude    # or: codex | both   (add --n
 ### What the installer does
 
 1. symlinks the skill into `~/.claude/skills` and/or `~/.agents/skills`;
-2. installs the Python dependencies (`faster-whisper`, `yt-dlp`, `pydantic`, `jsonschema`, `PyYAML`) with `pip install -e`;
+2. installs the Python dependencies (`faster-whisper`, `yt-dlp[default]` with `yt-dlp-ejs`, `pydantic`, `jsonschema`, `PyYAML`) with `pip install -e`;
 3. runs `npm install` for the Remotion project;
 4. runs the environment check.
 
@@ -145,8 +149,12 @@ Everything is written under `~/.inspire-video/output/`:
 Run from the skill root (`cd ~/.inspire-video`). Replace `<slug>` with a folder name.
 
 ```bash
-# 1. (URL only) download once; asks for rights confirmation
-python3 scripts/fetch.py "https://www.youtube.com/watch?v=VIDEO_ID"
+# 1. get the source into the cache once; asks for rights confirmation
+python3 scripts/fetch.py "https://www.youtube.com/watch?v=VIDEO_ID"       # download a URL
+python3 scripts/fetch.py --file ./video.mp4 --source-url "https://…"      # or import a file you downloaded yourself
+# only if YouTube demands a sign-in (opt-in, see "Getting YouTube videos" below):
+python3 scripts/fetch.py "https://www.youtube.com/watch?v=VIDEO_ID" --cookies cookies.json
+python3 scripts/fetch.py "https://www.youtube.com/watch?v=VIDEO_ID" --cookies-from-browser chrome
 
 # 2. extract 16 kHz mono audio and transcribe
 mkdir -p output/projects/<slug>/assets
@@ -163,6 +171,18 @@ python3 scripts/render.py output/projects/<slug> --preview        # half-scale d
 python3 scripts/render.py output/projects/<slug>                  # final MP4
 python3 scripts/render.py output/projects/<slug> --cover          # cover PNG
 ```
+
+### Getting YouTube videos
+
+`fetch.py` downloads at most 720p (clips are scaled to 720p anyway) after you confirm the rights. YouTube may answer with "Sign in to confirm you're not a bot". You have three ways forward, from safest:
+
+1. **Download the video yourself and import it:** `python3 scripts/fetch.py --file ./video.mp4 --source-url "<url>"`. No account involved.
+2. **`--cookies <file>`:** cookies you exported from your own browser, either a Netscape `cookies.txt` or the JSON list that cookie-export extensions produce. Only YouTube/Google cookies are read, a private temporary copy is used and deleted afterwards, and no cookie value is ever printed. Keep the file out of git (`cookies.json`, `cookies.txt` and `cookies/` are already in `.gitignore`), and delete it when you are done.
+3. **`--cookies-from-browser chrome|firefox|safari|edge|brave|…`:** lets `yt-dlp` read your browser's login directly. On macOS this needs Full Disk Access for your terminal app; without it you get "Operation not permitted".
+
+Options 2 and 3 are off by default and use your own signed-in session. That may violate YouTube's terms and can get the account flagged, so use your own account and accept the risk. `fetch.py` prints a reminder each time.
+
+YouTube downloads also need a JavaScript runtime (see Requirements). `fetch.py` picks Deno, then Bun, then Node automatically.
 
 ### Publishing copy
 
@@ -208,7 +228,7 @@ Notes:
 
 - Caption `start` and `end` are seconds **relative to the clip**, not the source. Build them at sentence or clause boundaries from the transcript timestamps.
 - Keep the clip starting at least 0.1 s before the first cue and ending at least 0.2 s after the last, so no speech is cut off.
-- `video.fit` is `contain` (default, whole 16:9 frame) or `cover` (taller window, crops some width). `crop_x` / `crop_y` (0–1) move the crop.
+- `video.fit` is `cover` (default, 852 x 520 window, crops about 7% of the width) or `contain` (whole 16:9 frame, smaller). `crop_x` / `crop_y` (0–1) move the crop.
 - Several people: add `copy.speakers` as `[{"id": "a", "name": "…", "name_zh": "…", "title": "…", "title_zh": "…", "org": "…"}]` and set `"speaker": "a"` on each cue. Names must come from the source (description, on-screen captions, you), never from guessing a voice or face.
 - Only include a title or company that the source or the speaker's own words support.
 
@@ -234,29 +254,33 @@ It refuses to render when: the manifest breaks the schema; `rights_confirmed` is
 | Chinese text shows as boxes (Linux) | Install `fonts-noto-cjk` |
 | Video is black or missing in the render | Re-encode the clip to H.264 + AAC; AV1 or Opus sources may not decode in Chrome |
 | `render.py` says a cue is too long or has two sentences | Split the cue at a clause boundary and give each part its own timing |
-| `fetch.py` fails | The video may be private, live, age-restricted or blocked; download an authorized copy yourself and use the local file |
+| `fetch.py` fails | The video may be private, live, age-restricted or blocked; download an authorized copy yourself and import it with `fetch.py --file <path>` |
+| YouTube says "Sign in to confirm you're not a bot" | YouTube is blocking this network. Download the video yourself and import it with `--file`. Opt-in alternative: `fetch.py <url> --cookies-from-browser chrome` (or firefox, safari, edge, brave) uses your signed-in browser session; this may violate YouTube's terms and can get the account flagged, so use your own account at your own risk |
+| "Only images are available" / "n challenge solving failed" | `yt-dlp` has no supported JavaScript runtime. Install Deno or Bun (Node 20.15 is unsupported; 20.19+ works) and make sure `pip install "yt-dlp[default]"` installed `yt-dlp-ejs`. `check_env.py` reports both |
+| "could not find chrome cookies database" or "Operation not permitted" (macOS) | macOS blocks your terminal from reading the browser profile. Grant Full Disk Access to the terminal app and restart it, or use `--cookies <file>` / `--file` instead |
 | Output file exists | Pass `--force` to overwrite |
-| Sides are cut off on WeChat / Douyin | They crop 9:16 video on tall screens. Re-render with the current version (120 px side margins); if a platform still crops, raise `SAFE_X` in `video/src/Video.tsx` |
+| Sides are cut off on WeChat / Douyin | They crop 9:16 video on tall screens. Re-render with the current version (114 px side margins); if a platform still crops, raise `SAFE_X` in `video/src/Video.tsx` |
 
 ## Known limits
 
 - Caption timing comes from the transcript and is accurate to a fraction of a second. Watch the output once before publishing.
 - Chinese translations and Chinese name transliterations are written by the agent; have a fluent reader review them.
-- The video window shows the whole 16:9 frame (`contain`) so nothing is cropped. Set `video.fit` to `cover` for a taller window that crops about 20% of the width; `crop_x` / `crop_y` move the crop.
-- Content sits inside the platform safe area, so the video window is about 840 px wide and there is empty space above and below. Adjust `SAFE_X`, `SAFE_TOP` and `SAFE_BOTTOM` in `video/src/Video.tsx` if a platform behaves differently.
+- The video window is 852 x 520 px and crops about 7% of the width of 16:9 footage (`cover`). Set `video.fit` to `contain` to show the whole frame (smaller, about 477 px tall); `crop_x` / `crop_y` move the crop.
+- Content sits inside the platform safe area, so the video window is about 852 px wide and there is empty space above and below. Adjust `SAFE_X`, `TITLE_TOP` (the title is anchored at a fixed distance from the top so it never moves when blocks below change; the label's top edge sits at about y = 259), `LINE_GAP` (space around each divider line) and `SAFE_BOTTOM` (the lowest content must end above y = 1590) in `video/src/Video.tsx` if a platform behaves differently.
 - No speaker-aware cropping or automatic speaker identification yet.
 - Fonts are system fonts, not bundled.
 - Tested on macOS only.
 
 ## Rights
 
-A URL does not grant reuse rights. Only use media you own or are licensed to use, never bypass DRM or access controls, and verify every quote and attribution before publishing. Some sources, such as TED talks (CC BY-NC-ND), forbid derivative works, so a re-edited clip must not be published without permission. You are responsible for complying with the terms of the sites you download from.
+Never commit cookie files or `.env`. A URL does not grant reuse rights. Only use media you own or are licensed to use, never bypass DRM or access controls, and verify every quote and attribution before publishing. Some sources, such as TED talks (CC BY-NC-ND), forbid derivative works, so a re-edited clip must not be published without permission. You are responsible for complying with the terms of the sites you download from.
 
 ## Repository layout
 
 ```text
 SKILL.md              agent workflow and quality rules
-README.md             this file
+README.md             this file (English)
+README.zh-CN.md       简体中文说明
 LICENSE               MIT
 config/default.yaml   documented defaults (reference only)
 config/publish.yaml   platform length limits used by publish_meta.py
