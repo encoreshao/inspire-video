@@ -97,6 +97,8 @@ def main() -> int:
         return 1
 
     m = json.loads((proj / "video_manifest.json").read_text())
+    out_dir = ROOT / "output/final" / m["project_id"]  # one folder per project: video, cover, publishing copy
+    out_dir.mkdir(parents=True, exist_ok=True)
     status = m["provenance"].get("review_status", "pending")
     warn = ""
     if status != "approved":
@@ -105,10 +107,10 @@ def main() -> int:
     credit, w, d = p["credit"].strip(), p["wechat_channels"], p["douyin"]
     wx = body(w["description"], credit, w["hashtags"])
     dy = body(d["description"], credit, d["hashtags"])
-    (proj / "publish_wechat.txt").write_text(f"{w['short_title']}\n\n{wx}\n")
-    (proj / "publish_douyin.txt").write_text(f"{d['title']}\n\n{dy}\n")
+    (out_dir / "publish_wechat.txt").write_text(f"{w['short_title']}\n\n{wx}\n")
+    (out_dir / "publish_douyin.txt").write_text(f"{d['title']}\n\n{dy}\n")
     notes = "".join(f"- {n}\n" for n in p.get("notes", []))
-    (proj / "publish.md").write_text(
+    (out_dir / "publish.md").write_text(
         f"# Publishing copy: {m['project_id']}\n\n{warn}"
         f"Video: `output/final/{m['project_id']}.mp4`  ·  Cover: `output/final/{m['project_id']}-cover.png`\n\n"
         f"## 微信视频号 (WeChat Channels)\n\n**短标题** ({len(w['short_title'])} 字)\n\n```\n{w['short_title']}\n```\n\n"
@@ -117,7 +119,7 @@ def main() -> int:
         f"**作品描述** ({len(dy)} 字)\n\n```\n{dy}\n```\n\n"
         + (f"## Notes\n\n{notes}\n" if notes else "")
         + "Limits come from `config/publish.yaml` and are unverified; check them in each platform's publish page.\n")
-    print(f"Wrote {proj/'publish.md'}, publish_wechat.txt, publish_douyin.txt")
+    print(f"Wrote {out_dir/'publish.md'}, publish_wechat.txt, publish_douyin.txt")
     if warn:
         print(f"WARNING: review_status is '{status}': not cleared for publication", file=sys.stderr)
     return 0

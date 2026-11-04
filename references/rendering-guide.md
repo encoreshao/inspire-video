@@ -16,8 +16,8 @@ Commands (from the skill root):
 
 ```bash
 python3 scripts/render.py output/projects/<slug> --preview    # half-scale draft -> <project>/preview.mp4
-python3 scripts/render.py output/projects/<slug> --force      # final -> output/final/<slug>.mp4
-python3 scripts/render.py output/projects/<slug> --cover --force   # cover -> output/final/<slug>-cover.png
+python3 scripts/render.py output/projects/<slug> --force      # final -> output/final/<slug>/<slug>.mp4 + cover.png
+python3 scripts/render.py output/projects/<slug> --cover --force   # cover only -> output/final/<slug>/cover.png
 ```
 
 Add `--theme light|mist|ivory|sage|ink` to override the manifest theme.
@@ -39,9 +39,9 @@ Choose `start` a little before the first spoken word and `end` a little after th
 ## Validation
 
 ```bash
-ffprobe -v error -show_entries format=duration:stream=codec_name,width,height,r_frame_rate -of json output/final/<slug>.mp4
-ffmpeg -i output/final/<slug>.mp4 -af volumedetect -vn -f null -
-ffmpeg -i output/final/<slug>.mp4 -vf blackdetect=d=0.5 -an -f null -
+ffprobe -v error -show_entries format=duration:stream=codec_name,width,height,r_frame_rate -of json output/final/<slug>/<slug>.mp4
+ffmpeg -i output/final/<slug>/<slug>.mp4 -af volumedetect -vn -f null -
+ffmpeg -i output/final/<slug>/<slug>.mp4 -vf blackdetect=d=0.5 -an -f null -
 ```
 
 Extract frames at the start of each caption and inspect them at phone size: no clipped text, correct glyphs, speaker in frame.
@@ -49,7 +49,7 @@ Extract frames at the start of each caption and inspect them at phone size: no c
 Simulate a platform's side crop on a frame (9:20 screen, keeps the center 864 px of 1080):
 
 ```bash
-ffmpeg -ss 12 -i output/final/<slug>.mp4 -frames:v 1 -vf "crop=864:1920" /tmp/crop920.png
+ffmpeg -ss 12 -i output/final/<slug>/<slug>.mp4 -frames:v 1 -vf "crop=864:1920" /tmp/crop920.png
 ```
 
 Nothing (text, panel edge, progress bar) may touch or pass the crop edges.

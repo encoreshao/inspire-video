@@ -44,7 +44,7 @@ Ask only for missing information that blocks the task. Defaults:
 - aspect ratio: 9:16;
 - duration: 40–150 seconds (choose the natural length of one complete thought);
 - one best segment;
-- output: `output/final/<project-slug>.mp4`;
+- output: one folder per project, `output/final/<project-slug>/`, holding `<project-slug>.mp4`, `cover.png` and the publishing copy;
 - visual style: `references/visual-style.md`;
 - no generated music unless explicitly requested.
 
@@ -125,6 +125,7 @@ Headline should express the clip's idea, not exaggerate it. Do not attribute the
 - Keep original speaker audio synchronized.
 - Crop to 9:16 using face/speaker-aware framing when available; otherwise use a safe center crop and inspect it.
 - Do not synthesize lip movement or alter the speaker's appearance.
+- Pick `assets/poster.jpg` (the cover image) deliberately: view 6-8 candidate frames across the clip and choose one with the speaker alone, face clear, eyes open, centered, and NO montage/split screen, lower-third, date or location text, or other people. Never take a fixed timestamp blindly. Then check the rendered `cover.png`: every text line (headline, subtitle, speaker, title, talk, source) must be fully visible, match `video_manifest.json`, and stay inside the safe margins.
 - Use subtle cuts/fades only. Avoid flashy transitions, emoji overlays and excessive zoom.
 - If the source is 16:9, place it in a framed landscape window within the vertical editorial layout rather than cropping away important people by default.
 
@@ -175,7 +176,7 @@ Use `ffprobe` and, where possible, extract representative frames for visual insp
 
 ### 10. Publishing copy (title, description, tags)
 
-After the video passes QA, write `publish.json` in the project folder for WeChat Channels (视频号) and Douyin (抖音), then run `python scripts/publish_meta.py output/projects/<slug>`. It validates the lengths against `config/publish.yaml` and writes `publish.md`, `publish_wechat.txt` and `publish_douyin.txt` ready to paste. `--init` scaffolds a draft from `copy.json`. Follow `references/publishing.md`:
+After the video passes QA, write `publish.json` in the project folder for WeChat Channels (视频号) and Douyin (抖音), then run `python scripts/publish_meta.py output/projects/<slug>`. It validates the lengths against `config/publish.yaml` and writes `publish.md`, `publish_wechat.txt` and `publish_douyin.txt` into `output/final/<slug>/`, ready to paste. `--init` scaffolds a draft from `copy.json`. Follow `references/publishing.md`:
 - Simplified Chinese; truthful to the clip; no clickbait, invented statistics or claims the speaker did not make.
 - WeChat: a short title plus a description; Douyin: a title plus a description; 3-5 relevant hashtags each, written without `#`.
 - Always include a credit line (source, speaker, year, and that the subtitles are your own translation); it is appended to every description.
@@ -196,16 +197,18 @@ output/projects/<slug>/
 ├── video_manifest.json
 ├── review.md
 ├── publish.json
-├── publish.md
-├── publish_wechat.txt
-├── publish_douyin.txt
 ├── render.log
 └── assets/
     ├── source.mp4
     ├── clip.mp4
     └── poster.jpg
 
-output/final/<slug>.mp4
+output/final/<slug>/
+├── <slug>.mp4
+├── cover.png          # rendered automatically with the video
+├── publish.md
+├── publish_wechat.txt
+└── publish_douyin.txt
 ```
 
 Also provide a concise completion report:

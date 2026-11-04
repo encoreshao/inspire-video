@@ -1,6 +1,6 @@
 # Publishing copy guide (WeChat Channels and Douyin)
 
-Output files per project: `publish.json` (source of truth), `publish.md` (all copy, ready to paste), `publish_wechat.txt`, `publish_douyin.txt`.
+`publish.json` (source of truth) lives in the project folder. The generated `publish.md` (all copy, ready to paste), `publish_wechat.txt` and `publish_douyin.txt` are written to `output/final/<slug>/`, next to the video and `cover.png`.
 
 ## publish.json
 

@@ -16,7 +16,7 @@ A calm, editorial bilingual quote video. The footage is the visual anchor; the c
 1. **Title block**: small category label, Chinese headline (bold serif) and English subtitle. The headline and subtitle share one font size (42 px) so they read as a pair. The Chinese headline stays on one line when it fits.
 2. **Divider**: a 4 px centered line between the title block and the panel, bright accent in the middle fading out to transparent at both ends, with a faint glow and 26 px (`LINE_GAP`) above and below. The same line repeats after the panel, before the bottom block.
 3. **Joined panel**: the video window and the caption area form a single rounded panel (about 24 px radius, 3 px border, soft theme-matched drop shadow) with a square seam and no gap between them.
-   - Panel width 852 px. Default `cover` gives a 520 px tall window that crops about 7% of the width of 16:9 footage; `video.fit: "contain"` shows the whole frame (about 477 px tall). `crop_x` / `crop_y` move the crop. Always inspect the crop; never cut off people.
+   - Panel width 852 px. Default `cover` gives a 488 px tall window that crops about 1% of the width of 16:9 footage; `video.fit: "contain"` shows the whole frame (about 477 px tall). `crop_x` / `crop_y` move the crop. Always inspect the crop; never cut off people.
 4. **Caption area** directly under the video, auto-height to its text:
    - One sentence (or one clause of a long sentence) per cue, synced to speech, at most 100 English characters. English first, Chinese second, centered.
    - English up to 34 px semibold, Chinese +2 px regular; the size is reduced per cue so text never overflows. Padding about 12 px top and bottom.

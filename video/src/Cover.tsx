@@ -1,6 +1,6 @@
 import React from 'react';
 import {AbsoluteFill, Img, staticFile} from 'remotion';
-import {SERIF, SAFE_X, HeadlineLines, SpeakerBlock, PeopleRow, ThemeCtx, pickTheme, Person} from './Video';
+import {SERIF, SAFE_X, HeadlineLines, SpeakerBlock, PeopleRow, InfoCard, ThemeCtx, pickTheme, Person} from './Video';
 
 export type CoverProps = {
   headline: string; subtitle: string; speaker: string; source: string;
@@ -26,13 +26,15 @@ export const InspireCover: React.FC<CoverProps> = ({headline, subtitle, speaker,
         style={{width: '100%', height: '100%', objectFit: 'cover'}} />}
     </div>
     <div style={{marginTop: 'auto'}}>
-      {people && people.length > 1
-        ? <PeopleRow people={people} scale={1.5} />
-        : <SpeakerBlock speaker={speaker} speakerZh={speakerZh} role={role} roleZh={roleZh} scale={1.35} />}
-      {talkTitle && <div style={{fontSize: 32, fontStyle: 'italic', marginTop: 10}}>“{talkTitle}”</div>}
-      <div style={{borderTop: `3px solid ${c.border}`, marginTop: 24, paddingTop: 18, fontSize: 28, color: c.muted}}>
-        {source}
-      </div>
+      <InfoCard pad={32} radius={28}>
+        {people && people.length > 1
+          ? <PeopleRow people={people} scale={1.5} />
+          : <SpeakerBlock speaker={speaker} speakerZh={speakerZh} role={role} roleZh={roleZh} scale={1.2} />}
+        {talkTitle && <div style={{fontSize: 32, fontStyle: 'italic', marginTop: 12}}>“{talkTitle}”</div>}
+        <div style={{borderTop: `3px solid ${c.cardBorder}`, marginTop: 20, paddingTop: 16, fontSize: 28, color: c.muted}}>
+          {source}
+        </div>
+      </InfoCard>
     </div>
   </AbsoluteFill>
   </ThemeCtx.Provider>

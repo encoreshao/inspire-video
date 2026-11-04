@@ -2,7 +2,7 @@
 """Validate a project's video_manifest.json and render it with Remotion.
 
 Usage: python scripts/render.py <project-dir> [--preview] [--force]
-Output: output/final/<project-id>.mp4  (or <project-dir>/preview.mp4 with --preview)
+Output: output/final/<project-id>/<project-id>.mp4 + cover.png  (or <project-dir>/preview.mp4 with --preview)
 """
 import argparse, json, re, shutil, subprocess, sys
 from pathlib import Path
@@ -85,6 +85,10 @@ def main() -> int:
         "theme": a.theme or m.get("theme", "light"), "videoFit": m["video"].get("fit", "cover"), "cropX": m["video"].get("crop_x", 0.5), "cropY": m["video"].get("crop_y", 0.5),
         "talkTitle": cp.get("talk_title", ""), "excerptLabel": cp.get("excerpt_label", ""),
     }
+    for line in (role_en, role_zh):
+        if len(line) > 58:
+            print(f"WARNING: speaker title/company line is {len(line)} chars and will wrap, which can push the bottom block "
+                  f"past the safe area; shorten speaker_title or speaker_org: {line[:60]}", file=sys.stderr)
     poster = proj / "assets/poster.jpg"
     if poster.exists():
         pname = f"{m['project_id']}-poster.jpg"
@@ -93,9 +97,11 @@ def main() -> int:
     props_file = proj / "props.json"
     props_file.write_text(json.dumps(props, ensure_ascii=False, indent=2))
 
-    if a.cover:
-        out = ROOT / "output/final" / f"{m['project_id']}-cover.png"
-        if out.exists() and not a.force:
+    final_dir = ROOT / "output/final" / m["project_id"]
+
+    def render_cover(overwrite: bool = False) -> int:
+        out = final_dir / "cover.png"
+        if out.exists() and not (a.force or overwrite):
             raise FileExistsError(f"{out} exists; use --force to overwrite")
         out.parent.mkdir(parents=True, exist_ok=True)
         cprops = {k: props.get(k) for k in ("headline", "subtitle", "theme", "people", "speaker", "speakerZh", "role", "roleZh", "source", "poster", "talkTitle", "category")}
@@ -107,10 +113,13 @@ def main() -> int:
             print(f"Rendered: {out}")
         return r.returncode
 
+    if a.cover:
+        return render_cover()
+
     if a.preview:
         out = proj / "preview.mp4"
     else:
-        out = ROOT / "output/final" / f"{m['project_id']}.mp4"
+        out = final_dir / f"{m['project_id']}.mp4"
         if out.exists() and not a.force:
             raise FileExistsError(f"{out} exists; use --force to overwrite")
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -123,6 +132,8 @@ def main() -> int:
     r = subprocess.run(cmd, cwd=ROOT / "video")
     if r.returncode == 0:
         print(f"Rendered: {out}")
+        if not a.preview:
+            return render_cover(overwrite=True)  # the cover always ships with the video
     return r.returncode
 
 

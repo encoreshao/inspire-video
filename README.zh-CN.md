@@ -139,9 +139,10 @@ bash ~/.inspire-video/scripts/install.sh claude    # 或：codex | both（加 --
 | 路径 | 内容 |
 | --- | --- |
 | `projects/<slug>/` | 转写稿、选定片段、文案、`video_manifest.json`、`review.md`、`assets/`（片段、封面图） |
-| `projects/<slug>/publish.md` | 微信视频号与抖音的标题、描述和话题标签（另有 `publish_wechat.txt`、`publish_douyin.txt`） |
-| `final/<slug>.mp4` | 成品视频 |
-| `final/<slug>-cover.png` | 封面图 |
+| `final/<slug>/` | 每个项目一个文件夹，发布所需文件都在里面： |
+| `final/<slug>/<slug>.mp4` | 成品视频 |
+| `final/<slug>/cover.png` | 封面图（每次渲染成品视频时自动生成） |
+| `final/<slug>/publish.md` | 微信视频号与抖音的标题、描述和话题标签（另有 `publish_wechat.txt`、`publish_douyin.txt`） |
 | `cache/` | 下载的链接素材 |
 
 ## 手动流程（不用智能体）
@@ -228,7 +229,7 @@ python3 scripts/publish_meta.py output/projects/<slug>          # 校验，然�
 
 - 字幕的 `start` 和 `end` 是**相对于片段**的秒数，不是相对于原素材。请根据转写稿的时间戳，在句子或分句边界处划分。
 - 片段要在第一条字幕前至少 0.1 秒开始，并在最后一条字幕后至少 0.2 秒结束，这样语音不会被截断。
-- `video.fit` 可选 `cover`（默认，852 x 520 的窗口，约裁掉 7% 的宽度）或 `contain`（显示完整的 16:9 画面，窗口更小）。`crop_x` / `crop_y`（0–1）用于移动裁切位置。
+- `video.fit` 可选 `cover`（默认，852 x 488 的窗口，约裁掉 1% 的宽度）或 `contain`（显示完整的 16:9 画面，窗口更小）。`crop_x` / `crop_y`（0–1）用于移动裁切位置。
 - 多人出镜：把 `copy.speakers` 写成 `[{"id": "a", "name": "…", "name_zh": "…", "title": "…", "title_zh": "…", "org": "…"}]`，并在每条字幕上设置 `"speaker": "a"`。姓名必须来自素材（简介、屏幕字幕、你本人），绝不能凭声音或长相猜测。
 - 只写素材或说话人自己的话所能佐证的职位和公司。
 
@@ -265,7 +266,7 @@ python3 scripts/publish_meta.py output/projects/<slug>          # 校验，然�
 
 - 字幕时间来自转写稿，精确到零点几秒。发布前请完整看一遍成片。
 - 中文译文和中文人名音译由智能体撰写，请找中文熟练的人审校。
-- 视频窗口为 852 x 520 px，会裁掉 16:9 素材约 7% 的宽度（`cover`）。把 `video.fit` 设为 `contain` 可显示完整画面（窗口更小，约 477 px 高）；`crop_x` / `crop_y` 用于移动裁切位置。
+- 视频窗口为 852 x 488 px，会裁掉 16:9 素材约 1% 的宽度（`cover`）。把 `video.fit` 设为 `contain` 可显示完整画面（窗口更小，约 477 px 高）；`crop_x` / `crop_y` 用于移动裁切位置。
 - 内容位于平台安全区内，所以视频窗口约 852 px 宽，上下会有空白。若某个平台表现不同，可在 `video/src/Video.tsx` 中调整 `SAFE_X`、`TITLE_TOP`（标题固定在距顶部某个位置，下方内容改变时它不会移动；标签顶边约在 y = 259）、`LINE_GAP`（每条分隔线上下的间距）和 `SAFE_BOTTOM`（最下方内容必须止于 y = 1590 之上）。
 - 暂不支持识别说话人的智能裁切，也不支持自动识别说话人身份。
 - 字体使用系统字体，不随项目打包。

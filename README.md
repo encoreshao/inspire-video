@@ -139,9 +139,10 @@ Everything is written under `~/.inspire-video/output/`:
 | Path | Contents |
 | --- | --- |
 | `projects/<slug>/` | transcript, selected segments, copy, `video_manifest.json`, `review.md`, `assets/` (clip, poster) |
-| `projects/<slug>/publish.md` | title, description and hashtags for WeChat Channels and Douyin (plus `publish_wechat.txt`, `publish_douyin.txt`) |
-| `final/<slug>.mp4` | the finished video |
-| `final/<slug>-cover.png` | the cover image |
+| `final/<slug>/` | everything to publish, in one folder per project: |
+| `final/<slug>/<slug>.mp4` | the finished video |
+| `final/<slug>/cover.png` | the cover image (rendered with every final video) |
+| `final/<slug>/publish.md` | title, description and hashtags for WeChat Channels and Douyin (plus `publish_wechat.txt`, `publish_douyin.txt`) |
 | `cache/` | downloaded URL sources |
 
 ## Manual workflow (without the agent)
@@ -228,7 +229,7 @@ Notes:
 
 - Caption `start` and `end` are seconds **relative to the clip**, not the source. Build them at sentence or clause boundaries from the transcript timestamps.
 - Keep the clip starting at least 0.1 s before the first cue and ending at least 0.2 s after the last, so no speech is cut off.
-- `video.fit` is `cover` (default, 852 x 520 window, crops about 7% of the width) or `contain` (whole 16:9 frame, smaller). `crop_x` / `crop_y` (0–1) move the crop.
+- `video.fit` is `cover` (default, 852 x 488 window, crops about 1% of the width) or `contain` (whole 16:9 frame, smaller). `crop_x` / `crop_y` (0–1) move the crop.
 - Several people: add `copy.speakers` as `[{"id": "a", "name": "…", "name_zh": "…", "title": "…", "title_zh": "…", "org": "…"}]` and set `"speaker": "a"` on each cue. Names must come from the source (description, on-screen captions, you), never from guessing a voice or face.
 - Only include a title or company that the source or the speaker's own words support.
 
@@ -265,7 +266,7 @@ It refuses to render when: the manifest breaks the schema; `rights_confirmed` is
 
 - Caption timing comes from the transcript and is accurate to a fraction of a second. Watch the output once before publishing.
 - Chinese translations and Chinese name transliterations are written by the agent; have a fluent reader review them.
-- The video window is 852 x 520 px and crops about 7% of the width of 16:9 footage (`cover`). Set `video.fit` to `contain` to show the whole frame (smaller, about 477 px tall); `crop_x` / `crop_y` move the crop.
+- The video window is 852 x 488 px and crops about 1% of the width of 16:9 footage (`cover`). Set `video.fit` to `contain` to show the whole frame (smaller, about 477 px tall); `crop_x` / `crop_y` move the crop.
 - Content sits inside the platform safe area, so the video window is about 852 px wide and there is empty space above and below. Adjust `SAFE_X`, `TITLE_TOP` (the title is anchored at a fixed distance from the top so it never moves when blocks below change; the label's top edge sits at about y = 259), `LINE_GAP` (space around each divider line) and `SAFE_BOTTOM` (the lowest content must end above y = 1590) in `video/src/Video.tsx` if a platform behaves differently.
 - No speaker-aware cropping or automatic speaker identification yet.
 - Fonts are system fonts, not bundled.

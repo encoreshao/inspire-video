@@ -57,9 +57,15 @@ export const SERIF = '"Noto Serif CJK SC", "Songti SC", Georgia, serif';
 
 // Break a long headline after the first Chinese comma only when it would not fit on one line.
 export const HeadlineLines: React.FC<{text: string; size: number; width?: number}> = ({text, size, width = 984}) => {
-  const i = text.indexOf('，');
+  // Break at a punctuation mark when the headline does not fit on one line (the break nearest the middle).
   const fits = text.length * (size + 1) <= width;
-  const lines = !fits && i > 0 ? [text.slice(0, i + 1), text.slice(i + 1)] : [text];
+  let lines = [text];
+  if (!fits) {
+    const marks = [...text].map((ch, k) => ('，：、；,:;'.includes(ch) ? k : -1)).filter((k) => k >= 0 && k < text.length - 1);
+    const mid = text.length / 2;
+    const cut = marks.length ? marks.reduce((a, b) => (Math.abs(b + 1 - mid) < Math.abs(a + 1 - mid) ? b : a)) + 1 : Math.ceil(mid);
+    lines = [text.slice(0, cut), text.slice(cut)];
+  }
   return <>{lines.map((l, k) => <div key={k} style={{whiteSpace: 'nowrap'}}>{l}</div>)}</>;
 };
 
@@ -80,7 +86,7 @@ export const LINE_GAP = 26; // space above and below each divider line
 const PANEL_W = 1080 - SAFE_X * 2; // 852
 const CARD_TEXT_W = PANEL_W - 6 - 64; // panel inner width minus card padding
 const CARD_PAD_Y = 12; // vertical padding inside the card
-const MAX_EN = 34;
+const MAX_EN = 32;
 const needed = (cue: {en: string; zh: string}, en: number) => {
   const zh = en + 2;
   const enLines = Math.ceil((cue.en.length * en * 0.54) / CARD_TEXT_W);
@@ -106,8 +112,8 @@ export const SpeakerBlock: React.FC<{speaker: string; speakerZh?: string; role?:
       <span style={{fontSize: 38 * scale, lineHeight: 1.2, color: c.accent, fontWeight: 700}}>{speaker}</span>
       {speakerZh ? <span style={{fontFamily: SERIF, fontSize: 38 * scale, color: c.accent, fontWeight: 700}}>{speakerZh}</span> : null}
     </div>
-    {role ? <div style={{fontSize: 25 * scale, lineHeight: 1.3, color: c.ink, marginTop: 6 * scale}}>{role}</div> : null}
-    {roleZh ? <div style={{fontFamily: SERIF, fontSize: 25 * scale, lineHeight: 1.3, color: c.muted, marginTop: 2 * scale}}>{roleZh}</div> : null}
+    {role ? <div style={{fontSize: 25 * scale, lineHeight: 1.3, color: c.ink, marginTop: 8 * scale}}>{role}</div> : null}
+    {roleZh ? <div style={{fontFamily: SERIF, fontSize: 25 * scale, lineHeight: 1.3, color: c.muted, marginTop: 4 * scale}}>{roleZh}</div> : null}
   </div>
   );
 };
@@ -135,6 +141,19 @@ export const PeopleRow: React.FC<{people: Person[]; activeId?: string; scale?: n
   );
 };
 
+// Rounded card that wraps the speaker / talk / source info at the bottom.
+export const InfoCard: React.FC<{children: React.ReactNode; pad?: number; radius?: number}> = ({children, pad = 24, radius = 22}) => {
+  const c = useTheme();
+  return (
+    <div style={{background: c.paper === '#1D1814' ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', backdropFilter: 'blur(6px)',
+      border: c.paper === '#1D1814' ? '2px solid rgba(255,255,255,0.16)' : '2px solid rgba(255,255,255,0.85)', borderLeft: `8px solid ${c.accent}`,
+      borderRadius: radius, padding: `${pad + 4}px ${pad + 10}px`, boxSizing: 'border-box',
+      boxShadow: '0 10px 26px rgba(60,40,20,0.14), 0 2px 6px rgba(60,40,20,0.08)'}}>
+      {children}
+    </div>
+  );
+};
+
 // Centered line: bright in the middle, fading out toward both ends.
 export const Divider: React.FC = () => {
   const c = useTheme();
@@ -153,7 +172,7 @@ export const InspireShort: React.FC<Props> = ({
   const frame = useCurrentFrame();
   const {durationInFrames, fps} = useVideoConfig();
   const t = frame / fps;
-  const opacity = interpolate(frame, [0, 6, durationInFrames - 10, durationInFrames], [0, 1, 1, 0],
+  const opacity = interpolate(frame, [durationInFrames - 10, durationInFrames], [1, 0],
     {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
 
   // Synced captions: show the sentence being spoken; hold until the next one starts.
@@ -168,7 +187,7 @@ export const InspireShort: React.FC<Props> = ({
     : 0;
   const size = cue ? fit(cue) : {en: 34, zh: 36};
   const cardReserve = synced ? cardHeight(cues!) : 160;
-  const videoH = videoFit === 'cover' ? 520 : Math.round((PANEL_W - 6) * 9 / 16);
+  const videoH = videoFit === 'cover' ? 488 : Math.round((PANEL_W - 6) * 9 / 16);
 
   return (
     <ThemeCtx.Provider value={c}>
@@ -215,20 +234,22 @@ export const InspireShort: React.FC<Props> = ({
       <Divider />
 
       {/* Bottom info block */}
-      <div style={{marginTop: LINE_GAP, flexShrink: 0, display: 'flex', flexDirection: 'column'}}>
-        {people && people.length > 1
-          ? <PeopleRow people={people} activeId={active?.speaker} />
-          : <SpeakerBlock speaker={speaker} speakerZh={speakerZh} role={role} roleZh={roleZh} scale={1.1} />}
-        {talkTitle && (
-          <div style={{fontSize: 25, lineHeight: 1.3, color: c.ink, marginTop: 6, fontStyle: 'italic'}}>
-            “{talkTitle}”
+      <div style={{marginTop: 20, flexShrink: 0, display: 'flex', flexDirection: 'column'}}>
+        <InfoCard pad={14}>
+          {people && people.length > 1
+            ? <PeopleRow people={people} activeId={active?.speaker} />
+            : <SpeakerBlock speaker={speaker} speakerZh={speakerZh} role={role} roleZh={roleZh} scale={1.0} />}
+          {talkTitle && (
+            <div style={{fontSize: 25, lineHeight: 1.3, color: c.ink, marginTop: 12, fontStyle: 'italic'}}>
+              “{talkTitle}”
+            </div>
+          )}
+          <div style={{borderTop: `2px solid ${c.cardBorder}`, marginTop: 12, paddingTop: 10, color: c.muted,
+            fontSize: 22, lineHeight: 1.3}}>
+            {source}{excerptLabel ? ` · ${excerptLabel}` : ''}
           </div>
-        )}
-        <div style={{borderTop: `2px solid ${c.border}`, marginTop: 10, paddingTop: 10, color: c.muted,
-          fontSize: 23, lineHeight: 1.35}}>
-          {source}{excerptLabel ? ` · ${excerptLabel}` : ''}
-        </div>
-        <div style={{marginTop: 14, height: 6, flexShrink: 0, borderRadius: 3, background: c.track}}>
+        </InfoCard>
+        <div style={{marginTop: 24, height: 6, flexShrink: 0, borderRadius: 3, background: c.track}}>
           <div style={{height: '100%', borderRadius: 3, background: c.accent,
             width: `${Math.min(100, (frame / durationInFrames) * 100)}%`}} />
         </div>
