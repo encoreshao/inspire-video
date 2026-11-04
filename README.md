@@ -10,12 +10,14 @@ The agent follows `SKILL.md` to transcribe, pick a segment, write the copy and t
 
 - **Output:** 1080×1920 MP4 (H.264 + AAC, 30 fps), 40 seconds to 2 min 30 s, plus a 1080×1920 cover PNG.
 - **Synced bilingual captions:** one short sentence (or one clause of a long sentence) at a time, English first and Chinese second, appearing as it is spoken. Each cue is at most 100 English characters, and two sentences never share a cue.
+- **Platform-safe layout:** WeChat Channels and Douyin crop the sides of 9:16 video on tall phones (about 100 px per side). All content stays 120 px inside the left and right edges, and clear of the top (190 px) and bottom (330 px) button zones.
 - **Joined panel:** the video and its caption area form one rounded panel with no gap. The caption area is only as tall as its text.
 - **Title block:** category label, Chinese headline and English subtitle at the same size.
 - **Bottom block:** speaker name in English and Chinese, job title, company, talk title, source, year, excerpt range and a progress bar.
 - **Several people on screen:** list them in `copy.speakers` and tag cues with a `speaker` id. All names show at the bottom and the current speaker is highlighted.
 - **Themes:** `light` (default), `mist`, `ivory`, `sage` and a dark `ink`.
 - **URL input:** download with `yt-dlp` after a rights confirmation, cached by video id so the same video is never downloaded twice.
+- **Publishing copy:** a WeChat Channels short title and description, a Douyin title and description, and hashtags, validated against editable length limits and written to ready-to-paste files, with a source credit and a "not cleared" banner when the rights are unresolved.
 - **Safety checks:** `render.py` validates the manifest and refuses to render when rights are not confirmed, captions are malformed, or speech could be cut off.
 
 ## Requirements
@@ -116,7 +118,8 @@ For a URL, add a rights statement so the agent can download it, for example: "I 
 2. extracts audio and transcribes it;
 3. proposes 1–3 candidate segments and asks you to choose;
 4. writes the headline, subtitle, captions, translation and speaker details;
-5. cuts the clip, writes `video_manifest.json`, and renders a preview, then the final MP4 and cover after you approve.
+5. cuts the clip, writes `video_manifest.json`, and renders a preview, then the final MP4 and cover after you approve;
+6. writes the publishing copy (title, description, hashtags) for WeChat Channels and Douyin.
 
 Other commands:
 
@@ -132,6 +135,7 @@ Everything is written under `~/.inspire-video/output/`:
 | Path | Contents |
 | --- | --- |
 | `projects/<slug>/` | transcript, selected segments, copy, `video_manifest.json`, `review.md`, `assets/` (clip, poster) |
+| `projects/<slug>/publish.md` | title, description and hashtags for WeChat Channels and Douyin (plus `publish_wechat.txt`, `publish_douyin.txt`) |
 | `final/<slug>.mp4` | the finished video |
 | `final/<slug>-cover.png` | the cover image |
 | `cache/` | downloaded URL sources |
@@ -159,6 +163,16 @@ python3 scripts/render.py output/projects/<slug> --preview        # half-scale d
 python3 scripts/render.py output/projects/<slug>                  # final MP4
 python3 scripts/render.py output/projects/<slug> --cover          # cover PNG
 ```
+
+### Publishing copy
+
+```bash
+python3 scripts/publish_meta.py output/projects/<slug> --init   # draft publish.json from copy.json
+# edit publish.json (or ask the agent: "/inspire-video publish output/projects/<slug>")
+python3 scripts/publish_meta.py output/projects/<slug>          # validate, then write publish.md + .txt files
+```
+
+`publish.json` holds `wechat_channels` (`short_title`, `description`, `hashtags`), `douyin` (`title`, `description`, `hashtags`), a required `credit` line and optional `notes`; see `references/publishing.md`. Hashtags are written without `#`. The credit is appended to every description. If the project's `review_status` is not `approved`, `publish.md` carries a "NOT CLEARED FOR PUBLICATION" banner. Length limits live in `config/publish.yaml` and are unverified defaults (WeChat short title 6–16, Douyin title ≤ 30, descriptions ≤ 1000, hashtags ≤ 5): check each platform's publish page and edit the file.
 
 Add `--force` to overwrite an existing final file, and `--theme light|mist|ivory|sage|ink` to override the theme. `fetch.py --yes-rights` skips the interactive rights prompt; only use it when you have confirmed the rights.
 
@@ -194,7 +208,7 @@ Notes:
 
 - Caption `start` and `end` are seconds **relative to the clip**, not the source. Build them at sentence or clause boundaries from the transcript timestamps.
 - Keep the clip starting at least 0.1 s before the first cue and ending at least 0.2 s after the last, so no speech is cut off.
-- `video.fit` is `cover` (taller window, crops some width) or `contain` (whole 16:9 frame). `crop_x` / `crop_y` (0–1) move the crop.
+- `video.fit` is `contain` (default, whole 16:9 frame) or `cover` (taller window, crops some width). `crop_x` / `crop_y` (0–1) move the crop.
 - Several people: add `copy.speakers` as `[{"id": "a", "name": "…", "name_zh": "…", "title": "…", "title_zh": "…", "org": "…"}]` and set `"speaker": "a"` on each cue. Names must come from the source (description, on-screen captions, you), never from guessing a voice or face.
 - Only include a title or company that the source or the speaker's own words support.
 
@@ -207,7 +221,7 @@ It refuses to render when: the manifest breaks the schema; `rights_confirmed` is
 - **Theme:** the `theme` manifest field or `--theme`. Colors are defined in `video/src/Video.tsx` (`themes`).
 - **Sizes and layout:** constants at the top of `video/src/Video.tsx` (`HEAD`, `MAX_EN`, panel and spacing values) and `video/src/Cover.tsx`.
 - **Preview a layout change quickly:** `cd video && npx remotion still src/index.ts InspireShort out.png --props=../output/projects/<slug>/props.json --frame=750 --scale=0.5`. `npm run preview` opens Remotion Studio.
-- `config/default.yaml` documents the defaults but is not read by the code.
+- `config/default.yaml` documents the defaults but is not read by the code. `config/publish.yaml` is read by `publish_meta.py`.
 - `references/visual-style.md` and `references/rendering-guide.md` describe the design rules the agent follows.
 
 ## Troubleshooting
@@ -222,12 +236,14 @@ It refuses to render when: the manifest breaks the schema; `rights_confirmed` is
 | `render.py` says a cue is too long or has two sentences | Split the cue at a clause boundary and give each part its own timing |
 | `fetch.py` fails | The video may be private, live, age-restricted or blocked; download an authorized copy yourself and use the local file |
 | Output file exists | Pass `--force` to overwrite |
+| Sides are cut off on WeChat / Douyin | They crop 9:16 video on tall screens. Re-render with the current version (120 px side margins); if a platform still crops, raise `SAFE_X` in `video/src/Video.tsx` |
 
 ## Known limits
 
 - Caption timing comes from the transcript and is accurate to a fraction of a second. Watch the output once before publishing.
 - Chinese translations and Chinese name transliterations are written by the agent; have a fluent reader review them.
-- The default `cover` window crops about 15% of the width of 16:9 footage; use `contain` or `crop_x` if a person is cut off.
+- The video window shows the whole 16:9 frame (`contain`) so nothing is cropped. Set `video.fit` to `cover` for a taller window that crops about 20% of the width; `crop_x` / `crop_y` move the crop.
+- Content sits inside the platform safe area, so the video window is about 840 px wide and there is empty space above and below. Adjust `SAFE_X`, `SAFE_TOP` and `SAFE_BOTTOM` in `video/src/Video.tsx` if a platform behaves differently.
 - No speaker-aware cropping or automatic speaker identification yet.
 - Fonts are system fonts, not bundled.
 - Tested on macOS only.
@@ -243,9 +259,10 @@ SKILL.md              agent workflow and quality rules
 README.md             this file
 LICENSE               MIT
 config/default.yaml   documented defaults (reference only)
+config/publish.yaml   platform length limits used by publish_meta.py
 references/           visual style, rendering guide, content extraction policy, manifest schema
 install.sh            online installer (clone + link + dependencies)
-scripts/              install.sh, uninstall.sh, check_env.py, fetch.py, transcribe.py, render.py
+scripts/              install.sh, uninstall.sh, check_env.py, fetch.py, transcribe.py, render.py, publish_meta.py
 video/                Remotion project (InspireShort video, InspireCover cover)
 src/inspire_video/    placeholder Python modules
 output/               projects, final files, download cache (git-ignored)

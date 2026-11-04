@@ -167,11 +167,20 @@ Check:
 - Chinese translation matches the English meaning;
 - speaker and source attribution are accurate;
 - video crop keeps the speaker visible;
-- safe margins are respected;
+- safe margins are respected: all content at least 120 px from the left and right edges (WeChat/Douyin crop the sides on tall phones), at least 190 px from the top and 330 px from the bottom; verify with a simulated 864 px center crop;
 - audio is clear and not clipped;
 - final MP4 plays from beginning to end.
 
 Use `ffprobe` and, where possible, extract representative frames for visual inspection. If any critical check fails, fix and re-render. Do not report success until the output file exists and validation passes.
+
+### 10. Publishing copy (title, description, tags)
+
+After the video passes QA, write `publish.json` in the project folder for WeChat Channels (视频号) and Douyin (抖音), then run `python scripts/publish_meta.py output/projects/<slug>`. It validates the lengths against `config/publish.yaml` and writes `publish.md`, `publish_wechat.txt` and `publish_douyin.txt` ready to paste. `--init` scaffolds a draft from `copy.json`. Follow `references/publishing.md`:
+- Simplified Chinese; truthful to the clip; no clickbait, invented statistics or claims the speaker did not make.
+- WeChat: a short title plus a description; Douyin: a title plus a description; 3-5 relevant hashtags each, written without `#`.
+- Always include a credit line (source, speaker, year, and that the subtitles are your own translation); it is appended to every description.
+- If the rights are not cleared, say so in `notes`; `publish.md` then shows a "NOT CLEARED FOR PUBLICATION" banner. Never claim the content is original.
+- Platform limits are unverified defaults: tell the user to check them in each publish page.
 
 ## Output contract
 
@@ -186,6 +195,10 @@ output/projects/<slug>/
 ├── copy.json
 ├── video_manifest.json
 ├── review.md
+├── publish.json
+├── publish.md
+├── publish_wechat.txt
+├── publish_douyin.txt
 ├── render.log
 └── assets/
     ├── source.mp4
@@ -227,6 +240,7 @@ When the user asks to install, set up or fix InspireVideo (or runs `setup`):
 
 Support natural-language requests and these suggested commands:
 - `setup` — install and verify the environment (see Setup below);
+- `publish <project-dir>` — write title, description and hashtags for WeChat Channels and Douyin;
 - `create from <path-or-url>` — full pipeline;
 - `analyze <path-or-url>` — transcribe and propose segments without rendering;
 - `render <project-dir>` — render an existing validated manifest;
