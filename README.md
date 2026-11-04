@@ -4,7 +4,7 @@ A Claude Code / Codex skill that turns authorized podcast or interview footage (
 
 The agent follows `SKILL.md` to transcribe, pick a segment, write the copy and translation, and cut the clip. Layout and typography are then rendered deterministically with [Remotion](https://www.remotion.dev/), so on-screen text is always exact.
 
-> **Status:** tested end to end on macOS with one real video. `fetch.py`, `transcribe.py`, `render.py` and the Remotion renderer are implemented. The modules in `src/inspire_video/` are placeholders: probing, segment selection, translation and clip cutting are done by the agent, guided by `SKILL.md`. Linux has not been tested.
+> **Status:** tested end to end on macOS with one real video. `fetch.py`, `transcribe.py`, `render.py` and the Remotion renderer are implemented. The modules in `src/inspire_video/` are placeholders: probing, segment selection, translation and clip cutting are done by the agent, guided by `SKILL.md`. Linux and Windows have not been tested.
 
 ## Features
 
@@ -29,29 +29,77 @@ The agent follows `SKILL.md` to transcribe, pick a segment, write the copy and t
 
 ## Install
 
+### Option 1: one command (recommended)
+
 ```bash
-git clone <this-repo-url> ~/.inspire-video
-bash ~/.inspire-video/scripts/install.sh claude    # or: codex | both
+curl -fsSL https://raw.githubusercontent.com/encoreshao/inspire-video/main/install.sh | bash
 ```
 
-The installer:
+This clones the repo into `~/.inspire-video`, links the skill into Claude Code and Codex, installs the Python and npm dependencies, and runs the environment check. Pick one tool, or skip dependency installation:
 
-1. symlinks the skill into `~/.claude/skills` (or `~/.agents/skills`);
+```bash
+curl -fsSL https://raw.githubusercontent.com/encoreshao/inspire-video/main/install.sh | bash -s -- claude
+curl -fsSL https://raw.githubusercontent.com/encoreshao/inspire-video/main/install.sh | bash -s -- codex --no-deps
+```
+
+Prefer to read it first? Open [`install.sh`](install.sh), or download it and run `bash install.sh`. Set `INSPIRE_VIDEO_HOME` to install somewhere other than `~/.inspire-video` (`SKILL.md` refers to `~/.inspire-video`, so the default is simplest).
+
+**Update:** run the same command again; it pulls the latest version and re-links.
+**Uninstall:** `bash ~/.inspire-video/scripts/uninstall.sh` removes the links (your outputs stay; delete the folder yourself to remove everything).
+
+### Option 2: let Claude Code or Codex install it
+
+Open Claude Code or Codex and paste one of these prompts.
+
+**Claude Code**
+
+```text
+Install the InspireVideo skill from https://github.com/encoreshao/inspire-video for Claude Code.
+1. Run: curl -fsSL https://raw.githubusercontent.com/encoreshao/inspire-video/main/install.sh | bash -s -- claude
+2. Run python3 ~/.inspire-video/scripts/check_env.py and fix anything missing (Python 3.11+, Node.js 20+, ffmpeg). Ask me before installing any system package with brew or apt.
+3. Tell me to start a new session, then summarize how to use /inspire-video. Do not process any video yet.
+```
+
+**Codex**
+
+```text
+Install the InspireVideo skill from https://github.com/encoreshao/inspire-video for Codex.
+1. Run: curl -fsSL https://raw.githubusercontent.com/encoreshao/inspire-video/main/install.sh | bash -s -- codex
+2. Run python3 ~/.inspire-video/scripts/check_env.py and fix anything missing (Python 3.11+, Node.js 20+, ffmpeg). Ask me before installing any system package with brew or apt.
+3. Tell me to start a new session, then summarize how to use the inspire-video skill. Do not process any video yet.
+```
+
+**Update or uninstall** (either tool)
+
+```text
+Update the InspireVideo skill by re-running its install command from https://github.com/encoreshao/inspire-video, then run its environment check and report the result.
+```
+
+```text
+Uninstall the InspireVideo skill with bash ~/.inspire-video/scripts/uninstall.sh and confirm the links are gone. Do not delete my outputs.
+```
+
+Once installed, `/inspire-video setup` (or "set up InspireVideo") makes the agent re-run the environment check and fix what is missing.
+
+### Option 3: manual
+
+```bash
+git clone https://github.com/encoreshao/inspire-video.git ~/.inspire-video
+bash ~/.inspire-video/scripts/install.sh claude    # or: codex | both   (add --no-deps to skip dependencies)
+```
+
+### What the installer does
+
+1. symlinks the skill into `~/.claude/skills` and/or `~/.agents/skills`;
 2. installs the Python dependencies (`faster-whisper`, `yt-dlp`, `pydantic`, `jsonschema`, `PyYAML`) with `pip install -e`;
 3. runs `npm install` for the Remotion project;
 4. runs the environment check.
 
-Use `--no-deps` to skip steps 2 and 3. If you cloned somewhere other than `~/.inspire-video`, the symlink points there; `SKILL.md` refers to `~/.inspire-video`, so cloning there is simplest.
-
 Downloads that happen later, on first use: headless Chrome (about 100 MB, on the first render) and the Whisper model (about 250 MB for `small.en`, about 3 GB for `large-v3`).
 
-Check your setup any time:
+Check your setup any time: `python3 ~/.inspire-video/scripts/check_env.py`
 
-```bash
-python3 ~/.inspire-video/scripts/check_env.py
-```
-
-Optional: copy `.env.example` to `.env` only if you use a hosted LLM provider. Never commit `.env`.
+Optional: copy `.env.example` to `.env` only if you use a hosted LLM provider. Never commit `.env`. Windows is not supported; use WSL.
 
 ## Quick start
 
@@ -196,7 +244,8 @@ README.md             this file
 LICENSE               MIT
 config/default.yaml   documented defaults (reference only)
 references/           visual style, rendering guide, content extraction policy, manifest schema
-scripts/              install.sh, check_env.py, fetch.py, transcribe.py, render.py
+install.sh            online installer (clone + link + dependencies)
+scripts/              install.sh, uninstall.sh, check_env.py, fetch.py, transcribe.py, render.py
 video/                Remotion project (InspireShort video, InspireCover cover)
 src/inspire_video/    placeholder Python modules
 output/               projects, final files, download cache (git-ignored)

@@ -205,6 +205,14 @@ Also provide a concise completion report:
 - QA result;
 - any caveats or manual review items.
 
+## Setup
+
+When the user asks to install, set up or fix InspireVideo (or runs `setup`):
+- If the skill is not installed, run `curl -fsSL https://raw.githubusercontent.com/encoreshao/inspire-video/main/install.sh | bash -s -- claude` (use `codex` for Codex).
+- Run `python3 ~/.inspire-video/scripts/check_env.py` and report each missing item. Python packages and `npm install` can be fixed with `bash ~/.inspire-video/scripts/install.sh <claude|codex>`.
+- Ask before installing system packages (Python 3.11+, Node.js 20+, ffmpeg) with brew or apt, and never use sudo without the user's approval.
+- Tell the user to start a new session so the skill loads. Do not process any video during setup.
+
 ## Error handling
 
 - Missing dependencies: explain exactly what is missing and provide the install command for the user's OS.
@@ -218,6 +226,7 @@ Also provide a concise completion report:
 ## Commands
 
 Support natural-language requests and these suggested commands:
+- `setup` — install and verify the environment (see Setup below);
 - `create from <path-or-url>` — full pipeline;
 - `analyze <path-or-url>` — transcribe and propose segments without rendering;
 - `render <project-dir>` — render an existing validated manifest;
