@@ -11,3 +11,10 @@ output/projects/*
 output/final/*
 !output/projects/.gitkeep
 !output/final/.gitkeep
+
+# Login cookies and secrets: never commit
+cookies.json
+cookies.txt
+*.cookies
+cookies/
+/*.mp4
