@@ -46,6 +46,14 @@ ffmpeg -i output/final/<slug>.mp4 -vf blackdetect=d=0.5 -an -f null -
 
 Extract frames at the start of each caption and inspect them at phone size: no clipped text, correct glyphs, speaker in frame.
 
+Simulate a platform's side crop on a frame (9:20 screen, keeps the center 864 px of 1080):
+
+```bash
+ffmpeg -ss 12 -i output/final/<slug>.mp4 -frames:v 1 -vf "crop=864:1920" /tmp/crop920.png
+```
+
+Nothing (text, panel edge, progress bar) may touch or pass the crop edges.
+
 ## Preview of a layout change without a full render
 
 ```bash

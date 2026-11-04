@@ -62,7 +62,14 @@ const resolve = (p: string) => (/^https?:/.test(p) ? p : staticFile(p));
 
 // Pick the largest font size (capped) at which BOTH languages fit the text area (estimated line
 // wrapping), so a caption is never cut off. The card height is sized to the tallest cue.
-const CARD_TEXT_W = 940; // card inner width in px
+// Platform safe area (WeChat Channels / Douyin fill tall phones by scaling to the height and
+// center-cropping the sides: about 108 px per side at 9:20, 97 px at 9:19.5). Keep ALL content
+// inside these margins. Bottom/top also avoid the platform's own buttons and captions.
+export const SAFE_X = 120;
+export const SAFE_TOP = 190;
+export const SAFE_BOTTOM = 330;
+const PANEL_W = 1080 - SAFE_X * 2; // 840
+const CARD_TEXT_W = PANEL_W - 6 - 64; // panel inner width minus card padding
 const CARD_PAD_Y = 12; // vertical padding inside the card
 const MAX_EN = 34;
 const needed = (cue: {en: string; zh: string}, en: number) => {
@@ -121,7 +128,7 @@ export const PeopleRow: React.FC<{people: Person[]; activeId?: string; scale?: n
 
 export const InspireShort: React.FC<Props> = ({
   headline, subtitle, quoteEn, quoteZh, speaker, source, clip, category,
-  cues, talkTitle, excerptLabel, speakerZh, role, roleZh, theme, people, videoFit = 'cover', cropX = 0.5, cropY = 0.5,
+  cues, talkTitle, excerptLabel, speakerZh, role, roleZh, theme, people, videoFit = 'contain', cropX = 0.5, cropY = 0.5,
 }) => {
   const c = pickTheme(theme);
   const frame = useCurrentFrame();
@@ -142,13 +149,13 @@ export const InspireShort: React.FC<Props> = ({
     : 0;
   const size = cue ? fit(cue) : {en: 34, zh: 36};
   const cardReserve = synced ? cardHeight(cues!) : 160;
-  const videoH = videoFit === 'cover' ? 700 : 576;
+  const videoH = videoFit === 'cover' ? 580 : Math.round((PANEL_W - 6) * 9 / 16);
 
   return (
     <ThemeCtx.Provider value={c}>
     <AbsoluteFill style={{
       opacity, backgroundColor: c.paper, color: c.ink,
-      padding: '0 28px', display: 'flex', flexDirection: 'column', justifyContent: 'center', fontFamily: 'Arial, sans-serif', boxSizing: 'border-box',
+      padding: `${SAFE_TOP}px ${SAFE_X}px ${SAFE_BOTTOM}px`, display: 'flex', flexDirection: 'column', justifyContent: 'center', fontFamily: 'Arial, sans-serif', boxSizing: 'border-box',
     }}>
       <div style={{flexShrink: 0, display: 'flex', flexDirection: 'column'}}>
         <div style={{fontSize: 22, letterSpacing: 1.5, color: c.muted, marginBottom: 16}}>

@@ -33,7 +33,7 @@ export const Root: React.FC = () => (
       excerptLabel: '',
       theme: 'light',
       people: [] as {id: string; name: string}[],
-      videoFit: 'cover' as 'cover' | 'contain',
+      videoFit: 'contain' as 'cover' | 'contain',
       cropX: 0.5,
       cropY: 0.5,
       speakerZh: '',

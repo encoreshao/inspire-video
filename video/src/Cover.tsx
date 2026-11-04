@@ -1,6 +1,6 @@
 import React from 'react';
 import {AbsoluteFill, Img, staticFile} from 'remotion';
-import {SERIF, HeadlineLines, SpeakerBlock, PeopleRow, ThemeCtx, pickTheme, Person} from './Video';
+import {SERIF, SAFE_X, HeadlineLines, SpeakerBlock, PeopleRow, ThemeCtx, pickTheme, Person} from './Video';
 
 export type CoverProps = {
   headline: string; subtitle: string; speaker: string; source: string;
@@ -12,15 +12,15 @@ export const InspireCover: React.FC<CoverProps> = ({headline, subtitle, speaker,
   const c = pickTheme(theme);
   return (
   <ThemeCtx.Provider value={c}>
-  <AbsoluteFill style={{backgroundColor: c.paper, color: c.ink, padding: '110px 64px 100px',
+  <AbsoluteFill style={{backgroundColor: c.paper, color: c.ink, padding: `150px ${SAFE_X}px 150px`,
     fontFamily: 'Arial, sans-serif', boxSizing: 'border-box'}}>
     <div style={{fontSize: 28, letterSpacing: 2, color: c.muted, marginBottom: 28}}>
       {category || 'INSPIRATION / 向上生长'}
     </div>
-    <div style={{fontFamily: SERIF, fontSize: 88, lineHeight: 1.16, fontWeight: 700, letterSpacing: 2,
-      }}><HeadlineLines text={headline} size={88} width={950} /></div>
+    <div style={{fontFamily: SERIF, fontSize: 84, lineHeight: 1.16, fontWeight: 700, letterSpacing: 2,
+      }}><HeadlineLines text={headline} size={84} width={840} /></div>
     <div style={{fontSize: 38, lineHeight: 1.3, color: c.muted, marginTop: 24}}>{subtitle}</div>
-    <div style={{marginTop: 56, height: 800, border: `5px solid ${c.border}`, borderRadius: 10, overflow: 'hidden',
+    <div style={{marginTop: 56, height: 640, border: `5px solid ${c.border}`, borderRadius: 10, overflow: 'hidden',
       background: c.videoBg}}>
       {poster && <Img src={/^https?:/.test(poster) ? poster : staticFile(poster)}
         style={{width: '100%', height: '100%', objectFit: 'cover'}} />}
