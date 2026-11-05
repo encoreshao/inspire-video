@@ -213,7 +213,7 @@ def download_url(a) -> int:
     try:
         shutil.rmtree(tmp, ignore_errors=True)
         tmp.mkdir()
-        r = subprocess.run(["yt-dlp", *js_args(), *cookie_args(a), "--no-playlist", "--socket-timeout", "60", "--retries", "5", "--fragment-retries", "10", "-f", FORMAT, "--merge-output-format", "mp4",
+        r = subprocess.run(["yt-dlp", *js_args(), *cookie_args(a), "--no-playlist", "--socket-timeout", "60", "--retries", "5", "--fragment-retries", "10", "-N", "8", "-f", FORMAT, "--merge-output-format", "mp4",
                             "-o", str(tmp / "source.%(ext)s"), a.url])
         if r.returncode != 0 or not (tmp / "source.mp4").exists():
             die("download failed; nothing cached")
