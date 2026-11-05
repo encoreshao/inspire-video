@@ -3,7 +3,7 @@
 
 Usage:
   python scripts/publish_meta.py <project-dir> --init    # scaffold publish.json from copy.json (draft)
-  python scripts/publish_meta.py <project-dir>           # validate publish.json, write publish.md + .txt files
+  python scripts/publish_meta.py <project-dir>           # validate publish.json, write publish.md + .txt files + project.json
 
 publish.json:
 {
@@ -15,6 +15,7 @@ publish.json:
 Hashtags are written without '#'. The credit line is appended to every description.
 """
 import argparse, json, sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
@@ -59,6 +60,34 @@ def validate(p: dict, lim: dict) -> list[str]:
             if not t or any(c in t for c in " #\n"):
                 errs.append(f"{name} hashtag '{t}' must be non-empty with no spaces or '#'")
     return errs
+
+
+def write_project_json(out_dir: Path, m: dict, p: dict) -> Path:
+    """Machine-readable manifest of a finished project (schema 1), read by the LoopX Creator page."""
+    slug = m["project_id"]
+    credit, w, d = p["credit"].strip(), p["wechat_channels"], p["douyin"]
+    prev = {}
+    try:
+        prev = json.loads((out_dir / "project.json").read_text())
+    except (OSError, ValueError):
+        pass
+    cover = out_dir / "cover.png"
+    manifest = {
+        "schema": 1,
+        "slug": slug,
+        "title": (m.get("copy") or {}).get("headline_zh") or slug,
+        "source_url": (m.get("provenance") or {}).get("source_reference") or None,
+        "created_at": prev.get("created_at") or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "video": f"{slug}.mp4",
+        "cover": "cover.png" if cover.exists() else None,
+        "publish": {
+            "wechat": {"title": w["short_title"], "caption": f"{w['description']}\n\n{credit}", "hashtags": w["hashtags"]},
+            "douyin": {"title": d["title"], "caption": f"{d['description']}\n\n{credit}", "hashtags": d["hashtags"]},
+        },
+    }
+    out = out_dir / "project.json"
+    out.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
+    return out
 
 
 def init(proj: Path) -> None:
@@ -120,6 +149,7 @@ def main() -> int:
         + (f"## Notes\n\n{notes}\n" if notes else "")
         + "Limits come from `config/publish.yaml` and are unverified; check them in each platform's publish page.\n")
     print(f"Wrote {out_dir/'publish.md'}, publish_wechat.txt, publish_douyin.txt")
+    print(f"Wrote {write_project_json(out_dir, m, p)}")
     if warn:
         print(f"WARNING: review_status is '{status}': not cleared for publication", file=sys.stderr)
     return 0

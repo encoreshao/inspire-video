@@ -176,7 +176,7 @@ Use `ffprobe` and, where possible, extract representative frames for visual insp
 
 ### 10. Publishing copy (title, description, tags)
 
-After the video passes QA, write `publish.json` in the project folder for WeChat Channels (视频号) and Douyin (抖音), then run `python scripts/publish_meta.py output/projects/<slug>`. It validates the lengths against `config/publish.yaml` and writes `publish.md`, `publish_wechat.txt` and `publish_douyin.txt` into `output/final/<slug>/`, ready to paste. `--init` scaffolds a draft from `copy.json`. Follow `references/publishing.md`:
+After the video passes QA, write `publish.json` in the project folder for WeChat Channels (视频号) and Douyin (抖音), then run `python scripts/publish_meta.py output/projects/<slug>`. It validates the lengths against `config/publish.yaml` and writes `publish.md`, `publish_wechat.txt` and `publish_douyin.txt` into `output/final/<slug>/`, ready to paste, plus `project.json` (schema in `references/publishing.md`, read by the LoopX Creator page; re-run after the cover exists so it lists `cover.png`). `--init` scaffolds a draft from `copy.json`. Follow `references/publishing.md`:
 - Simplified Chinese; truthful to the clip; no clickbait, invented statistics or claims the speaker did not make.
 - WeChat: a short title plus a description; Douyin: a title plus a description; 3-5 relevant hashtags each, written without `#`.
 - Always include a credit line (source, speaker, year, and that the subtitles are your own translation); it is appended to every description.

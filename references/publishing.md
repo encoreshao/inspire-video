@@ -15,6 +15,28 @@
 
 Hashtags are written without `#`; the script adds it. The credit line is appended to every description, followed by the hashtags.
 
+## project.json (written automatically)
+
+`publish_meta.py` also writes `output/final/<slug>/project.json`, the machine-readable manifest the LoopX Creator page reads. It is regenerated on every run (`created_at` is kept from the first run); do not hand-edit it.
+
+```json
+{
+  "schema": 1,
+  "slug": "<slug>",
+  "title": "headline_zh from the video manifest, else the slug",
+  "source_url": "provenance.source_reference or null",
+  "created_at": "2026-11-04T10:00:00Z",
+  "video": "<slug>.mp4",
+  "cover": "cover.png",
+  "publish": {
+    "wechat": {"title": "short title", "caption": "description + credit", "hashtags": ["no #"]},
+    "douyin": {"title": "title", "caption": "description + credit", "hashtags": ["no #"]}
+  }
+}
+```
+
+`cover` is `null` when `cover.png` does not exist yet; run the script again after the cover is rendered.
+
 ## Writing rules
 
 - Simplified Chinese, natural and concrete. Lead with the clip's real idea, not an exaggeration of it.
