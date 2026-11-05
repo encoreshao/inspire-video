@@ -28,6 +28,8 @@ Defaults: 1080 x 1920, 30 fps, h264, aac, yuv420p, CRF 18.
 
 ## Cutting the clip
 
+In a sandboxed run, prefix every `ffmpeg` / `ffprobe` command below with `python scripts/media.py` (`python scripts/media.py ffmpeg -ss ...`); it checks that every file is under `output/`.
+
 ```bash
 ffmpeg -ss <start> -to <end> -i source.mp4 -vf "scale=1280:720,fps=30" \
   -c:v libx264 -crf 20 -pix_fmt yuv420p -c:a aac -b:a 160k assets/clip.mp4
@@ -49,7 +51,7 @@ Extract frames at the start of each caption and inspect them at phone size: no c
 Simulate a platform's side crop on a frame (9:20 screen, keeps the center 864 px of 1080):
 
 ```bash
-ffmpeg -ss 12 -i output/final/<slug>/<slug>.mp4 -frames:v 1 -vf "crop=864:1920" /tmp/crop920.png
+ffmpeg -ss 12 -i output/final/<slug>/<slug>.mp4 -frames:v 1 -vf "crop=864:1920" output/projects/<slug>/crop920.png
 ```
 
 Nothing (text, panel edge, progress bar) may touch or pass the crop edges.
@@ -57,5 +59,5 @@ Nothing (text, panel edge, progress bar) may touch or pass the crop edges.
 ## Preview of a layout change without a full render
 
 ```bash
-cd video && npx remotion still src/index.ts InspireShort /tmp/still.png --props=<project>/props.json --frame=750 --scale=0.5
+cd video && npx remotion still src/index.ts InspireShort output/projects/<slug>/still.png --props=<project>/props.json --frame=750 --scale=0.5
 ```
