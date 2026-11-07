@@ -1,5 +1,13 @@
 import React from 'react';
 import {AbsoluteFill, OffthreadVideo, interpolate, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
+import {
+  CARD_PAD_Y, DEFAULT_PROFILE, cardHeight, cardLimits, fit, headlineLines, needed, panelVideoHeight, panelWidth, scaleOf,
+} from './layout.mjs';
+import type {Profile} from './layout.mjs';
+
+export type {Profile};
+export {CARD_PAD_Y, cardHeight, fit, needed};
+
 
 export type Cue = {start: number; end: number; en: string; zh: string; speaker?: string};
 export type Person = {id: string; name: string; name_zh?: string; title?: string; title_zh?: string; org?: string};
@@ -25,6 +33,7 @@ export type Props = {
   videoFit?: 'cover' | 'contain';
   cropX?: number;
   cropY?: number;
+  profile?: Profile;
 };
 
 export const themes = {
@@ -76,32 +85,15 @@ const resolve = (p: string) => (/^https?:/.test(p) ? p : staticFile(p));
 // Platform safe area (WeChat Channels / Douyin fill tall phones by scaling to the height and
 // center-cropping the sides: about 108 px per side at 9:20, 97 px at 9:19.5). Keep ALL content
 // inside these margins. Bottom/top also avoid the platform's own buttons and captions.
-export const SAFE_X = 114;
-export const SAFE_BOTTOM = 330; // the lowest content must end above 1920 - SAFE_BOTTOM = 1590
+export const SAFE_X = DEFAULT_PROFILE.safeX;
+export const SAFE_BOTTOM = DEFAULT_PROFILE.safeBottom; // the lowest content must end above 1920 - SAFE_BOTTOM = 1590
 // The title is anchored at a fixed distance from the top (top-anchored layout), so adding or
 // resizing blocks below it never moves the title. TITLE_TOP is the top padding in px; with the
 // 22 px label it puts the label's top edge at about y = 259 (the user-approved position).
-export const TITLE_TOP = 256;
+export const TITLE_TOP = DEFAULT_PROFILE.titleTop;
 export const LINE_GAP = 26; // space above and below each divider line
-export const PANEL_W = 1080 - SAFE_X * 2; // 852
-const CARD_TEXT_W = PANEL_W - 6 - 64; // panel inner width minus card padding
-export const CARD_PAD_Y = 12; // vertical padding inside the card
-const MAX_EN = 32;
-export const needed = (cue: {en: string; zh: string}, en: number) => {
-  const zh = en + 2;
-  const enLines = Math.ceil((cue.en.length * en * 0.54) / CARD_TEXT_W);
-  const zhLines = Math.ceil((cue.zh.length * zh * 1.04) / CARD_TEXT_W);
-  return enLines * en * 1.28 + zhLines * zh * 1.38 + 14;
-};
-export const fit = (cue: {en: string; zh: string}) => {
-  for (let en = MAX_EN; en >= 26; en -= 2) {
-    if (needed(cue, en) <= 400) return {en, zh: en + 2};
-  }
-  return {en: 26, zh: 28};
-};
+export const PANEL_W = panelWidth(DEFAULT_PROFILE); // 852
 const HEAD = 42; // headline and English subtitle share this size
-export const cardHeight = (cues: {en: string; zh: string}[]) =>
-  Math.max(64, ...cues.map((q) => needed(q, fit(q).en))) + CARD_PAD_Y * 2 + 4;
 
 export const SpeakerBlock: React.FC<{speaker: string; speakerZh?: string; role?: string; roleZh?: string;
   scale?: number}> = ({speaker, speakerZh, role, roleZh, scale = 1}) => {
@@ -155,10 +147,10 @@ export const InfoCard: React.FC<{children: React.ReactNode; pad?: number; radius
 };
 
 // Centered line: bright in the middle, fading out toward both ends.
-export const Divider: React.FC = () => {
+export const Divider: React.FC<{gap?: number}> = ({gap = LINE_GAP}) => {
   const c = useTheme();
   return (
-    <div style={{marginTop: LINE_GAP, height: 4, flexShrink: 0, borderRadius: 2,
+    <div style={{marginTop: gap, height: 4, flexShrink: 0, borderRadius: 2,
       background: `linear-gradient(90deg, transparent 0%, ${c.border} 14%, ${c.accent} 40%, ${c.accent} 60%, ${c.border} 86%, transparent 100%)`,
       boxShadow: `0 0 16px ${c.accent}88`}} />
   );
@@ -167,6 +159,7 @@ export const Divider: React.FC = () => {
 export const InspireShort: React.FC<Props> = ({
   headline, subtitle, quoteEn, quoteZh, speaker, source, clip, category,
   cues, talkTitle, excerptLabel, speakerZh, role, roleZh, theme, people, videoFit = 'cover', cropX = 0.5, cropY = 0.5,
+  profile = DEFAULT_PROFILE,
 }) => {
   const c = pickTheme(theme);
   const frame = useCurrentFrame();
@@ -174,6 +167,13 @@ export const InspireShort: React.FC<Props> = ({
   const t = frame / fps;
   const opacity = interpolate(frame, [durationInFrames - 10, durationInFrames], [1, 0],
     {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+
+  // Density: 1 for the default 9:16 layout, smaller for the compact (4:5) layout.
+  const s = scaleOf(profile);
+  const head = Math.round(HEAD * s);
+  const gap = Math.round(LINE_GAP * s);
+  const panelW = panelWidth(profile);
+  const limits = cardLimits(profile);
 
   // Synced captions: show the sentence being spoken; hold until the next one starts.
   const synced = cues && cues.length > 0;
@@ -185,32 +185,33 @@ export const InspireShort: React.FC<Props> = ({
   const cueAlpha = !synced ? 1 : active
     ? interpolate(t - active.start, [-0.05, 0.12], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'})
     : 0;
-  const size = cue ? fit(cue) : {en: 34, zh: 36};
-  const cardReserve = synced ? cardHeight(cues!) : 160;
-  const videoH = videoFit === 'cover' ? 488 : Math.round((PANEL_W - 6) * 9 / 16);
+  const size = cue ? fit(cue, panelW, limits) : {en: 34, zh: 36};
+  const cardReserve = synced ? cardHeight(cues!, panelW, limits) : Math.round(160 * s);
+  const headWidth = profile.compact ? panelW : 984;
+  const videoH = panelVideoHeight({profile, fit: videoFit, headlineLines: headlineLines(headline, head, headWidth), cardReserve});
 
   return (
     <ThemeCtx.Provider value={c}>
     <AbsoluteFill style={{
       opacity, backgroundColor: c.paper, color: c.ink,
-      padding: `${TITLE_TOP}px ${SAFE_X}px 0`, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', fontFamily: 'Arial, sans-serif', boxSizing: 'border-box',
+      padding: `${profile.titleTop}px ${profile.safeX}px 0`, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', fontFamily: 'Arial, sans-serif', boxSizing: 'border-box',
     }}>
       <div style={{flexShrink: 0, display: 'flex', flexDirection: 'column'}}>
-        <div style={{fontSize: 22, letterSpacing: 1.5, color: c.muted, marginBottom: 16}}>
+        <div style={{fontSize: Math.round(22 * s), letterSpacing: 1.5, color: c.muted, marginBottom: Math.round(16 * s)}}>
           {category || 'INSPIRATION / 向上生长'}
         </div>
-        <div style={{fontFamily: SERIF, fontSize: HEAD, lineHeight: 1.3, fontWeight: 700, letterSpacing: 1}}>
-          <HeadlineLines text={headline} size={HEAD} />
+        <div style={{fontFamily: SERIF, fontSize: head, lineHeight: 1.3, fontWeight: 700, letterSpacing: 1}}>
+          <HeadlineLines text={headline} size={head} width={headWidth} />
         </div>
-        <div style={{fontSize: HEAD, lineHeight: 1.25, fontWeight: 600, color: c.muted, marginTop: 8}}>{subtitle}</div>
+        <div style={{fontSize: head, lineHeight: 1.25, fontWeight: 600, color: c.muted, marginTop: Math.round(8 * s)}}>{subtitle}</div>
       </div>
 
       {/* Joined panel: video with the caption area attached directly below (square seam, no gap).
           The caption area grows/shrinks with its text; the space it may need is reserved so
           nothing else moves between captions. */}
-      <Divider />
+      <Divider gap={gap} />
 
-      <div style={{marginTop: LINE_GAP, height: videoH + 3 + cardReserve, flexShrink: 0}}>
+      <div style={{marginTop: gap, height: videoH + 3 + cardReserve, flexShrink: 0}}>
         <div style={{border: `3px solid ${c.border}`, borderRadius: 24, overflow: 'hidden', background: c.card, boxShadow: c.shadow}}>
           <div style={{height: videoH, background: c.videoBg}}>
             {clip
@@ -231,25 +232,25 @@ export const InspireShort: React.FC<Props> = ({
       </div>
 
       {/* Same divider after the video panel */}
-      <Divider />
+      <Divider gap={gap} />
 
       {/* Bottom info block */}
-      <div style={{marginTop: 20, flexShrink: 0, display: 'flex', flexDirection: 'column'}}>
-        <InfoCard pad={14}>
+      <div style={{marginTop: Math.round(20 * s), flexShrink: 0, display: 'flex', flexDirection: 'column'}}>
+        <InfoCard pad={14 * s}>
           {people && people.length > 1
-            ? <PeopleRow people={people} activeId={active?.speaker} />
-            : <SpeakerBlock speaker={speaker} speakerZh={speakerZh} role={role} roleZh={roleZh} scale={1.0} />}
+            ? <PeopleRow people={people} activeId={active?.speaker} scale={s} />
+            : <SpeakerBlock speaker={speaker} speakerZh={speakerZh} role={role} roleZh={roleZh} scale={1.0 * s} />}
           {talkTitle && (
-            <div style={{fontSize: 25, lineHeight: 1.3, color: c.ink, marginTop: 12, fontStyle: 'italic'}}>
+            <div style={{fontSize: 25 * s, lineHeight: 1.3, color: c.ink, marginTop: 12 * s, fontStyle: 'italic'}}>
               “{talkTitle}”
             </div>
           )}
-          <div style={{borderTop: `2px solid ${c.cardBorder}`, marginTop: 12, paddingTop: 10, color: c.muted,
-            fontSize: 22, lineHeight: 1.3}}>
+          <div style={{borderTop: `2px solid ${c.cardBorder}`, marginTop: 12 * s, paddingTop: 10 * s, color: c.muted,
+            fontSize: 22 * s, lineHeight: 1.3}}>
             {source}{excerptLabel ? ` · ${excerptLabel}` : ''}
           </div>
         </InfoCard>
-        <div style={{marginTop: 24, height: 6, flexShrink: 0, borderRadius: 3, background: c.track}}>
+        <div style={{marginTop: 24 * s, height: 6, flexShrink: 0, borderRadius: 3, background: c.track}}>
           <div style={{height: '100%', borderRadius: 3, background: c.accent,
             width: `${Math.min(100, (frame / durationInFrames) * 100)}%`}} />
         </div>

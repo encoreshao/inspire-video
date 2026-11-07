@@ -24,6 +24,25 @@ Add `--theme light|mist|ivory|sage|ink` to override the manifest theme.
 
 Defaults: 1080 x 1920, 30 fps, h264, aac, yuv420p, CRF 18.
 
+## Platform formats
+
+`config/platforms.yaml` maps each platform to a video profile. Render for the platforms the user publishes to; profiles shared by several platforms render once:
+
+```bash
+python3 scripts/render.py output/projects/<slug> --platform wechat_channels,douyin,linkedin
+python3 scripts/render.py output/projects/<slug> --profile portrait-4x5      # one profile only
+python3 scripts/render.py output/projects/<slug> --platform linkedin --preview
+```
+
+| Profile | Size | Used by | Files |
+|---|---|---|---|
+| `vertical-9x16` | 1080 x 1920 | `wechat_channels`, `douyin`, `rednote`, `bilibili` | `<slug>.mp4`, `cover.png` |
+| `portrait-4x5` | 1080 x 1350 | `linkedin`, `facebook` | `<slug>-portrait-4x5.mp4`, `cover-portrait-4x5.png` |
+| `square-1x1` | 1080 x 1080 | none yet (not supported: falls back to `portrait-4x5` with a warning) | |
+| `landscape-16x9` | 1920 x 1080 | none yet (not supported: falls back to `vertical-9x16` with a warning) | |
+
+Without `--platform` or `--profile` the render is the default 9:16, exactly as before. The clip length is also checked against each listed platform's range. Showcase projects are 9:16 only and reject these flags.
+
 `render.py` rejects: schema violations, `rights_confirmed: false`, `review_status: rejected`, clips outside 40-150 s, cues that overlap, run out of order, hold more than one sentence, exceed 100 English characters, reference an unknown speaker, start within 0.1 s of the clip start, or end within 0.2 s of the clip end.
 
 ## Cutting the clip

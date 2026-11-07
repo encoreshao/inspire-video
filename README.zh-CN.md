@@ -17,9 +17,9 @@
 
 ### 访谈视频（`/inspire-video`）
 
-- **输出：** 1080×1920 MP4（H.264 + AAC，30 fps），时长 40 秒到 2 分 30 秒，另有一张 1080×1920 的封面 PNG。
+- **输出：** 1080×1920 MP4（H.264 + AAC，30 fps），时长 40 秒到 2 分 30 秒，另有一张 1080×1920 的封面 PNG。面向 LinkedIn 和 Facebook 时，同一视频还会渲染一份 1080×1350（4:5）的版本并附带封面，详见“平台与视频格式”。
 - **同步双语字幕：** 一次只显示一句短句（或长句中的一个分句），先英文后中文，随说话同步出现。每条字幕最多 100 个英文字符，且绝不会把两句话放在同一条里。
-- **适配平台安全区：** 微信视频号和抖音在较高的手机上会裁掉 9:16 视频的两侧（每侧约 100 px）。所有内容都距左右边缘至少 114 px；标题固定在距顶部的某个位置（不会偏高）；最下方的内容止于底部按钮区之上（y = 1590）。
+- **适配平台安全区：** 微信视频号和抖音在较高的手机上会裁掉 9:16 视频的两侧（每侧约 100 px）。所有内容都距左右边缘至少 114 px；标题固定在距顶部的某个位置（不会偏高）；最下方的内容止于底部按钮区之上（y = 1590）。4:5 版本有自己的安全区（两侧 60 px，内容止于 y = 1200 之上）。
 - **分隔线与层次：** 标题与视频之间有一条居中的线，视频之后还有同样的一条；线条中间亮、向两端渐隐，上下各留一小段间距；视频面板周围有与主题协调的柔和阴影。
 - **一体式面板：** 视频与字幕区合成一个圆角面板，中间没有缝隙，字幕区的高度随文字自动变化。
 - **标题区：** 分类标签、中文主标题和英文副标题，字号相同。
@@ -27,7 +27,7 @@
 - **多人出镜：** 在 `copy.speakers` 里列出所有人，并给每条字幕标注 `speaker` 编号；底部显示所有人的名字，并高亮当前说话的人。
 - **主题：** `light`（默认）、`mist`、`ivory`、`sage` 和深色 `ink`。
 - **链接或文件输入：** 确认版权后用 `yt-dlp` 下载，或用 `--file` 导入你自己下载好的文件。所有素材都会缓存，同一个视频不会重复获取。对要求登录的 YouTube 页面，提供可选的 `--cookies` 和 `--cookies-from-browser` 选项。
-- **发布文案：** 微信视频号的短标题与描述、抖音的标题与描述，以及话题标签；按可编辑的字数上限校验，输出可直接粘贴的文件，附带来源署名；版权未确认时会显示“未获准发布”警示。
+- **发布文案：** 为每个目标平台（微信视频号、抖音、小红书、B站、LinkedIn、Facebook；LinkedIn 和 Facebook 为英文）生成标题、描述和话题标签；按可编辑的各平台字数上限校验，输出可直接粘贴的文件，附带来源署名；版权未确认时会显示“未获准发布”警示。
 - **安全检查：** 当版权未确认、字幕格式不对或可能截断语音时，`render.py` 会校验清单并拒绝渲染。
 
 ### 展示类视频（`/inspire-showcase`）
@@ -140,7 +140,7 @@ bash ~/.inspire-video/scripts/install.sh claude    # 或：codex | both（加 --
 3. 提出 1–3 个候选片段，请你选择；
 4. 撰写标题、副标题、字幕、译文和说话人信息；
 5. 剪辑片段、写出 `video_manifest.json`，先渲染预览，经你确认后再渲染最终 MP4 和封面；
-6. 为微信视频号和抖音撰写发布文案（标题、描述、话题标签）。
+6. 为每个目标平台撰写发布文案（标题、描述、话题标签）。
 
 其他命令：
 
@@ -159,7 +159,7 @@ bash ~/.inspire-video/scripts/install.sh claude    # 或：codex | both（加 --
 | `final/<slug>/` | 每个项目一个文件夹，发布所需文件都在里面： |
 | `final/<slug>/<slug>.mp4` | 成品视频 |
 | `final/<slug>/cover.png` | 封面图（每次渲染成品视频时自动生成） |
-| `final/<slug>/publish.md` | 微信视频号与抖音的标题、描述和话题标签（另有 `publish_wechat.txt`、`publish_douyin.txt`） |
+| `final/<slug>/publish.md` | 每个目标平台的标题、描述和话题标签（另有每个平台各一份 `publish_<platform>.txt`） |
 | `cache/` | 下载的链接素材 |
 
 ## 手动流程：访谈视频（不用智能体）
@@ -210,9 +210,20 @@ python3 scripts/publish_meta.py output/projects/<slug> --init   # 根据 copy.js
 python3 scripts/publish_meta.py output/projects/<slug>          # 校验，然后生成 publish.md 和 .txt 文件
 ```
 
-`publish.json` 包含 `wechat_channels`（`short_title`、`description`、`hashtags`）、`douyin`（`title`、`description`、`hashtags`）、必填的 `credit` 署名行以及可选的 `notes`，详见 `skills/inspire-video/references/publishing.md`。话题标签不带 `#`，脚本会自动加上。署名行会追加到每个描述末尾。若项目的 `review_status` 不是 `approved`，`publish.md` 会带上“NOT CLEARED FOR PUBLICATION”（未获准发布）的警示。字数上限写在 `config/publish.yaml` 中，属于未经核实的默认值（微信短标题 6–16、抖音标题 ≤ 30、描述 ≤ 1000、话题 ≤ 5）：请到各平台的发布页面核对并修改该文件。
+`publish.json` 在 `platforms` 下列出目标平台（平台 id → `title`、`description`、`hashtags`），另有 `credit` 署名行（列出中文平台时必填）、`credit_en`（列出 LinkedIn、Facebook 等英文平台时必填）以及可选的 `notes`，详见 `skills/inspire-video/references/publishing.md`。带顶层 `wechat_channels` / `douyin` 的旧文件仍可使用。话题标签不带 `#`，脚本会自动加上。署名行会追加到每个描述末尾。若项目的 `review_status` 不是 `approved`，`publish.md` 会带上“NOT CLEARED FOR PUBLICATION”（未获准发布）的警示。字数上限写在 `config/platforms.yaml` 中，每个平台有 `verified` 标记，多数为未经核实的默认值：请到各平台的发布页面核对并修改该文件。
 
 加 `--force` 可覆盖已有的成品文件，加 `--theme light|mist|ivory|sage|ink` 可覆盖主题。`fetch.py --yes-rights` 会跳过交互式的版权确认，只有在你已确认版权时才使用。
+
+### 平台与视频格式
+
+`config/platforms.yaml` 列出支持的平台（`wechat_channels`、`douyin`、`rednote`、`bilibili`、`linkedin`、`facebook`）、各自的发布字数限制和使用的视频规格。`render.py` 的 `--platform` 会为这些平台所需的每种规格各渲染一次（国内平台 9:16，LinkedIn 和 Facebook 为 4:5）；`publish_meta.py` 为每个平台生成一份文案，LinkedIn 和 Facebook 为英文，视频仍为中英双语。
+
+```bash
+python3 scripts/render.py output/projects/<slug> --platform wechat_channels,douyin,linkedin
+python3 scripts/publish_meta.py output/projects/<slug> --init --platform douyin,linkedin
+```
+
+多数平台的限制是未经核实的默认值（每个平台有 `verified` 标记）：请到各平台发布页核对。1:1 和 16:9 已登记但暂不支持，会带警告回退到 4:5 和 9:16。新增平台只需在 `config/platforms.yaml` 里加一个块。展示类视频目前只支持 9:16，对展示类项目使用 `--platform` 和 `--profile` 会被拒绝。
 
 ### 清单（manifest）
 
@@ -333,9 +344,9 @@ python3 scripts/showcase/narrate.py output/projects/demo --engine cosyvoice --vo
 ## 自定义
 
 - **主题：** 使用清单里的 `theme` 字段或 `--theme`。颜色定义在 `video/src/Video.tsx` 的 `themes` 中。
-- **字号与版式：** 在 `video/src/Video.tsx` 顶部的常量（`HEAD`、`MAX_EN`、面板与间距数值）以及 `video/src/Cover.tsx` 中调整。
+- **字号与版式：** 在 `config/platforms.yaml` 中对应 profile 的 `safe` 与 `title_top`（9:16 的数值在 `video/src/layout.mjs` 的 `DEFAULT_PROFILE` 中有镜像，由测试保证二者一致）、`video/src/layout.mjs` 的 `cardLimits`（字幕字号）以及 `video/src/Video.tsx` 顶部和 `video/src/Cover.tsx` 中的其余常量（`HEAD`、面板与间距数值）里调整。
 - **快速预览版式改动：** `cd video && npx remotion still src/index.ts InspireShort out.png --props=../output/projects/<slug>/props.json --frame=750 --scale=0.5`。`npm run preview` 会打开 Remotion Studio。
-- `config/default.yaml` 只是记录默认值，代码不会读取它。`config/publish.yaml` 由 `publish_meta.py` 读取。
+- `config/default.yaml` 只是记录默认值，代码不会读取它。`config/platforms.yaml` 由 `publish_meta.py` 和 `render.py` 读取。
 - `skills/inspire-video/references/visual-style.md` 和 `skills/inspire-video/references/rendering-guide.md` 描述了智能体遵循的设计规则。
 - **展示类视频版面：** `video/src/showcase/`（`ShowcaseShort.tsx`、`DeviceFrame.tsx`，以及负责镜头与高亮圈计算的 `geometry.mjs`），复用 `video/src/Video.tsx` 的主题和组件。
 
@@ -354,7 +365,7 @@ python3 scripts/showcase/narrate.py output/projects/demo --engine cosyvoice --vo
 | “Only images are available” / “n challenge solving failed” | `yt-dlp` 找不到受支持的 JavaScript 运行时。请安装 Deno 或 Bun（Node 20.15 不受支持，20.19+ 可用），并确认 `pip install "yt-dlp[default]"` 装上了 `yt-dlp-ejs`。`check_env.py` 会同时报告这两项 |
 | “could not find chrome cookies database” 或 “Operation not permitted”（macOS） | macOS 阻止终端读取浏览器配置文件。请给终端应用开启“完全磁盘访问权限”并重启它，或改用 `--cookies <文件>` / `--file` |
 | 成品文件已存在 | 加 `--force` 覆盖 |
-| 在微信/抖音里两侧被裁掉 | 它们会在较高的屏幕上裁掉 9:16 视频的两侧。请用当前版本重新渲染（两侧边距 114 px）；若平台仍然裁切，请调大 `video/src/Video.tsx` 中的 `SAFE_X` |
+| 在微信/抖音里两侧被裁掉 | 它们会在较高的屏幕上裁掉 9:16 视频的两侧。请用当前版本重新渲染（两侧边距 114 px）；若平台仍然裁切，请调大 `config/platforms.yaml` 中 `vertical-9x16` profile 的 `safe.x`，并同步修改 `video/src/layout.mjs` 中 `DEFAULT_PROFILE` 的 `safeX` |
 | `ingest.py` 读不到网站的任何页面 | 该网站屏蔽爬虫（`robots.txt`）、需要登录或无法访问。请用 `--screenshots DIR` 提供你自己的图片 |
 | “no Chrome or Chromium found” | 为页面截图安装 Chrome 或 Chromium，或使用 `--screenshots DIR` |
 | `manifest.py validate` 提示某一行太宽或太长 | 缩短该字段（见“展示类视频”下的限制表） |
@@ -367,7 +378,7 @@ python3 scripts/showcase/narrate.py output/projects/demo --engine cosyvoice --vo
 - 字幕时间来自转写稿，精确到零点几秒。发布前请完整看一遍成片。
 - 中文译文和中文人名音译由智能体撰写，请找中文熟练的人审校。
 - 视频窗口为 852 x 488 px，会裁掉 16:9 素材约 1% 的宽度（`cover`）。把 `video.fit` 设为 `contain` 可显示完整画面（窗口更小，约 477 px 高）；`crop_x` / `crop_y` 用于移动裁切位置。
-- 内容位于平台安全区内，所以视频窗口约 852 px 宽，上下会有空白。若某个平台表现不同，可在 `video/src/Video.tsx` 中调整 `SAFE_X`、`TITLE_TOP`（标题固定在距顶部某个位置，下方内容改变时它不会移动；标签顶边约在 y = 259）、`LINE_GAP`（每条分隔线上下的间距）和 `SAFE_BOTTOM`（最下方内容必须止于 y = 1590 之上）。
+- 内容位于平台安全区内，所以视频窗口约 852 px 宽，上下会有空白。若某个平台表现不同，可在 `config/platforms.yaml` 中调整对应 profile 的 `safe` 与 `title_top`（9:16 的数值在 `video/src/layout.mjs` 的 `DEFAULT_PROFILE` 中有镜像）来改变两侧边距和标题位置（标题固定在距顶部某个位置，下方内容改变时它不会移动；标签顶边约在 y = 259）以及底部限制（最下方内容必须止于 y = 1590 之上），并在 `video/src/Video.tsx` 中调整 `LINE_GAP`（每条分隔线上下的间距）。
 - 暂不支持识别说话人的智能裁切，也不支持自动识别说话人身份。
 - 字体使用系统字体，不随项目打包。
 - 仅在 macOS 上测试过。
@@ -388,10 +399,10 @@ README.md             英文说明
 README.zh-CN.md       本文件（简体中文）
 LICENSE               MIT
 config/default.yaml   默认值说明（仅供参考）
-config/publish.yaml   publish_meta.py 使用的平台字数上限
+config/platforms.yaml publish_meta.py 与 render.py 使用的平台字数上限和渲染配置
 schemas/              render.py 读取的清单 schema
 install.sh            在线安装脚本（克隆 + 链接 + 安装依赖）
-scripts/              install.sh、uninstall.sh、check_env.py、check_skills.py、fetch.py、transcribe.py、render.py、publish_meta.py；
+scripts/              install.sh、uninstall.sh、check_env.py、check_skills.py、fetch.py、transcribe.py、render.py、publish_meta.py、platforms.py；
                       showcase/（ingest、manifest、narrate、voices、render_showcase、checks 等）
 video/                Remotion 项目（InspireShort、InspireCover、ShowcaseShort、ShowcaseCover）
 src/inspire_video/    占位的 Python 模块

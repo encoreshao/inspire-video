@@ -20,6 +20,7 @@ Create a finished vertical MP4 inspired by the supplied visual references:
 - no imitation of the source app's status bar, navigation, engagement icons, or account UI.
 
 Default output: 1080×1920, 30 fps, H.264 MP4, 40 seconds to 2 min 30 s (40–150 s), bilingual Chinese/English.
+Other platform formats (4:5 for LinkedIn and Facebook) come from `config/platforms.yaml`: render them with `--platform` or `--profile`, see `references/rendering-guide.md`.
 
 ## Operating principles
 
@@ -159,7 +160,7 @@ Validate JSON before rendering. Reject missing required fields, negative timesta
 ### 8. Render
 
 Use the Remotion composition `InspireShort`.
-- Render at 1080×1920, 30 fps, H.264.
+- Render at 1080×1920, 30 fps, H.264. For other platforms add `--platform <ids>`; profiles shared by several platforms render once.
 - Use bundled/local fonts; never depend on a remote font at render time.
 - Ensure Chinese glyph coverage. Preferred fallback chain: Noto Serif CJK SC / Source Han Serif SC / Songti SC; English: Inter / Arial.
 - Use FFmpeg for final audio normalization and muxing only when required.
@@ -173,9 +174,9 @@ Inspect the rendered video, not just the source composition, using every check i
 
 ### 10. Publishing copy (title, description, tags)
 
-After the video passes QA, write `publish.json` in the project folder for WeChat Channels (视频号) and Douyin (抖音), then run `python scripts/publish_meta.py output/projects/<slug>`. It validates the lengths against `config/publish.yaml` and writes `publish.md`, `publish_wechat.txt` and `publish_douyin.txt` into `output/final/<slug>/`, ready to paste, plus `project.json` (schema in `references/publishing.md`, read by the LoopX Creator page; re-run after the cover exists so it lists `cover.png`). `--init` scaffolds a draft from `copy.json`. Follow `references/publishing.md`:
+After the video passes QA, write `publish.json` in the project folder for the target platforms (`wechat_channels`, `douyin`, `rednote`, `bilibili`, `linkedin`, `facebook`; ask which ones the user wants), then run `python scripts/publish_meta.py output/projects/<slug>`. It validates the lengths against `config/platforms.yaml` and writes `publish.md` and one `publish_<platform>.txt` per platform into `output/final/<slug>/`, ready to paste, plus `project.json` (schema in `references/publishing.md`, read by the LoopX Creator page; re-run after the cover exists so it lists `cover.png`). `--init` scaffolds a draft from `copy.json`. Follow `references/publishing.md`:
 - Simplified Chinese; truthful to the clip; no clickbait, invented statistics or claims the speaker did not make.
-- WeChat: a short title plus a description; Douyin: a title plus a description; 3-5 relevant hashtags each, written without `#`.
+- WeChat: a short title plus a description; every other platform: a title plus a description; 3-5 relevant hashtags each, written without `#`. English platforms need English copy and `credit_en`.
 - Always include a credit line (source, speaker, year, and that the subtitles are the publisher's own translation); it is appended to every description.
 - If the rights are not cleared, say so in `notes`; `publish.md` then shows a "NOT CLEARED FOR PUBLICATION" banner. Never claim the content is original.
 - Platform limits are unverified defaults: tell the user to check them in each publish page.
@@ -202,7 +203,7 @@ When the user asks to install, set up or fix InspireVideo (or runs `setup`), fol
 
 Support natural-language requests and these suggested commands:
 - `setup` — install and verify the environment (see Setup below);
-- `publish <project-dir>` — write title, description and hashtags for WeChat Channels and Douyin;
+- `publish <project-dir>` — write title, description and hashtags for the chosen platforms;
 - `create from <path-or-url>` — full pipeline;
 - `analyze <path-or-url>` — transcribe and propose segments without rendering;
 - `render <project-dir>` — render an existing validated manifest;

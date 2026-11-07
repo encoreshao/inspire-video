@@ -7,7 +7,7 @@ A calm, editorial bilingual quote video. The footage is the visual anchor; the c
 ## Canvas and themes
 
 - 1080 x 1920 px, 9:16, 30 fps (the file is true 9:16, square pixels).
-- **Safe area (mandatory):** WeChat Channels and Douyin scale the video to the screen height on tall phones (9:19.5 to 9:20) and center-crop the sides, losing about 97-108 px per side. Keep every element at least 114 px from the left and right edges (`SAFE_X`), at least 190 px from the top and 330 px from the bottom (platform buttons and captions). The layout is top-anchored: the title block starts at a fixed `TITLE_TOP` (label top edge at about y = 259, so the title is not too high inside WeChat) and everything else stacks below it. The lowest content must end above y = 1590.
+- **Safe area (mandatory):** WeChat Channels and Douyin scale the video to the screen height on tall phones (9:19.5 to 9:20) and center-crop the sides, losing about 97-108 px per side. Keep every element at least 114 px from the left and right edges (`safe.x` of the profile in `config/platforms.yaml`), at least 190 px from the top and 330 px from the bottom (platform buttons and captions). The layout is top-anchored: the title block starts at a fixed `title_top` (256 px for 9:16; label top edge at about y = 259, so the title is not too high inside WeChat) and everything else stacks below it. The lowest content must end above y = 1590.
 - Themes are defined in `video/src/Video.tsx` (`themes`): `light` (soft off-white, default), `mist` (cool light gray-blue), `ivory` (warm parchment), `sage` (soft green) and dark `ink`.
 - Select with the manifest `theme` field or `render.py --theme`. Avoid pure white pages, oversaturated colors and gradients.
 
@@ -41,3 +41,16 @@ A calm, editorial bilingual quote video. The footage is the visual anchor; the c
 
 - The layout stays fixed while the video plays. Captions fade in over about 0.1 s; the whole composition fades in and out over about 0.2-0.3 s.
 - No bouncing, glitch, particles or flashy transitions.
+
+## Platform profiles
+
+The layout above is the `vertical-9x16` profile (WeChat Channels, Douyin, RedNote, Bilibili). `config/platforms.yaml` defines the others; the compositions read the profile and size themselves from it.
+
+| Profile | Canvas | Safe area | Title top | Notes |
+|---|---|---|---|---|
+| `vertical-9x16` | 1080 x 1920 px | 114 px left/right, 190 px top, 330 px bottom | 256 px | Default. Tall phones center-crop the sides. |
+| `portrait-4x5` | 1080 x 1350 px | 60 px left/right, 90 px top, 150 px bottom | 110 px | LinkedIn and Facebook feed. Compact density: type and gaps about 18% smaller, the caption card limited to 300 px, the video panel takes the remaining height (at least 320 px). Feeds do not crop the sides. |
+
+`square-1x1` and `landscape-16x9` are registered but not supported yet: the stacked layout leaves too little video height at 1:1 and 16:9 needs a side-by-side layout. Rendering them falls back to `portrait-4x5` and `vertical-9x16` with a warning.
+
+Both profiles keep the bilingual captions. Only the geometry and density change, never the content.

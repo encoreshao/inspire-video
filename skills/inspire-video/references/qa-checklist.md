@@ -15,3 +15,12 @@ Check:
 - final MP4 plays from beginning to end.
 
 Use `ffprobe` and, where possible, extract representative frames for visual inspection. If any critical check fails, fix and re-render. Do not report success until the output file exists and validation passes.
+
+## Other platform formats
+
+When a 4:5 render exists (`<slug>-portrait-4x5.mp4`):
+- the file is 1080 x 1350 (check with `ffprobe`);
+- all content is at least 60 px from the left and right edges, at least 90 px from the top, and ends above y = 1200;
+- the video panel is clearly visible and the longest caption is not clipped;
+- the speaker block, talk title, source line and progress bar are all complete;
+- `cover-portrait-4x5.png` is 1080 x 1350 with the poster visible.

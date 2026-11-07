@@ -1,0 +1,107 @@
+# Platform registry: publishing limits per platform and the render profile each platform uses.
+# Read by scripts/publish_meta.py and scripts/render.py (scripts/platforms.py loads and validates it).
+#
+# `verified: false` means the limits were NOT read from the platform's own publish page (2026-11-07 research
+# found third-party guides only, often contradictory). publish.md warns for those platforms. Check the platform's
+# publish page, correct the numbers, then set `verified: true`.
+# Clip length is also limited by render.py itself (editorial 40-150 s); `duration` here is the platform's range.
+#
+# Add a platform: copy a block under `platforms`, change the id, name, lang, profile and limits.
+# Add a video format: add a block under `profiles` (and layout work in video/src/ if it is a new shape).
+version: 1
+
+profiles:
+  # Today's layout. These numbers MUST equal DEFAULT_PROFILE in video/src/layout.mjs (a test checks it).
+  vertical-9x16:
+    width: 1080
+    height: 1920
+    safe: {x: 114, top: 190, bottom: 330}
+    title_top: 256
+  # Feed video for LinkedIn / Facebook. `compact` switches the composition to its denser layout.
+  portrait-4x5:
+    width: 1080
+    height: 1350
+    safe: {x: 60, top: 90, bottom: 150}
+    title_top: 110
+    compact: true
+  # Not supported yet: the stacked layout leaves too little video height (see layout.test.mjs).
+  square-1x1:
+    width: 1080
+    height: 1080
+    safe: {x: 60, top: 80, bottom: 120}
+    title_top: 90
+    compact: true
+    supported: false
+    fallback: portrait-4x5
+  # Not supported yet: needs a side-by-side layout.
+  landscape-16x9:
+    width: 1920
+    height: 1080
+    safe: {x: 120, top: 70, bottom: 110}
+    title_top: 90
+    supported: false
+    fallback: vertical-9x16
+
+platforms:
+  wechat_channels:
+    name: 微信视频号 (WeChat Channels)
+    lang: zh
+    profile: vertical-9x16
+    file_stem: wechat            # publish_wechat.txt, project.json publish.wechat
+    duration: {min: 3, max: 600}
+    title_field: short_title     # 短标题
+    title: {min: 6, max: 16}
+    description_max: 1000
+    hashtags_max: 5
+    verified: false
+  douyin:
+    name: 抖音 (Douyin)
+    lang: zh
+    profile: vertical-9x16
+    duration: {min: 3, max: 600}
+    title_field: title
+    title: {max: 30}             # conservative; older docs say 55
+    description_max: 1000
+    hashtags_max: 5
+    verified: false
+  rednote:
+    name: 小红书 (RedNote)
+    lang: zh
+    profile: vertical-9x16
+    duration: {min: 3, max: 600}
+    title_field: title
+    title: {max: 20}             # from one third-party article; unconfirmed
+    description_max: 1000
+    hashtags_max: 10             # from one third-party article; unconfirmed
+    verified: false
+  bilibili:
+    name: B站 (Bilibili)
+    lang: zh
+    profile: vertical-9x16       # 16:9 is not supported yet
+    file_stem: bilibili
+    duration: {min: 3, max: 600}
+    title_field: title
+    title: {max: 40}             # conservative guess; no source found
+    description_max: 1000
+    hashtags_max: 10
+    verified: false
+  linkedin:
+    name: LinkedIn
+    lang: en
+    profile: portrait-4x5        # LinkedIn accepts 16:9, 1:1, 4:5, 9:16; 4:5 is recommended for the mobile feed
+    duration: {min: 3, max: 600} # third-party guides: feed video 3 s to 10 min
+    title_field: title
+    title: {max: 70}
+    description_max: 3000
+    hashtags_max: 5
+    verified: false
+  facebook:
+    name: Facebook
+    lang: en
+    profile: portrait-4x5        # feed video; Reels (9:16) are limited to about 90 s by some guides
+    duration: {min: 3, max: 600}
+    title_field: title
+    title: {max: 100}
+    description_max: 2200        # conservative; guides report up to 63,206
+    hashtags_max: 5
+    verified: false

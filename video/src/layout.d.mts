@@ -1,0 +1,16 @@
+export type Profile = {id?: string; width: number; height: number; safeX: number; safeTop: number; safeBottom: number; titleTop: number; compact?: boolean};
+export type Cue = {en: string; zh: string};
+export type CardLimits = {maxH?: number; maxEn?: number; minEn?: number};
+export const DEFAULT_PROFILE: Profile;
+export const MIN_VIDEO_H: number;
+export const CARD_PAD_Y: number;
+export const INFO_H: number;
+export function scaleOf(p: Profile): number;
+export function panelWidth(p: Profile): number;
+export function cardLimits(p: Profile): Required<CardLimits>;
+export function needed(cue: Cue, en: number, panelW?: number): number;
+export function fit(cue: Cue, panelW?: number, limits?: CardLimits): {en: number; zh: number};
+export function cardHeight(cues: Cue[], panelW?: number, limits?: CardLimits): number;
+export function headlineLines(text: string, size: number, width: number): number;
+export function panelVideoHeight(a: {profile?: Profile; fit?: 'cover' | 'contain'; headlineLines?: number; cardReserve: number}): number;
+export function fits(videoH: number): boolean;

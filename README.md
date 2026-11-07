@@ -17,9 +17,9 @@ The agent follows each skill's `SKILL.md` (in `skills/<name>/`) to do the thinki
 
 ### Speaker videos (`/inspire-video`)
 
-- **Output:** 1080×1920 MP4 (H.264 + AAC, 30 fps), 40 seconds to 2 min 30 s, plus a 1080×1920 cover PNG.
+- **Output:** 1080×1920 MP4 (H.264 + AAC, 30 fps), 40 seconds to 2 min 30 s, plus a 1080×1920 cover PNG. For LinkedIn and Facebook the same video is also rendered as 1080×1350 (4:5) with its own cover; see Platforms and video formats.
 - **Synced bilingual captions:** one short sentence (or one clause of a long sentence) at a time, English first and Chinese second, appearing as it is spoken. Each cue is at most 100 English characters, and two sentences never share a cue.
-- **Platform-safe layout:** WeChat Channels and Douyin crop the sides of 9:16 video on tall phones (about 100 px per side). All content stays 114 px inside the left and right edges, the title is anchored at a fixed distance from the top (so it is never too high), and the lowest content ends above the bottom button zone (y = 1590).
+- **Platform-safe layout:** WeChat Channels and Douyin crop the sides of 9:16 video on tall phones (about 100 px per side). All content stays 114 px inside the left and right edges, the title is anchored at a fixed distance from the top (so it is never too high), and the lowest content ends above the bottom button zone (y = 1590). The 4:5 version has its own safe area (60 px sides, content ends above y = 1200).
 - **Divider lines and depth:** a centered line between the title and the video and the same line after the video, bright in the middle and fading out toward both ends, with a small margin above and below each; plus a soft theme-matched shadow around the video panel.
 - **Joined panel:** the video and its caption area form one rounded panel with no gap. The caption area is only as tall as its text.
 - **Title block:** category label, Chinese headline and English subtitle at the same size.
@@ -27,7 +27,7 @@ The agent follows each skill's `SKILL.md` (in `skills/<name>/`) to do the thinki
 - **Several people on screen:** list them in `copy.speakers` and tag cues with a `speaker` id. All names show at the bottom and the current speaker is highlighted.
 - **Themes:** `light` (default), `mist`, `ivory`, `sage` and a dark `ink`.
 - **URL or file input:** download with `yt-dlp` after a rights confirmation, or import a file you downloaded yourself (`--file`). Everything is cached, so the same video is never fetched twice. For YouTube pages that demand a sign-in, there are opt-in `--cookies` and `--cookies-from-browser` options.
-- **Publishing copy:** a WeChat Channels short title and description, a Douyin title and description, and hashtags, validated against editable length limits and written to ready-to-paste files, with a source credit and a "not cleared" banner when the rights are unresolved.
+- **Publishing copy:** a title, description and hashtags for each target platform (WeChat Channels, Douyin, RedNote, Bilibili, LinkedIn, Facebook; English for LinkedIn and Facebook), validated against editable per-platform length limits and written to ready-to-paste files, with a source credit and a "not cleared" banner when the rights are unresolved.
 - **Safety checks:** `render.py` validates the manifest and refuses to render when rights are not confirmed, captions are malformed, or speech could be cut off.
 
 ### Showcase videos (`/inspire-showcase`)
@@ -140,7 +140,7 @@ For a URL, add a rights statement so the agent can download it, for example: "I 
 3. proposes 1–3 candidate segments and asks you to choose;
 4. writes the headline, subtitle, captions, translation and speaker details;
 5. cuts the clip, writes `video_manifest.json`, and renders a preview, then the final MP4 and cover after you approve;
-6. writes the publishing copy (title, description, hashtags) for WeChat Channels and Douyin.
+6. writes the publishing copy (title, description, hashtags) for each target platform.
 
 Other commands:
 
@@ -159,7 +159,7 @@ Everything is written under `~/.inspire-video/output/`:
 | `final/<slug>/` | everything to publish, in one folder per project: |
 | `final/<slug>/<slug>.mp4` | the finished video |
 | `final/<slug>/cover.png` | the cover image (rendered with every final video) |
-| `final/<slug>/publish.md` | title, description and hashtags for WeChat Channels and Douyin (plus `publish_wechat.txt`, `publish_douyin.txt`) |
+| `final/<slug>/publish.md` | title, description and hashtags for each target platform (plus one `publish_<platform>.txt` each) |
 | `cache/` | downloaded URL sources |
 
 ## Manual workflow: speaker videos (without the agent)
@@ -210,9 +210,20 @@ python3 scripts/publish_meta.py output/projects/<slug> --init   # draft publish.
 python3 scripts/publish_meta.py output/projects/<slug>          # validate, then write publish.md + .txt files
 ```
 
-`publish.json` holds `wechat_channels` (`short_title`, `description`, `hashtags`), `douyin` (`title`, `description`, `hashtags`), a required `credit` line and optional `notes`; see `skills/inspire-video/references/publishing.md`. Hashtags are written without `#`. The credit is appended to every description. If the project's `review_status` is not `approved`, `publish.md` carries a "NOT CLEARED FOR PUBLICATION" banner. Length limits live in `config/publish.yaml` and are unverified defaults (WeChat short title 6–16, Douyin title ≤ 30, descriptions ≤ 1000, hashtags ≤ 5): check each platform's publish page and edit the file.
+`publish.json` lists the target platforms under `platforms` (platform id → `title`, `description`, `hashtags`), a `credit` line (required when a Chinese platform is listed), `credit_en` (required when an English platform such as `linkedin` or `facebook` is listed) and optional `notes`; see `skills/inspire-video/references/publishing.md`. Old files with top-level `wechat_channels` / `douyin` keys still work. Hashtags are written without `#`. The credit is appended to every description. If the project's `review_status` is not `approved`, `publish.md` carries a "NOT CLEARED FOR PUBLICATION" banner. Limits live in `config/platforms.yaml`; each platform has a `verified` flag and most are unverified defaults: check each platform's publish page and edit the file.
 
 Add `--force` to overwrite an existing final file, and `--theme light|mist|ivory|sage|ink` to override the theme. `fetch.py --yes-rights` skips the interactive rights prompt; only use it when you have confirmed the rights.
+
+### Platforms and video formats
+
+`config/platforms.yaml` lists the supported platforms (`wechat_channels`, `douyin`, `rednote`, `bilibili`, `linkedin`, `facebook`) with their publishing limits and the video profile each one uses. `--platform` on `render.py` renders every distinct profile those platforms need (9:16 for the Chinese platforms, 4:5 for LinkedIn and Facebook); `publish_meta.py` writes one copy file per platform, in English for LinkedIn and Facebook while the video stays bilingual.
+
+```bash
+python3 scripts/render.py output/projects/<slug> --platform wechat_channels,douyin,linkedin
+python3 scripts/publish_meta.py output/projects/<slug> --init --platform douyin,linkedin
+```
+
+Most platform limits are unverified defaults (each platform has a `verified` flag): check them on each publish page. 1:1 and 16:9 are registered but not supported yet and fall back to 4:5 and 9:16 with a warning. Adding a platform means adding a block to `config/platforms.yaml`. Showcase videos are 9:16 only for now; `--platform` and `--profile` are rejected for showcase projects.
 
 ### The manifest
 
@@ -333,9 +344,9 @@ Screenshots you supply count as yours. Images captured from a page or taken from
 ## Customizing
 
 - **Theme:** the `theme` manifest field or `--theme`. Colors are defined in `video/src/Video.tsx` (`themes`).
-- **Sizes and layout:** constants at the top of `video/src/Video.tsx` (`HEAD`, `MAX_EN`, panel and spacing values) and `video/src/Cover.tsx`.
+- **Sizes and layout:** the profile's `safe` and `title_top` in `config/platforms.yaml` (the 9:16 values are mirrored in `DEFAULT_PROFILE` in `video/src/layout.mjs`, and a test keeps the two equal), caption font sizes in `cardLimits` in `video/src/layout.mjs`, and the other constants (`HEAD`, panel and spacing values) at the top of `video/src/Video.tsx` and in `video/src/Cover.tsx`.
 - **Preview a layout change quickly:** `cd video && npx remotion still src/index.ts InspireShort out.png --props=../output/projects/<slug>/props.json --frame=750 --scale=0.5`. `npm run preview` opens Remotion Studio.
-- `config/default.yaml` documents the defaults but is not read by the code. `config/publish.yaml` is read by `publish_meta.py`.
+- `config/default.yaml` documents the defaults but is not read by the code. `config/platforms.yaml` is read by `publish_meta.py` and `render.py`.
 - `skills/inspire-video/references/visual-style.md` and `skills/inspire-video/references/rendering-guide.md` describe the design rules the agent follows.
 - **Showcase layout:** `video/src/showcase/` (`ShowcaseShort.tsx`, `DeviceFrame.tsx`, and `geometry.mjs` for the camera and ring maths). It reuses the themes and helpers of `video/src/Video.tsx`.
 
@@ -354,7 +365,7 @@ Screenshots you supply count as yours. Images captured from a page or taken from
 | "Only images are available" / "n challenge solving failed" | `yt-dlp` has no supported JavaScript runtime. Install Deno or Bun (Node 20.15 is unsupported; 20.19+ works) and make sure `pip install "yt-dlp[default]"` installed `yt-dlp-ejs`. `check_env.py` reports both |
 | "could not find chrome cookies database" or "Operation not permitted" (macOS) | macOS blocks your terminal from reading the browser profile. Grant Full Disk Access to the terminal app and restart it, or use `--cookies <file>` / `--file` instead |
 | Output file exists | Pass `--force` to overwrite |
-| Sides are cut off on WeChat / Douyin | They crop 9:16 video on tall screens. Re-render with the current version (114 px side margins); if a platform still crops, raise `SAFE_X` in `video/src/Video.tsx` |
+| Sides are cut off on WeChat / Douyin | They crop 9:16 video on tall screens. Re-render with the current version (114 px side margins); if a platform still crops, raise `safe.x` of the `vertical-9x16` profile in `config/platforms.yaml` and the matching `safeX` in `DEFAULT_PROFILE` in `video/src/layout.mjs` |
 | `ingest.py` could not read any page of a website | The site blocks crawlers (`robots.txt`), needs a login or is unreachable. Pass your own images with `--screenshots DIR` |
 | "no Chrome or Chromium found" | Install Chrome or Chromium for page screenshots, or pass `--screenshots DIR` |
 | `manifest.py validate` says a line is too wide or too long | Shorten that field (see the limits table under Showcase videos) |
@@ -367,7 +378,7 @@ Screenshots you supply count as yours. Images captured from a page or taken from
 - Caption timing comes from the transcript and is accurate to a fraction of a second. Watch the output once before publishing.
 - Chinese translations and Chinese name transliterations are written by the agent; have a fluent reader review them.
 - The video window is 852 x 488 px and crops about 1% of the width of 16:9 footage (`cover`). Set `video.fit` to `contain` to show the whole frame (smaller, about 477 px tall); `crop_x` / `crop_y` move the crop.
-- Content sits inside the platform safe area, so the video window is about 852 px wide and there is empty space above and below. Adjust `SAFE_X`, `TITLE_TOP` (the title is anchored at a fixed distance from the top so it never moves when blocks below change; the label's top edge sits at about y = 259), `LINE_GAP` (space around each divider line) and `SAFE_BOTTOM` (the lowest content must end above y = 1590) in `video/src/Video.tsx` if a platform behaves differently.
+- Content sits inside the platform safe area, so the video window is about 852 px wide and there is empty space above and below. Adjust `safe` and `title_top` of the profile in `config/platforms.yaml` (mirrored for 9:16 in `DEFAULT_PROFILE` in `video/src/layout.mjs`) for the side margins, the title position (the title is anchored at a fixed distance from the top so it never moves when blocks below change; the label's top edge sits at about y = 259) and the bottom limit (the lowest content must end above y = 1590), and `LINE_GAP` (space around each divider line) in `video/src/Video.tsx`, if a platform behaves differently.
 - No speaker-aware cropping or automatic speaker identification yet.
 - Fonts are system fonts, not bundled.
 - Tested on macOS only.
@@ -388,10 +399,10 @@ README.md             this file (English)
 README.zh-CN.md       简体中文说明
 LICENSE               MIT
 config/default.yaml   documented defaults (reference only)
-config/publish.yaml   platform length limits used by publish_meta.py
+config/platforms.yaml platform limits and render profiles, used by publish_meta.py and render.py
 schemas/              manifest schema read by render.py
 install.sh            online installer (clone + link + dependencies)
-scripts/              install.sh, uninstall.sh, check_env.py, check_skills.py, fetch.py, transcribe.py, render.py, publish_meta.py;
+scripts/              install.sh, uninstall.sh, check_env.py, check_skills.py, fetch.py, transcribe.py, render.py, publish_meta.py, platforms.py;
                       showcase/ (ingest, manifest, narrate, voices, render_showcase, checks, ...)
 video/                Remotion project (InspireShort, InspireCover, ShowcaseShort, ShowcaseCover)
 src/inspire_video/    placeholder Python modules
