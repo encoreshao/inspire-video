@@ -104,7 +104,7 @@ def write_project_json(out_dir: Path, m: dict, p: dict, reg: platforms.Registry)
     for pid, blk in p["platforms"].items():
         pf = reg.platform(pid)
         publish[pf.file_stem] = {"title": blk["title"], "caption": f"{blk['description']}\n\n{credit_for(p, pf)}",
-                                 "hashtags": blk["hashtags"]}
+                                 "hashtags": blk.get("hashtags", [])}
         profile = reg.resolve(pf.profile)[0].id
         if profile not in rendered:
             rendered.append(profile)
@@ -133,6 +133,8 @@ def init(proj: Path, ids: list[str]) -> None:
     if out.exists():
         sys.exit(f"{out} exists; edit it or delete it first")
     reg = platforms.load()
+    for pid in ids:
+        reg.platform(pid)               # fail on an unknown id before reading or writing anything
     cp = json.loads((proj / "copy.json").read_text())
     who = cp.get("speaker_name", "")
     credit = (f"内容来源：{cp.get('source_name', '')}"
@@ -178,7 +180,11 @@ def main() -> int:
     a = ap.parse_args()
     proj = Path(a.project_dir).resolve()
     if a.init:
-        init(proj, [x.strip() for x in a.platform.split(",") if x.strip()])
+        try:
+            init(proj, [x.strip() for x in a.platform.split(",") if x.strip()])
+        except platforms.RegistryError as e:
+            print(e, file=sys.stderr)
+            return 1
         return 0
     reg = platforms.load()
     p = normalize(json.loads((proj / "publish.json").read_text()))
@@ -198,7 +204,7 @@ def main() -> int:
     sections, written, unverified = "", [], []
     for pid, blk in p["platforms"].items():
         pf = reg.platform(pid)
-        full = body(blk["description"], credit_for(p, pf), blk["hashtags"])
+        full = body(blk["description"], credit_for(p, pf), blk.get("hashtags", []))
         name = f"publish_{pf.file_stem}.txt"
         (out_dir / name).write_text(f"{blk['title']}\n\n{full}\n")
         written.append(name)

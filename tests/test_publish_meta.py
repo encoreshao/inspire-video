@@ -139,3 +139,72 @@ def test_init_drafts_each_requested_platform_and_never_overwrites(run, monkeypat
     assert "TED" in draft["credit"] and "TED" in draft["credit_en"] and "Ada" in draft["credit_en"]
     with pytest.raises(SystemExit):
         publish_meta.main()          # publish.json exists now
+
+
+def test_a_block_without_hashtags_still_publishes(run):
+    block = {"title": "先行动，再自信", "description": "行动先于信心。"}
+    rc, out, err = run({"platforms": {"douyin": block}, "credit": "内容来源：测试。"})
+    assert rc == 0, err
+    assert (out / "publish_douyin.txt").read_text() == "先行动，再自信\n\n行动先于信心。\n\n内容来源：测试。\n\n\n"
+    assert json.loads((out / "project.json").read_text())["publish"]["douyin"]["hashtags"] == []
+
+
+def test_init_with_an_unknown_platform_exits_1_and_writes_nothing(run):
+    proj = run.proj
+    (proj / "copy.json").write_text(json.dumps({"headline_zh": "x"}))
+    rc, _, err = run_init(run, "tiktok")
+    assert rc == 1 and "unknown platform 'tiktok'" in err and "douyin" in err
+    assert not (proj / "publish.json").exists()
+
+
+def run_init(run, ids):
+    return run_init_impl(run.proj, ids)
+
+
+def run_init_impl(proj, ids):
+    import io, contextlib
+    old = sys.argv
+    sys.argv = ["publish_meta.py", str(proj), "--init", "--platform", ids]
+    err = io.StringIO()
+    try:
+        with contextlib.redirect_stderr(err):
+            rc = publish_meta.main()
+    finally:
+        sys.argv = old
+    return rc, None, err.getvalue()
+
+
+def test_publish_md_warns_for_the_unverified_platforms(run):
+    rc, out, err = run(NEW)
+    assert rc == 0, err
+    md = (out / "publish.md").read_text()
+    assert "unverified for:" in md
+    reg = platforms.load()
+    sentence = md.split("unverified for:")[1]
+    assert reg.platform("douyin").name in sentence and reg.platform("linkedin").name in sentence
+
+
+def _registry_with_verified(tmp_path, monkeypatch, verified_ids):
+    import yaml
+    raw = yaml.safe_load(platforms.DEFAULT_PATH.read_text(encoding="utf-8"))
+    for pid, blk in raw["platforms"].items():
+        blk["verified"] = pid in verified_ids
+    path = tmp_path / "platforms.yaml"
+    path.write_text(yaml.safe_dump(raw, allow_unicode=True), encoding="utf-8")
+    monkeypatch.setattr(platforms, "DEFAULT_PATH", path)
+
+
+def test_a_verified_platform_is_left_out_of_the_warning(run, tmp_path, monkeypatch):
+    _registry_with_verified(tmp_path, monkeypatch, {"douyin"})
+    rc, out, err = run(NEW)
+    assert rc == 0, err
+    sentence = (out / "publish.md").read_text().split("unverified for:")[1]
+    reg = platforms.load()
+    assert reg.platform("linkedin").name in sentence and reg.platform("douyin").name not in sentence
+
+
+def test_no_warning_when_every_listed_platform_is_verified(run, tmp_path, monkeypatch):
+    _registry_with_verified(tmp_path, monkeypatch, {"douyin", "linkedin"})
+    rc, out, err = run(NEW)
+    assert rc == 0, err
+    assert "unverified" not in (out / "publish.md").read_text()
