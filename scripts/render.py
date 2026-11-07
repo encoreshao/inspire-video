@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """Validate a project's video_manifest.json and render it with Remotion.
 
-Usage: python scripts/render.py <project-dir> [--preview] [--force]
+Usage: python scripts/render.py <project-dir> [--platform id,id] [--profile id] [--preview] [--force]
 Output: output/final/<project-id>/<project-id>.mp4 + cover.png  (or <project-dir>/preview.mp4 with --preview)
+With --platform / --profile, every distinct video profile those platforms use is rendered once; profiles other than
+the default 9:16 write <project-id>-<profile>.mp4 and cover-<profile>.png (see config/platforms.yaml).
 """
 import argparse, json, re, shutil, subprocess, sys
 from pathlib import Path
+
+import platforms
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -71,11 +75,23 @@ def main() -> int:
     ap.add_argument("--theme", choices=["light", "mist", "ivory", "ink", "sage"], help="background theme (default: manifest theme, else light)")
     ap.add_argument("--cover", action="store_true", help="render the cover image only")
     ap.add_argument("--force", action="store_true", help="overwrite existing final file")
+    ap.add_argument("--platform", default="", help="comma-separated platform ids from config/platforms.yaml: render each "
+                    "distinct video profile they use, and check their clip-length limits")
+    ap.add_argument("--profile", help="render this profile only (for example portrait-4x5), overriding the profiles implied by --platform")
     a = ap.parse_args()
 
     proj = Path(a.project_dir).resolve()
     m = json.loads((proj / "video_manifest.json").read_text())
     validate(m, None)
+    reg = platforms.load()
+    platform_ids = [x.strip() for x in a.platform.split(",") if x.strip()]
+    clip_seconds = m["source"]["end_seconds"] - m["source"]["start_seconds"]
+    problems = platforms.check_duration(reg, platform_ids, clip_seconds)
+    if problems:
+        raise ValueError("; ".join(problems))
+    targets, warnings = platforms.plan_renders(reg, platform_ids, a.profile)
+    for warning in warnings:
+        print(f"WARNING: {warning}", file=sys.stderr)
 
     clip = Path(m["video"]["clip_path"])
     clip = clip if clip.is_absolute() else proj / clip
@@ -91,7 +107,7 @@ def main() -> int:
     role_zh = " · ".join(x for x in [cp.get("speaker_title_zh"), cp.get("speaker_org")] if x)
     credit = cp.get("speaker_name") or "Speaker unknown"
     src_line = " · ".join(str(x) for x in [cp.get("source_name"), cp.get("year")] if x)
-    dur = m["source"]["end_seconds"] - m["source"]["start_seconds"]
+    dur = clip_seconds
     props = {
         "headline": cp["headline_zh"], "subtitle": cp["subtitle_en"],
         "quoteEn": cp["quote_en"], "quoteZh": cp["quote_zh"],
@@ -116,14 +132,22 @@ def main() -> int:
     props_file.write_text(json.dumps(props, ensure_ascii=False, indent=2))
 
     final_dir = ROOT / "output/final" / m["project_id"]
+    default_id = platforms.DEFAULT_PROFILE
 
-    def render_cover(overwrite: bool = False) -> int:
-        out = final_dir / "cover.png"
+    def suffixed(name: str, profile) -> str:
+        """props.json for the default profile, props-<profile>.json otherwise."""
+        stem, ext = name.rsplit(".", 1)
+        return name if profile.id == default_id else f"{stem}-{profile.id}.{ext}"
+
+    def render_cover(profile, overwrite: bool = False) -> int:
+        out = final_dir / platforms.cover_name(profile.id)
         if out.exists() and not (a.force or overwrite):
             raise FileExistsError(f"{out} exists; use --force to overwrite")
         out.parent.mkdir(parents=True, exist_ok=True)
         cprops = {k: props.get(k) for k in ("headline", "subtitle", "theme", "people", "speaker", "speakerZh", "role", "roleZh", "source", "poster", "talkTitle", "category")}
-        cfile = proj / "cover_props.json"
+        if profile.id != default_id:
+            cprops["profile"] = profile.props()
+        cfile = proj / suffixed("cover_props.json", profile)
         cfile.write_text(json.dumps(cprops, ensure_ascii=False, indent=2))
         r = subprocess.run(["npx", "remotion", "still", "src/index.ts", "InspireCover", str(out), f"--props={cfile}"],
                            cwd=ROOT / "video")
@@ -131,28 +155,34 @@ def main() -> int:
             print(f"Rendered: {out}")
         return r.returncode
 
-    if a.cover:
-        return render_cover()
+    def render_video(profile) -> int:
+        pprops = props if profile.id == default_id else {**props, "profile": profile.props()}
+        pfile = proj / suffixed("props.json", profile)
+        pfile.write_text(json.dumps(pprops, ensure_ascii=False, indent=2))
+        if a.preview:
+            out = proj / suffixed("preview.mp4", profile)
+        else:
+            out = final_dir / platforms.video_name(m["project_id"], profile.id)
+            if out.exists() and not a.force:
+                raise FileExistsError(f"{out} exists; use --force to overwrite")
+        out.parent.mkdir(parents=True, exist_ok=True)
+        cmd = ["npx", "remotion", "render", "src/index.ts", "InspireShort", str(out),
+               f"--props={pfile}", "--codec=h264", "--crf=18"]
+        if a.preview:
+            cmd += ["--scale=0.5"]
+        print("+", " ".join(cmd))
+        r = subprocess.run(cmd, cwd=ROOT / "video")
+        if r.returncode == 0:
+            print(f"Rendered: {out}")
+            if not a.preview:
+                return render_cover(profile, overwrite=True)  # the cover always ships with the video
+        return r.returncode
 
-    if a.preview:
-        out = proj / "preview.mp4"
-    else:
-        out = final_dir / f"{m['project_id']}.mp4"
-        if out.exists() and not a.force:
-            raise FileExistsError(f"{out} exists; use --force to overwrite")
-    out.parent.mkdir(parents=True, exist_ok=True)
-
-    cmd = ["npx", "remotion", "render", "src/index.ts", "InspireShort", str(out),
-           f"--props={props_file}", "--codec=h264", "--crf=18"]
-    if a.preview:
-        cmd += ["--scale=0.5"]
-    print("+", " ".join(cmd))
-    r = subprocess.run(cmd, cwd=ROOT / "video")
-    if r.returncode == 0:
-        print(f"Rendered: {out}")
-        if not a.preview:
-            return render_cover(overwrite=True)  # the cover always ships with the video
-    return r.returncode
+    for profile in targets:
+        code = render_cover(profile) if a.cover else render_video(profile)
+        if code != 0:
+            return code
+    return 0
 
 
 if __name__ == "__main__":
