@@ -296,3 +296,16 @@ output/               项目、成品文件、下载缓存（已被 git 忽略�
 ## 许可证
 
 MIT，见 `LICENSE`。
+
+## 展示类视频旁白（实验性）
+
+网站 / 代码仓库展示视频的旁白在本地生成，使用由你自己的录音克隆的声音档案。
+
+```bash
+bash scripts/showcase/setup_cosyvoice.sh        # 仅需一次，约 9 GB，安装在仓库之外
+ffmpeg -i my-voice.m4a -ar 16000 -ac 1 clip.wav # 10-20 秒，安静环境
+python3 scripts/showcase/voices.py add --name me --wav clip.wav --text-file clip.txt --lang zh
+python3 scripts/showcase/narrate.py output/projects/<slug> --engine cosyvoice --voice me
+```
+
+`--engine say`（macOS，无需安装）和 `--engine kokoro`（需要 `mlx-audio` 与 `brew install espeak-ng`）可用于快速预览。声音档案保存在 `voices/`，已被 git 忽略：这是个人数据。

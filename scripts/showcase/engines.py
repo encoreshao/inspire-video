@@ -126,4 +126,7 @@ def get_engine(name: str) -> Engine:
         return SayEngine()
     if name == "kokoro":
         return KokoroEngine()
+    if name == "cosyvoice":
+        from showcase.cosyvoice_engine import CosyVoiceEngine  # lazy: avoids a circular import
+        return CosyVoiceEngine()
     raise EngineUnavailable(f"unknown engine {name!r}; choose one of: {', '.join(ENGINE_NAMES)}")

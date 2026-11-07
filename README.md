@@ -296,3 +296,16 @@ output/               projects, final files, download cache (git-ignored)
 ## License
 
 MIT, see `LICENSE`.
+
+## Showcase narration (experimental)
+
+Narration for website/repo showcase videos runs locally, with a voice profile cloned from your own recording.
+
+```bash
+bash scripts/showcase/setup_cosyvoice.sh        # one time, about 9 GB, installs outside the repo
+ffmpeg -i my-voice.m4a -ar 16000 -ac 1 clip.wav # 10-20 s, quiet room
+python3 scripts/showcase/voices.py add --name me --wav clip.wav --text-file clip.txt --lang zh
+python3 scripts/showcase/narrate.py output/projects/<slug> --engine cosyvoice --voice me
+```
+
+`--engine say` (macOS, no setup) and `--engine kokoro` (needs `mlx-audio` and `brew install espeak-ng`) are lighter options for previews. Voice profiles live in `voices/`, which is git-ignored: they are personal data.
