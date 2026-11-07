@@ -27,7 +27,7 @@ def main() -> None:
                   cv.inference_zero_shot(it["text"], PREFIX + job["prompt_text"], job["prompt_wav"], **kwargs)]
         if not chunks:
             sys.exit(f"CosyVoice returned no audio for: {it['text'][:40]!r}")
-        torchaudio.save(it["out"], torch.cat(chunks, dim=1), cv.sample_rate)
+        torchaudio.save(it["out"], torch.cat(chunks, dim=1), cv.sample_rate, encoding="PCM_S", bits_per_sample=16)
 
 
 if __name__ == "__main__":
