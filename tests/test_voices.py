@@ -76,3 +76,9 @@ def test_cli_add_and_list(tmp_path, make_wav, capsys):
     assert voices.main(["--root", root, "list"]) == 0
     assert "encore" in capsys.readouterr().out
     assert voices.main(["--root", root, "add", "--name", "encore", "--wav", str(clip), "--text-file", str(txt)]) == 1
+
+
+def test_voice_name_with_trailing_newline_is_rejected(tmp_path, make_wav):
+    clip = make_wav(tmp_path / "in.wav", seconds=12)
+    with pytest.raises(voices.VoiceError, match="invalid voice name"):
+        voices.create_voice("a\n", clip, "text", root=tmp_path / "v")

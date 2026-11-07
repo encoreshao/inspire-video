@@ -139,3 +139,85 @@ def test_cli_reports_errors_and_success(tmp_path, capsys, monkeypatch):
     assert "2 beats" in capsys.readouterr().out
     assert narrate.main([str(tmp_path / "missing")]) == 1
     assert "error:" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("scenario", ["duplicate-ids", "needs-voice", "no-manifest"])
+def test_a_stale_timings_file_never_survives_a_failed_run(tmp_path, scenario):
+    if scenario == "duplicate-ids":
+        p, engine = project(tmp_path, [{"id": "a", "en": "x"}, {"id": "a", "en": "y"}]), FakeEngine()
+    elif scenario == "needs-voice":
+        p, engine = project(tmp_path, BEATS), FakeEngine(needs_voice=True)
+    else:
+        p, engine = tmp_path, FakeEngine()
+    (p / "timings.json").write_text("{}")
+    with pytest.raises(narrate.NarrationError):
+        run(p, engine)
+    assert not (p / "timings.json").exists()
+
+
+def test_beat_id_with_a_trailing_newline_is_rejected(tmp_path):
+    with pytest.raises(narrate.NarrationError, match="beat id"):
+        run(project(tmp_path, [{"id": "intro\n", "en": "hello"}]), FakeEngine())
+    assert not any(tmp_path.rglob("*.wav"))
+
+
+@pytest.mark.parametrize("beats", ["oops", ["intro"], [{"id": "a", "en": "x"}, 3]])
+def test_malformed_beats_are_a_clear_error(tmp_path, beats):
+    with pytest.raises(narrate.NarrationError, match="list of beat objects"):
+        run(project(tmp_path, beats), FakeEngine())
+
+
+def test_voice_language_is_the_default_narration_language(tmp_path, make_wav):
+    clip = make_wav(tmp_path / "in.wav", seconds=12)
+    zh_voice = voices.create_voice("me", clip, "你好", language="zh", root=tmp_path / "v")
+    e = FakeEngine(needs_voice=True)
+    t = run(project(tmp_path, BEATS), e, voice=zh_voice)          # manifest has no narration_lang
+    assert t["lang"] == "zh" and e.texts == ["你好", "再见"]
+
+
+def test_voice_profile_with_an_engine_that_cannot_use_it_is_refused(tmp_path, make_wav):
+    clip = make_wav(tmp_path / "in.wav", seconds=12)
+    v = voices.create_voice("me", clip, "words", root=tmp_path / "v")
+    with pytest.raises(narrate.NarrationError, match="does not use voice profiles"):
+        run(project(tmp_path, BEATS), FakeEngine(), voice=v)
+
+
+def _cli_setup(tmp_path, monkeypatch, make_wav, **extra):
+    clip = make_wav(tmp_path / "in.wav", seconds=12)
+    voices.create_voice("me", clip, "words", root=tmp_path / "v")
+    voices.create_voice("other", clip, "words", root=tmp_path / "v")
+    p = project(tmp_path, BEATS, **extra)
+    monkeypatch.setattr(narrate.engines, "get_engine", lambda n: FakeEngine(needs_voice=True))
+    monkeypatch.setattr(narrate, "load_voice", lambda n: voices.load_voice(n, root=tmp_path / "v"))
+    monkeypatch.setattr(narrate, "MIN_TOTAL", LO)
+    monkeypatch.setattr(narrate, "MAX_TOTAL", HI)
+    return p
+
+
+def test_cli_uses_the_manifest_voice_and_the_flag_overrides_it(tmp_path, monkeypatch, make_wav):
+    p = _cli_setup(tmp_path, monkeypatch, make_wav, voice="me", narration_lang="en")
+    assert narrate.main([str(p), "--engine", "cosyvoice"]) == 0
+    assert json.loads((p / "timings.json").read_text())["voice"] == "me"
+    assert narrate.main([str(p), "--engine", "cosyvoice", "--voice", "other"]) == 0
+    assert json.loads((p / "timings.json").read_text())["voice"] == "other"
+
+
+class JunkWavEngine(FakeEngine):
+    def synth_batch(self, items, voice):
+        for it in items:
+            it.out.parent.mkdir(parents=True, exist_ok=True)
+            it.out.write_bytes(b"not a wav")
+
+
+class CrashingEngine(FakeEngine):
+    def synth_batch(self, items, voice):
+        import subprocess
+        raise subprocess.CalledProcessError(3, ["say"])
+
+
+@pytest.mark.parametrize("engine_cls, needle", [(JunkWavEngine, "error:"), (CrashingEngine, "say engine failed")])
+def test_cli_turns_engine_failures_into_a_message_not_a_traceback(tmp_path, capsys, monkeypatch, engine_cls, needle):
+    p = project(tmp_path, BEATS)
+    monkeypatch.setattr(narrate.engines, "get_engine", lambda n: engine_cls())
+    assert narrate.main([str(p), "--engine", "say"]) == 1
+    assert needle in capsys.readouterr().err

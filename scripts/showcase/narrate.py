@@ -14,6 +14,7 @@ import json
 import re
 import subprocess
 import sys
+import wave
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))   # so `python scripts/showcase/narrate.py` finds the package
@@ -38,8 +39,18 @@ def _voice_id(voice) -> str:
     return f"{voice.name}:{digest}"
 
 
+def _manifest_voice(project: Path):
+    """The manifest's optional `voice` name; problems with the manifest itself are reported by narrate()."""
+    try:
+        name = json.loads((project / "video_manifest.json").read_text(encoding="utf-8")).get("voice")
+    except (OSError, ValueError, AttributeError):
+        return None
+    return name if isinstance(name, str) and name else None
+
+
 def narrate(project, engine, voice=None, lang=None, min_total=MIN_TOTAL, max_total=MAX_TOTAL) -> dict:
     project = Path(project)
+    (project / "timings.json").unlink(missing_ok=True)      # never leave a stale timings file, whatever fails below
     mpath = project / "video_manifest.json"
     try:
         manifest = json.loads(mpath.read_text(encoding="utf-8"))
@@ -48,18 +59,23 @@ def narrate(project, engine, voice=None, lang=None, min_total=MIN_TOTAL, max_tot
     beats = manifest.get("beats")
     if not beats:
         raise NarrationError("the manifest has no beats")
-    lang = lang or manifest.get("narration_lang", "en")
+    if not isinstance(beats, list) or not all(isinstance(b, dict) for b in beats):
+        raise NarrationError("the manifest's beats must be a list of beat objects")
+    lang = lang or manifest.get("narration_lang") or (voice.language if voice else "en")
     if lang not in LANGS:
         raise NarrationError(f"narration language must be one of {LANGS}, got {lang!r}")
     if engine.needs_voice and voice is None:
         raise NarrationError(f"the {engine.name} engine needs a voice profile: pass --voice NAME")
+    if voice is not None and not engine.needs_voice:
+        raise NarrationError(
+            f"the {engine.name} engine does not use voice profiles: drop --voice, or use --engine cosyvoice")
     engine.check()
 
     # Validate every beat before touching the disk.
     seen, plan = set(), []
     for b in beats:
         bid = b.get("id")
-        if not isinstance(bid, str) or not BEAT_ID.match(bid):
+        if not isinstance(bid, str) or not BEAT_ID.fullmatch(bid):
             raise NarrationError(f"invalid beat id {bid!r}: use a-z, 0-9, '_' or '-', 1-48 characters")
         if bid in seen:
             raise NarrationError(f"duplicate beat id {bid!r}")
@@ -71,7 +87,6 @@ def narrate(project, engine, voice=None, lang=None, min_total=MIN_TOTAL, max_tot
 
     audio_dir = project / "audio"
     audio_dir.mkdir(parents=True, exist_ok=True)
-    (project / "timings.json").unlink(missing_ok=True)      # never leave a stale timings file
 
     speed = voice.speed if voice else 1.0
     vid = _voice_id(voice)
@@ -113,10 +128,14 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     try:
         engine = engines.get_engine(a.engine)
-        voice = load_voice(a.voice) if a.voice else None
+        voice_name = a.voice or _manifest_voice(Path(a.project_dir))
+        voice = load_voice(voice_name) if voice_name else None
         t = narrate(Path(a.project_dir), engine, voice, a.lang, min_total=MIN_TOTAL, max_total=MAX_TOTAL)
-    except (NarrationError, LengthError, VoiceError, engines.EngineUnavailable, RuntimeError,
-            subprocess.CalledProcessError) as e:
+    except subprocess.CalledProcessError as e:
+        print(f"error: the {a.engine} engine failed (exit status {e.returncode}); see its output above", file=sys.stderr)
+        return 1
+    except (ValueError, RuntimeError, OSError, KeyError, wave.Error, ZeroDivisionError) as e:
+        # ValueError covers NarrationError, LengthError, VoiceError and bad JSON; RuntimeError covers EngineUnavailable.
         print(f"error: {e}", file=sys.stderr)
         return 1
     print(f"{len(t['beats'])} beats, {t['total']} s total, engine={t['engine']}, lang={t['lang']}")

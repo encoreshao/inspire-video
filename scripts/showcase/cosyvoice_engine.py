@@ -40,7 +40,8 @@ class CosyVoiceEngine(Engine):
             raise EngineUnavailable("the cosyvoice engine needs a voice profile (--voice NAME)")
         py, repo, _ = self._paths()
         job = {"prompt_wav": str(voice.prompt_wav), "prompt_text": voice.prompt_text, "speed": voice.speed,
-               "items": [{"text": it.text, "out": str(it.out)} for it in items]}
+               # The runner starts in the CosyVoice repo: relative paths would be written there.
+               "items": [{"text": it.text, "out": str(Path(it.out).resolve())} for it in items]}
         for it in items:
             Path(it.out).parent.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory() as td:

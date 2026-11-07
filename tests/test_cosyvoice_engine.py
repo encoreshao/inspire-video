@@ -61,3 +61,16 @@ def test_one_subprocess_for_the_whole_batch_with_a_job_file(tmp_path, monkeypatc
 
 def test_registry_returns_the_engine():
     assert engines.get_engine("cosyvoice").name == "cosyvoice"
+
+
+def test_relative_output_paths_become_absolute_in_the_job(tmp_path, monkeypatch, make_wav):
+    # The runner starts in the CosyVoice repo, so a relative path would be written there.
+    monkeypatch.setenv("INSPIRE_CV_HOME", str(setup_home(tmp_path)))
+    clip = make_wav(tmp_path / "in.wav", seconds=12)
+    voice = voices.create_voice("me", clip, "words", root=tmp_path / "v")
+    jobs = []
+    monkeypatch.setattr(cv.subprocess, "run", lambda argv, **kw: jobs.append(json.loads(Path(argv[2]).read_text(encoding="utf-8"))) or subprocess.CompletedProcess(argv, 0))
+    monkeypatch.chdir(tmp_path)
+    cv.CosyVoiceEngine().synth_batch([engines.Item("hi", "en", Path("output/projects/p/audio/a.wav"))], voice)
+    out = jobs[0]["items"][0]["out"]
+    assert Path(out).is_absolute() and out == str((tmp_path / "output/projects/p/audio/a.wav").resolve())

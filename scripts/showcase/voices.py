@@ -42,7 +42,7 @@ class VoiceProfile:
 
 
 def _check_name(name) -> None:
-    if not isinstance(name, str) or not NAME_RE.match(name):
+    if not isinstance(name, str) or not NAME_RE.fullmatch(name):
         raise VoiceError(
             f"invalid voice name {name!r}: use 1-32 characters from a-z, 0-9, '_' or '-', "
             "starting with a letter or digit"
