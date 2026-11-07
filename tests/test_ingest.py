@@ -180,3 +180,72 @@ def test_cli_writes_the_brief_and_reports_problems(tmp_path, capsys, monkeypatch
     assert (p / "brief.json").exists() and "brief written" in capsys.readouterr().out
     assert I.main(["ftp://example.com/", "--project", str(tmp_path / "x")]) == 1
     assert "error:" in capsys.readouterr().err
+
+
+def test_reingest_removes_only_the_files_it_created(tmp_path):
+    p, d = tmp_path / "p", shots(tmp_path)
+    I.ingest("https://example.com/", p, screenshots=d, deps=deps())
+    (p / "assets" / "notes.txt").write_text("keep me")
+    brief = I.ingest("https://example.com/", p, screenshots=d, deps=deps())
+    names = sorted(x.name for x in (p / "assets").iterdir())
+    assert "notes.txt" in names and len(names) == 3 and len(brief["assets"]) == 2
+
+
+def test_screenshots_inside_the_projects_assets_folder_are_refused_and_untouched(tmp_path):
+    p = tmp_path / "p"
+    (p / "assets").mkdir(parents=True)
+    (p / "assets" / "1-a.png").write_bytes(png(900, 600))
+    (p / "assets" / "note.txt").write_text("mine")
+    with pytest.raises(I.IngestError, match="assets"):
+        I.ingest("https://example.com/", p, screenshots=p / "assets", deps=deps())
+    assert sorted(x.name for x in (p / "assets").iterdir()) == ["1-a.png", "note.txt"]
+
+
+def test_capture_candidates_survive_next_to_user_screenshots(tmp_path):
+    p = tmp_path / "p"
+    brief = I.ingest("https://example.com/", p, screenshots=shots(tmp_path), capture=True, deps=deps())
+    assert [a["origin"] for a in brief["assets"]] == ["user", "user"] and brief["rights_unresolved"] is False
+    caps = [c for c in brief["candidates"] if c["origin"] == "capture"]
+    assert len(caps) == 4 and all((p / c["path"]).is_file() and c["path"].startswith("candidates/") for c in caps)
+    assert len(list((p / "assets").iterdir())) == 2
+
+
+def test_a_failed_rerun_leaves_no_stale_brief(tmp_path):
+    p = tmp_path / "p"
+    I.ingest("https://example.com/", p, screenshots=shots(tmp_path), deps=deps())
+    assert (p / "brief.json").exists()
+    with pytest.raises(I.IngestError):
+        I.ingest("https://example.com/", p, deps=deps(fetch=fake_fetch(robots="User-agent: *\nDisallow: /")))
+    assert not (p / "brief.json").exists()
+
+
+def test_when_every_screenshot_is_unusable_ingest_stops(tmp_path):
+    d = tmp_path / "bad"
+    d.mkdir()
+    (d / "tiny.png").write_bytes(png(50, 50))
+    (d / "fake.png").write_bytes(b"nope")
+    with pytest.raises(I.IngestError, match="none of the 2 files"):
+        I.ingest(str(repo(tmp_path)), tmp_path / "p", screenshots=d, deps=deps())
+
+
+def test_a_relative_project_path_works_with_page_capture(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    brief = I.ingest("https://example.com/", "proj", deps=deps())
+    assert len(brief["assets"]) == 4 and all((tmp_path / "proj" / a["path"]).is_file() for a in brief["assets"])
+
+
+def test_the_social_preview_image_is_a_fact(tmp_path):
+    page = '<html><head><title>T</title><meta property="og:image" content="/og.png"></head><body><h1>x</h1></body></html>'
+    brief = I.ingest("https://example.com/", tmp_path / "p", screenshots=shots(tmp_path), deps=deps(fetch=fake_fetch(pages={"https://example.com/": page})))
+    assert any(f["claim"] == "Social preview image: https://example.com/og.png" for f in brief["facts"])
+
+
+def test_cli_warns_about_rejected_images_and_skipped_pages(tmp_path, capsys, monkeypatch):
+    d = shots(tmp_path, 1)
+    (d / "broken.png").write_bytes(b"not an image")
+    fake = deps(fetch=fake_fetch(robots="User-agent: *\nDisallow: /features"))
+    monkeypatch.setattr(I, "Deps", lambda: fake)
+    assert I.main(["https://example.com/", "--project", str(tmp_path / "p"), "--screenshots", str(d)]) == 0
+    err = capsys.readouterr().err
+    assert "warning: image not used" in err and "broken.png" in err
+    assert "warning: page skipped" in err and "/features" in err

@@ -133,3 +133,39 @@ def test_a_redirect_to_a_private_address_is_refused():
         handler.redirect_request(None, None, 302, "Found", {}, "http://169.254.169.254/latest/meta-data/")
     with pytest.raises(W.CrawlError, match="refusing to follow"):
         handler.redirect_request(None, None, 302, "Found", {}, "file:///etc/passwd")
+
+
+def with_robots(base, mapping):
+    def fetch(url):
+        if url in mapping:
+            v = mapping[url]
+            if isinstance(v, Exception):
+                raise v
+            return W.FetchResult(url, "text/plain", v.encode())
+        return base(url)
+    return fetch
+
+
+def test_robots_txt_is_read_for_each_origin():
+    fetch = with_robots(site(PAGES), {"https://www.example.com/robots.txt": "User-agent: *\nDisallow: /pricing"})
+    r = W.crawl("https://example.com/", fetch=fetch, host_check=ANY)
+    assert urls(r) == ["https://example.com/", "https://example.com/features"]
+    assert {"url": "https://www.example.com/pricing", "reason": "disallowed by robots.txt"} in r.skipped
+
+
+def test_a_forbidden_robots_txt_means_disallowed_but_a_server_error_does_not():
+    r = W.crawl("https://example.com/", fetch=with_robots(site(PAGES), {"https://example.com/robots.txt": W.CrawlError("HTTP 403")}), host_check=ANY)
+    assert r.pages == [] and r.skipped[0]["reason"] == "disallowed by robots.txt"
+    r = W.crawl("https://example.com/", fetch=with_robots(site(PAGES), {"https://example.com/robots.txt": W.CrawlError("HTTP 500")}), host_check=ANY)
+    assert len(r.pages) == 3
+
+
+def test_a_homepage_that_redirects_to_another_host_is_checked_against_that_hosts_robots():
+    def fetch(url):
+        if url == "https://example.com/":
+            return W.FetchResult("https://other.example/", "text/html", HOME.encode())
+        if url == "https://other.example/robots.txt":
+            return W.FetchResult(url, "text/plain", b"User-agent: *\nDisallow: /")
+        raise W.CrawlError("HTTP 404")
+    r = W.crawl("https://example.com/", fetch=fetch, host_check=ANY)
+    assert r.pages == [] and r.skipped[0]["reason"] == "disallowed by robots.txt"

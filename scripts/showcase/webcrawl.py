@@ -207,20 +207,34 @@ def crawl(url, fetch=None, host_check=is_public_host, max_pages=MAX_PAGES, allow
     fetch = fetch or make_fetcher(check)
     skipped, pages = [], []
 
-    robots = urllib.robotparser.RobotFileParser()
-    try:
-        robots.parse(_decode(fetch(f"{parts.scheme}://{parts.netloc}/robots.txt")).splitlines())
-    except Exception:                                   # no readable robots.txt: everything is allowed
-        robots.parse([])
+    robots_by_origin: dict = {}
+
+    def robots_for(u: str):
+        """robots.txt of the URL's own origin: 401/403 mean disallowed, other failures mean allowed."""
+        p = urlsplit(u)
+        key = f"{p.scheme}://{p.netloc.lower()}"
+        if key not in robots_by_origin:
+            rp = urllib.robotparser.RobotFileParser()
+            try:
+                rp.parse(_decode(fetch(f"{key}/robots.txt")).splitlines())
+            except CrawlError as e:
+                rp.parse(["User-agent: *", "Disallow: /"] if str(e) in ("HTTP 401", "HTTP 403") else [])
+            except Exception:
+                rp.parse([])
+            robots_by_origin[key] = rp
+        return robots_by_origin[key]
 
     def get(u: str):
-        if not robots.can_fetch(USER_AGENT, u):
+        if not robots_for(u).can_fetch(USER_AGENT, u):
             skipped.append({"url": u, "reason": "disallowed by robots.txt"})
             return None
         try:
             r = fetch(u)
         except CrawlError as e:
             skipped.append({"url": u, "reason": str(e)})
+            return None
+        if urlsplit(r.url).netloc.lower() != urlsplit(u).netloc.lower() and not robots_for(r.url).can_fetch(USER_AGENT, r.url):
+            skipped.append({"url": u, "reason": "disallowed by robots.txt"})     # redirected to a host that forbids it
             return None
         if r.content_type not in HTML_TYPES:
             skipped.append({"url": u, "reason": f"not an HTML page ({r.content_type})"})

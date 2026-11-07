@@ -87,6 +87,7 @@ def _website(src, deps, allow_private, facts, texts, skipped, unknowns, have_use
     home = result.pages[0]
     facts.add(f"The site is titled \"{home.title}\"" if home.title else "", home.url)
     facts.add(f"The site describes itself as: {home.description}" if home.description else "", home.url)
+    facts.add(f"Social preview image: {home.og_image}" if home.og_image else "", home.url)
     labels = [l["text"] for l in home.nav_links if l["text"]]
     facts.add(f"The navigation lists: {', '.join(dict.fromkeys(labels))}" if labels else "", home.url)
     for page in result.pages:
@@ -127,12 +128,33 @@ def _repo(src, deps, cache_dir, facts, texts, unknowns):
     return root, info, license_name
 
 
+def _clear_previous(project: Path) -> None:
+    """Remove what an earlier ingest into this project wrote (its files and its brief), nothing else."""
+    old = project / "brief.json"
+    try:
+        prev = json.loads(old.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        prev = None
+    if isinstance(prev, dict):
+        for a in list(prev.get("assets", [])) + list(prev.get("candidates", [])):
+            p = (project / str(a.get("path", ""))).resolve()
+            if p.is_file() and p.is_relative_to(project):        # absolute paths into a repo stay untouched
+                p.unlink()
+    old.unlink(missing_ok=True)
+
+
 def ingest(source_arg, project, screenshots=None, capture=None, gitlab_hosts=(), allow_private=False,
            deps=None, cache_dir=None) -> dict:
     deps = deps or Deps()
     src = classify_source(source_arg, gitlab_hosts)
-    project = Path(project)
+    project = Path(project).resolve()
     assets_dir = project / "assets"
+    if screenshots:
+        shots_dir = Path(screenshots).resolve()
+        if shots_dir == assets_dir or assets_dir in shots_dir.parents:
+            raise IngestError(f"--screenshots {screenshots} is inside the project's assets folder, which ingest "
+                              "manages: keep your screenshots in a separate folder")
+    _clear_previous(project)
     assets_dir.mkdir(parents=True, exist_ok=True)
     facts, texts, skipped, unknowns, rejected = _Facts(), [], [], [], []
 
@@ -140,7 +162,11 @@ def ingest(source_arg, project, screenshots=None, capture=None, gitlab_hosts=(),
     if screenshots:
         user_assets, bad = A.collect_user_shots(screenshots)
         rejected.extend(bad)
+        if not user_assets:
+            why = "; ".join(f"{Path(b['path']).name}: {b['reason']}" for b in bad[:5]) or "the folder has no files"
+            raise IngestError(f"none of the {len(bad)} files in {screenshots} could be used ({why})")
 
+    made = []                                                    # capture files written by this run
     found = []                                                   # capture or repo assets
     if src.kind == "website":
         pages = _website(src, deps, allow_private, facts, texts, skipped, unknowns, bool(user_assets))
@@ -150,6 +176,7 @@ def ingest(source_arg, project, screenshots=None, capture=None, gitlab_hosts=(),
             more, fails2 = C.capture_pages(urls[1:], assets_dir, chrome=deps.chrome, run=deps.run,
                                            sizes=C.SIZES[:1], prefix="capture-b")
             skipped.extend(fails + fails2)
+            made = [Path(c["path"]) for c in caps + more]
             for c in caps + more:
                 asset, why = A.try_describe(c["path"], "capture", c["url"], A.rights_note("capture", c["url"]))
                 if asset:
@@ -189,9 +216,19 @@ def ingest(source_arg, project, screenshots=None, capture=None, gitlab_hosts=(),
             shutil.copyfile(src_path, dest)
         final.append({**a, "path": dest.relative_to(project).as_posix()})
     keep = {a["path"] for a in final}
-    for stray in assets_dir.iterdir():                           # capture files that were not selected
-        if stray.is_file() and stray.relative_to(project).as_posix() not in keep:
-            stray.unlink()
+    cand_paths = {c["path"] for c in candidates}
+    moved = {}
+    for p in made:                                               # capture files this run wrote and did not select
+        if p.relative_to(project).as_posix() in keep or not p.exists():
+            continue
+        if str(p) in cand_paths:                                 # still useful: park it as a candidate
+            dest = project / "candidates" / p.name
+            dest.parent.mkdir(exist_ok=True)
+            shutil.move(str(p), dest)
+            moved[str(p)] = dest.relative_to(project).as_posix()
+        else:
+            p.unlink()
+    candidates = [{**c, "path": moved.get(c["path"], c["path"])} for c in candidates]
 
     brief = {"version": 1,
              "source": {"kind": src.kind, "url": src.url, "host": src.host, "repo_path": src.repo_path},
@@ -223,6 +260,12 @@ def main(argv=None) -> int:
     except (ValueError, RuntimeError, OSError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
+    for r in brief["rejected_assets"]:
+        print(f"warning: image not used: {r['path']}: {r['reason']}", file=sys.stderr)
+    for s in brief["skipped"]:
+        print(f"warning: page skipped: {s['url']}: {s['reason']}", file=sys.stderr)
+    for u in brief["unknowns"]:
+        print(f"note: {u}", file=sys.stderr)
     unresolved = sum(1 for x in brief["assets"] if not x["rights_resolved"])
     print(f"brief written: {len(brief['facts'])} facts, {len(brief['assets'])} assets ({unresolved} with unresolved "
           f"rights), suggested style {brief['hints']['suggested_style']} -> {project / 'brief.json'}")

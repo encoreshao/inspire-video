@@ -52,3 +52,15 @@ def test_local_folder(tmp_path):
 def test_bad_sources_are_rejected_with_a_reason(arg, needle):
     with pytest.raises(SourceError, match=needle):
         classify_source(arg)
+
+
+def test_credentials_in_a_website_url_are_never_kept():
+    s = classify_source("https://user:s3cret@Example.com/x?a=1")
+    assert s.url == "https://example.com/x?a=1" and "s3cret" not in s.url and s.host == "example.com"
+    assert classify_source("http://u:p@localhost:3000/a").url == "http://localhost:3000/a"
+    assert classify_source("http://[::1]:8080/").url == "http://[::1]:8080/"
+
+
+def test_an_invalid_port_is_a_source_error():
+    with pytest.raises(SourceError, match="port"):
+        classify_source("https://example.com:abc/")

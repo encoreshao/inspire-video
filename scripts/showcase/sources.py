@@ -70,7 +70,12 @@ def classify_source(arg: str, gitlab_hosts=()) -> Source:
             return _repo_source("github", "github.com", parts.path)
         if _is_gitlab(host, hosts):
             return _repo_source("gitlab", host, parts.path)
-        url = f"{parts.scheme}://{parts.netloc.lower()}{parts.path or '/'}"
+        try:
+            port = parts.port
+        except ValueError:
+            raise SourceError(f"invalid port in {arg!r}") from None
+        shown = f"[{host}]" if ":" in host else host      # never keep user:password@ from the URL
+        url = f"{parts.scheme}://{shown}{f':{port}' if port else ''}{parts.path or '/'}"
         if parts.query:
             url += f"?{parts.query}"
         return Source("website", url, host, "")
