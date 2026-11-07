@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import re
 import subprocess
 import sys
@@ -107,11 +108,14 @@ def narrate(project, engine, voice=None, lang=None, min_total=MIN_TOTAL, max_tot
                 raise RuntimeError(f"the {engine.name} engine produced no audio for {Path(item.out).name}")
             keyfile.write_text(key)                          # only after the audio exists
 
+    # A beat is held at least min_total / beats seconds: a few spoken sentences are shorter than the minimum
+    # video length, and the camera move needs the time anyway. The audio itself is never stretched.
+    floor = math.ceil(min_total / len(plan) * 100) / 100
     rows = []
     for bid, _ in plan:
         secs = wav_seconds(audio_dir / f"{bid}.wav")
         rows.append({"id": bid, "audio": f"audio/{bid}.wav", "audio_seconds": round(secs, 2),
-                     "seconds": beat_seconds(secs)})
+                     "seconds": max(beat_seconds(secs), floor)})
     total = check_total([r["seconds"] for r in rows], lo=min_total, hi=max_total)
     timings = {"engine": engine.name, "voice": voice.name if voice else None, "lang": lang,
                "total": total, "beats": rows}

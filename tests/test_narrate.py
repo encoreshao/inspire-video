@@ -221,3 +221,24 @@ def test_cli_turns_engine_failures_into_a_message_not_a_traceback(tmp_path, caps
     monkeypatch.setattr(narrate.engines, "get_engine", lambda n: engine_cls())
     assert narrate.main([str(p), "--engine", "say"]) == 1
     assert needle in capsys.readouterr().err
+
+
+def test_short_narration_is_held_long_enough_to_reach_the_minimum_total(tmp_path):
+    # Two 11-character beats narrate to 1.1 s each (+0.4 s), but the total must reach min_total:
+    # each beat is held for at least min_total / number_of_beats seconds. The audio itself is not stretched.
+    p = project(tmp_path, [{"id": "a", "en": "Hello there"}, {"id": "b", "en": "Hello there"}])
+    t = run(p, FakeEngine(), min_total=10.0)
+    assert [b["seconds"] for b in t["beats"]] == [5.0, 5.0] and t["total"] == 10.0
+    assert [b["audio_seconds"] for b in t["beats"]] == [1.1, 1.1]
+
+
+def test_the_hold_floor_never_rounds_below_the_minimum(tmp_path):
+    p = project(tmp_path, [{"id": f"b{i}", "en": "Hi"} for i in range(3)])
+    t = run(p, FakeEngine(), min_total=40.0)
+    assert t["total"] >= 40.0 and all(b["seconds"] >= 13.33 for b in t["beats"])
+
+
+def test_long_narration_is_not_shortened_by_the_floor(tmp_path):
+    p = project(tmp_path, [{"id": "a", "en": "x" * 100}, {"id": "b", "en": "x" * 100}])
+    t = run(p, FakeEngine(), min_total=5.0)
+    assert [b["seconds"] for b in t["beats"]] == [10.4, 10.4]
