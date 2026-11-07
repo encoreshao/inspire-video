@@ -128,7 +128,7 @@ def test_a_voice_without_timings_asks_to_narrate_first(tmp_path):
     m["voice"] = "encore"
     with pytest.raises(M.ManifestError, match="narrate"):
         M.validate_showcase(m, p)
-    M.validate_showcase(m, p, timings(m))
+    M.validate_showcase(m, p, narrated(m, voice="encore"))
 
 
 def brief(n_assets=3):
@@ -158,3 +158,91 @@ def test_cli_scaffold_never_overwrites_and_validate_reports(tmp_path, capsys):
     assert M.main(["scaffold", str(p)]) == 1 and "already exists" in capsys.readouterr().err
     assert (p / "video_manifest.json").read_text() == first
     assert M.main(["validate", str(p)]) == 1 and "error:" in capsys.readouterr().err
+
+
+def narrated(m, secs=(12.0, 11.0, 10.0, 9.0), lang="en", voice=None):
+    import hashlib
+    t = timings(m, secs)
+    t["lang"], t["voice"] = lang, voice
+    for row, b in zip(t["beats"], m["beats"]):
+        row["text_sha"] = hashlib.sha256(b[lang].strip().encode()).hexdigest()
+    return t
+
+
+@pytest.mark.parametrize("callout, ok", [("Look here", True), ("中" * 11, True), ("中" * 12, False), ("c" * 22, True), ("c" * 23, False)])
+def test_callout_width_is_limited_in_width_units(tmp_path, callout, ok):
+    p, m = project(tmp_path)
+    m["beats"][0]["callout"] = callout
+    if ok:
+        M.validate_showcase(m, p)
+    else:
+        with pytest.raises(M.ManifestError, match="callout"):
+            M.validate_showcase(m, p)
+
+
+@pytest.mark.parametrize("mutate, needle", [
+    (lambda m: m.update(headline="长" * 21), "headline"),
+    (lambda m: m.update(subtitle="word " * 40), "subtitle"),
+    (lambda m: m["project"].update(name="N" * 30, name_zh="极致小工具工作室工作室"), "project name"),
+    (lambda m: m["project"].update(tagline="t" * 70), "tagline"),
+    (lambda m: m["project"].update(tagline_zh="长" * 32), "tagline_zh"),
+    (lambda m: m["source"].update(label="x" * 70), "source.label"),
+    (lambda m: m["beats"][0].update(zh="长" * 46), "'hook'.*zh"),
+])
+def test_text_that_would_overflow_the_layout_is_refused_before_rendering(tmp_path, mutate, needle):
+    p, m = project(tmp_path)
+    mutate(m)
+    with pytest.raises(M.ManifestError, match=needle):
+        M.validate_showcase(m, p)
+
+
+def test_stale_narration_is_refused(tmp_path):
+    p, m = project(tmp_path)
+    M.validate_showcase(m, p, narrated(m))
+    t = narrated(m)
+    m["beats"][1]["en"] = "A different sentence now."
+    with pytest.raises(M.ManifestError, match="'problem'.*out of date"):
+        M.validate_showcase(m, p, t)
+
+
+def test_the_manifest_voice_must_match_the_narration(tmp_path):
+    p, m = project(tmp_path)
+    m["voice"] = "me"
+    with pytest.raises(M.ManifestError, match="voice"):
+        M.validate_showcase(m, p, narrated(m, voice=None))
+    M.validate_showcase(m, p, narrated(m, voice="me"))
+    del m["voice"]
+    with pytest.raises(M.ManifestError, match="voice"):
+        M.validate_showcase(m, p, narrated(m, voice="me"))
+
+
+def test_scaffold_label_for_a_local_folder_is_the_folder_name_not_the_path():
+    b = brief(3)
+    b["source"] = {"kind": "local", "url": "/Users/me/code/my-app", "host": "", "repo_path": ""}
+    m = M.scaffold_manifest(b, "x", 4)
+    assert m["source"]["label"] == "my-app" and "/Users" not in json.dumps(m["source"]["label"])
+
+
+def test_scaffold_ids_always_end_with_a_call_to_action():
+    for n, ids in ((4, ["hook", "problem", "what", "cta"]), (5, ["hook", "problem", "what", "features", "cta"]),
+                   (6, ["hook", "problem", "what", "features", "proof", "cta"])):
+        assert [b["id"] for b in M.scaffold_manifest(brief(3), "x", n)["beats"]] == ids
+
+
+def test_cli_scaffold_gives_non_ascii_folder_names_distinct_ids(tmp_path):
+    ids = []
+    for name in ("项目甲", "项目乙"):
+        d = tmp_path / name
+        d.mkdir()
+        (d / "brief.json").write_text(json.dumps(brief(2)))
+        assert M.main(["scaffold", str(d)]) == 0
+        ids.append(json.loads((d / "video_manifest.json").read_text())["project_id"])
+    assert all(i.startswith("showcase-") for i in ids) and ids[0] != ids[1]
+
+
+def test_odd_image_shapes_get_a_crop_warning(tmp_path):
+    p, m = project(tmp_path, shape=(900, 600))
+    assert M.crop_warnings(m, p) == []
+    p2, m2 = project(tmp_path / "sq", shape=(1000, 1000))
+    w = M.crop_warnings(m2, p2)
+    assert len(w) == 4 and "cropped" in w[0] and "'hook'" in w[0]

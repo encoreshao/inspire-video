@@ -112,10 +112,11 @@ def narrate(project, engine, voice=None, lang=None, min_total=MIN_TOTAL, max_tot
     # video length, and the camera move needs the time anyway. The audio itself is never stretched.
     floor = math.ceil(min_total / len(plan) * 100) / 100
     rows = []
-    for bid, _ in plan:
+    for bid, text in plan:
         secs = wav_seconds(audio_dir / f"{bid}.wav")
         rows.append({"id": bid, "audio": f"audio/{bid}.wav", "audio_seconds": round(secs, 2),
-                     "seconds": max(beat_seconds(secs), floor)})
+                     "seconds": max(beat_seconds(secs), floor),
+                     "text_sha": hashlib.sha256(text.encode("utf-8")).hexdigest()})   # lets render notice stale audio
     total = check_total([r["seconds"] for r in rows], lo=min_total, hi=max_total)
     timings = {"engine": engine.name, "voice": voice.name if voice else None, "lang": lang,
                "total": total, "beats": rows}
@@ -132,7 +133,7 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     try:
         engine = engines.get_engine(a.engine)
-        voice_name = a.voice or _manifest_voice(Path(a.project_dir))
+        voice_name = a.voice or (_manifest_voice(Path(a.project_dir)) if engine.needs_voice else None)
         voice = load_voice(voice_name) if voice_name else None
         t = narrate(Path(a.project_dir), engine, voice, a.lang, min_total=MIN_TOTAL, max_total=MAX_TOTAL)
     except subprocess.CalledProcessError as e:

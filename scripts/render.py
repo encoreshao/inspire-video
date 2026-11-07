@@ -46,7 +46,25 @@ def validate(m: dict, clip_seconds: float | None) -> None:
         raise ValueError("review_status is rejected")
 
 
+def _is_showcase_project() -> bool:
+    """True when a project folder named on the command line holds a showcase manifest.
+    Checked before the speaker flags are parsed, so showcase-only flags such as --allow-unresolved-rights work."""
+    for arg in sys.argv[1:]:
+        if arg.startswith("-"):
+            continue
+        manifest = Path(arg).resolve() / "video_manifest.json"
+        try:
+            if manifest.exists() and json.loads(manifest.read_text()).get("type") == "showcase":
+                return True
+        except (OSError, ValueError):
+            pass
+    return False
+
+
 def main() -> int:
+    if _is_showcase_project():
+        from showcase import render_showcase           # the showcase mode has its own manifest and composition
+        return render_showcase.main(sys.argv[1:])
     ap = argparse.ArgumentParser()
     ap.add_argument("project_dir")
     ap.add_argument("--preview", action="store_true", help="half-scale draft render")
@@ -54,11 +72,6 @@ def main() -> int:
     ap.add_argument("--cover", action="store_true", help="render the cover image only")
     ap.add_argument("--force", action="store_true", help="overwrite existing final file")
     a = ap.parse_args()
-
-    manifest_path = Path(a.project_dir).resolve() / "video_manifest.json"
-    if manifest_path.exists() and json.loads(manifest_path.read_text()).get("type") == "showcase":
-        from showcase import render_showcase           # the showcase mode has its own manifest and composition
-        return render_showcase.main(sys.argv[1:])
 
     proj = Path(a.project_dir).resolve()
     m = json.loads((proj / "video_manifest.json").read_text())

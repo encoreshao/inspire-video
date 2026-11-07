@@ -169,3 +169,56 @@ def test_render_py_delegates_showcase_projects(tmp_path, monkeypatch):
     monkeypatch.setattr(R, "main", lambda argv=None, run=None: called.append(argv) or 7)
     monkeypatch.setattr("sys.argv", ["render.py", str(p), "--preview"])
     assert render.main() == 7 and called == [[str(p), "--preview"]]
+
+
+def test_render_py_passes_the_showcase_flags_through(tmp_path, monkeypatch):
+    import render
+    p, _ = project(tmp_path)
+    called = []
+    monkeypatch.setattr(R, "main", lambda argv=None, run=None: called.append(argv) or 0)
+    monkeypatch.setattr("sys.argv", ["render.py", "--theme", "ink", str(p), "--allow-unresolved-rights", "--no-check"])
+    assert render.main() == 0
+    assert called == [["--theme", "ink", str(p), "--allow-unresolved-rights", "--no-check"]]
+
+
+def test_a_narrated_beat_without_its_wav_is_an_error(tmp_path, sandbox):
+    p, m = project(tmp_path, with_timings=True)
+    (p / "audio" / "hook.wav").unlink()
+    t = json.loads((p / "timings.json").read_text())
+    with pytest.raises(M.ManifestError, match="hook"):
+        R.stage(p, sandbox / "video" / "public", m, t)
+
+
+def test_malformed_timings_give_a_message_not_a_traceback(tmp_path, sandbox, capsys):
+    p, m = project(tmp_path)
+    (p / "timings.json").write_text(json.dumps({"beats": [{"id": b["id"]} for b in m["beats"]]}))
+    assert R.main([str(p)], run=FakeRun()) == 1
+    assert "error:" in capsys.readouterr().err
+
+
+def test_an_existing_cover_is_noticed_before_the_long_render(tmp_path, sandbox, capsys):
+    p, _ = project(tmp_path, with_timings=True)
+    cover = sandbox / "output" / "final" / "acme-demo" / "cover.png"
+    cover.parent.mkdir(parents=True)
+    cover.write_bytes(b"x")
+    run = FakeRun()
+    assert R.main([str(p)], run=run) == 1 and run.calls == []
+    assert "cover.png" in capsys.readouterr().err
+
+
+def test_a_missing_npx_is_reported(tmp_path, sandbox, capsys):
+    p, _ = project(tmp_path, with_timings=True)
+
+    def boom(argv, **kw):
+        raise FileNotFoundError("npx")
+
+    assert R.main([str(p)], run=boom) == 1
+    assert "npx" in capsys.readouterr().err
+
+
+def test_crop_warnings_are_printed_at_render_time(tmp_path, sandbox, capsys):
+    p, _ = project(tmp_path, with_timings=True)
+    (p / "assets" / "0.png").write_bytes(png(1000, 1000))
+    assert R.main([str(p), "--preview"], run=FakeRun()) == 0
+    err = capsys.readouterr().err
+    assert "warning:" in err and "cropped" in err

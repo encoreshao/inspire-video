@@ -53,5 +53,8 @@ export function calloutPosition(ring, cw, ch, w, h, gap = 12) {
   return {left: clamp(left, 0, Math.max(0, w - cw)), top: clamp(top, 0, Math.max(0, h - ch))};
 }
 
+// Rough rendered width of one line of bold text: a CJK glyph is as wide as the font size, a Latin one about 0.58 of it.
+export const textWidth = (text, size) => [...text].reduce((w, ch) => w + (ch.charCodeAt(0) >= 0x2e80 ? 1 : 0.58) * size, 0);
+
 // Tall screenshots get a phone frame, everything else a browser frame.
 export const deviceFor = (iw, ih) => (ih / iw >= 1.3 ? 'phone' : 'browser');

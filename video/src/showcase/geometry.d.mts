@@ -8,4 +8,5 @@ export function camera(a: {iw: number; ih: number; w: number; h: number; focus: 
 export function focusRect(rect: Rect, focus: Focus): Rect;
 export function ringOpacity(t: number, duration: number): number;
 export function calloutPosition(ring: Rect, cw: number, ch: number, w: number, h: number, gap?: number): {left: number; top: number};
+export function textWidth(text: string, size: number): number;
 export function deviceFor(iw: number, ih: number): 'phone' | 'browser';

@@ -12,4 +12,4 @@ def test_geometry_unit_tests_pass_under_node():
     r = subprocess.run(["node", "--test", "video/src/showcase/geometry.test.mjs"], cwd=ROOT,
                        capture_output=True, text=True, timeout=60)
     assert r.returncode == 0, r.stdout + r.stderr
-    assert "# pass 9" in r.stdout and "# fail 0" in r.stdout
+    assert "# pass 10" in r.stdout and "# fail 0" in r.stdout

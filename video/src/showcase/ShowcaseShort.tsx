@@ -1,6 +1,6 @@
 import React from 'react';
 import {AbsoluteFill, Audio, Sequence, interpolate, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
-import {CARD_PAD_Y, Divider, HeadlineLines, InfoCard, LINE_GAP, SAFE_X, SERIF, SpeakerBlock, TITLE_TOP, ThemeCtx, cardHeight, fit, pickTheme, useTheme} from '../Video';
+import {CARD_PAD_Y, Divider, HeadlineLines, InfoCard, LINE_GAP, PANEL_W, SAFE_X, SERIF, SpeakerBlock, TITLE_TOP, ThemeCtx, cardHeight, fit, pickTheme, useTheme} from '../Video';
 import {DeviceFrame} from './DeviceFrame';
 import type {Focus} from './DeviceFrame';
 
@@ -56,7 +56,7 @@ export const ShowcaseShort: React.FC<ShowcaseProps> = ({headline, subtitle, cate
         <div style={{flexShrink: 0, display: 'flex', flexDirection: 'column'}}>
           <div style={{fontSize: 22, letterSpacing: 1.5, color: c.muted, marginBottom: 16}}>{category || 'SHOWCASE / 项目展示'}</div>
           <div style={{fontFamily: SERIF, fontSize: HEAD, lineHeight: 1.3, fontWeight: 700, letterSpacing: 1}}>
-            <HeadlineLines text={headline} size={HEAD} />
+            <HeadlineLines text={headline} size={HEAD} width={PANEL_W} />
           </div>
           <div style={{fontSize: HEAD, lineHeight: 1.25, fontWeight: 600, color: c.muted, marginTop: 8}}>{subtitle}</div>
         </div>

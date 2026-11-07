@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from showcase.assets import image_size  # noqa: E402
 from showcase.checks import check_video  # noqa: E402
-from showcase.manifest import FPS, ManifestError, beat_seconds_list, frame_windows, validate_showcase  # noqa: E402
+from showcase.manifest import FPS, ManifestError, beat_seconds_list, crop_warnings, frame_windows, validate_showcase  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -33,8 +33,10 @@ def stage(project: Path, public: Path, m: dict, timings: dict | None) -> dict:
         asset = f"{pid}-{b['id']}{src.suffix.lower()}"
         shutil.copy2(src, public / asset)
         audio = None
-        wav = project / "audio" / f"{b['id']}.wav"
-        if timings and wav.is_file():
+        if timings:
+            wav = project / "audio" / f"{b['id']}.wav"
+            if not wav.is_file():
+                raise ManifestError(f"the narration audio for beat {b['id']!r} is missing ({wav}): run narrate again")
             audio = f"{pid}-{b['id']}.wav"
             shutil.copy2(wav, public / audio)
         out[b["id"]] = {"asset": asset, "audio": audio}
@@ -88,15 +90,30 @@ def main(argv=None, run=subprocess.run) -> int:
         if brief and brief.get("rights_unresolved") and not a.preview and not a.allow_unresolved_rights:
             raise ManifestError("some assets have unresolved rights: confirm you may reuse them, then pass "
                                 "--allow-unresolved-rights (preview renders are exempt)")
+        for w in crop_warnings(m, project):
+            print(f"warning: {w}", file=sys.stderr)
+        final_dir = ROOT / "output" / "final" / m["project_id"]
+        if not a.preview and not a.cover and (final_dir / "cover.png").exists() and not a.force:
+            raise ManifestError(f"{final_dir / 'cover.png'} exists; use --force to overwrite")     # before the long render
         staged = stage(project, ROOT / "video" / "public", m, timings)
         props = build_props(m, project, timings, staged)
     except (ValueError, OSError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
+    except (KeyError, AttributeError, TypeError) as e:
+        print(f"error: a project file is malformed ({type(e).__name__}: {e}); check video_manifest.json and timings.json",
+              file=sys.stderr)
+        return 1
     props_file = project / "props.json"
     props_file.write_text(json.dumps(props, ensure_ascii=False, indent=2), encoding="utf-8")
-    final_dir = ROOT / "output" / "final" / m["project_id"]
     video_cwd = ROOT / "video"
+
+    def go(cmd) -> int:
+        try:
+            return run(cmd, cwd=video_cwd).returncode
+        except OSError as e:
+            print(f"error: could not run {cmd[0]}: {e}", file=sys.stderr)
+            return 1
 
     def render_cover() -> int:
         out = final_dir / "cover.png"
@@ -106,10 +123,10 @@ def main(argv=None, run=subprocess.run) -> int:
         out.parent.mkdir(parents=True, exist_ok=True)
         cfile = project / "cover_props.json"
         cfile.write_text(json.dumps(cover_props(props), ensure_ascii=False, indent=2), encoding="utf-8")
-        r = run(["npx", "remotion", "still", "src/index.ts", "ShowcaseCover", str(out), f"--props={cfile}"], cwd=video_cwd)
-        if r.returncode == 0:
+        rc = go(["npx", "remotion", "still", "src/index.ts", "ShowcaseCover", str(out), f"--props={cfile}"])
+        if rc == 0:
             print(f"Rendered: {out}")
-        return r.returncode
+        return rc
 
     if a.cover:
         return render_cover()
@@ -121,7 +138,7 @@ def main(argv=None, run=subprocess.run) -> int:
     cmd = ["npx", "remotion", "render", "src/index.ts", "ShowcaseShort", str(out), f"--props={props_file}",
            "--codec=h264", "--crf=18"] + (["--scale=0.5"] if a.preview else [])
     print("+", " ".join(cmd))
-    rc = run(cmd, cwd=video_cwd).returncode
+    rc = go(cmd)
     if rc != 0:
         return rc
     print(f"Rendered: {out}")
@@ -130,6 +147,8 @@ def main(argv=None, run=subprocess.run) -> int:
         for p in problems:
             print(f"CHECK FAILED: {p}")
         if problems:
+            if not a.preview:
+                print("note: the cover was not rendered; fix the problem, render again with --force, or run --cover")
             return 3
     return 0 if a.preview else render_cover()
 

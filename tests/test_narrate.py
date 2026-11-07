@@ -242,3 +242,17 @@ def test_long_narration_is_not_shortened_by_the_floor(tmp_path):
     p = project(tmp_path, [{"id": "a", "en": "x" * 100}, {"id": "b", "en": "x" * 100}])
     t = run(p, FakeEngine(), min_total=5.0)
     assert [b["seconds"] for b in t["beats"]] == [10.4, 10.4]
+
+
+def test_timings_record_a_hash_of_each_narrated_text(tmp_path):
+    import hashlib
+    t = run(project(tmp_path, BEATS), FakeEngine())
+    assert t["beats"][0]["text_sha"] == hashlib.sha256(b"Hello there").hexdigest()
+
+
+def test_cli_ignores_the_manifest_voice_for_engines_without_voices(tmp_path, monkeypatch):
+    p = project(tmp_path, BEATS, voice="me")
+    monkeypatch.setattr(narrate.engines, "get_engine", lambda n: FakeEngine())
+    monkeypatch.setattr(narrate, "MIN_TOTAL", LO)
+    monkeypatch.setattr(narrate, "MAX_TOTAL", HI)
+    assert narrate.main([str(p), "--engine", "say"]) == 0

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  calloutPosition, camera, clamp, deviceFor, easeInOut, focusRect, imageRect, ringOpacity, zoomFor,
+  calloutPosition, camera, clamp, deviceFor, easeInOut, focusRect, imageRect, ringOpacity, textWidth, zoomFor,
 } from './geometry.mjs';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) <= eps, `${a} vs ${b}`);
@@ -87,4 +87,11 @@ test('clamp', () => {
   assert.equal(clamp(5, 0, 1), 1);
   assert.equal(clamp(-5, 0, 1), 0);
   assert.equal(clamp(0.5, 0, 1), 0.5);
+});
+
+test('textWidth: a CJK glyph is as wide as the font size, a Latin one about 0.58 of it', () => {
+  near(textWidth('中中', 20), 40);
+  near(textWidth('abcd', 20), 4 * 0.58 * 20);
+  assert.equal(textWidth('', 20), 0);
+  assert.ok(textWidth('中文', 22) > textWidth('ab', 22));
 });
