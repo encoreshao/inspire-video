@@ -17,9 +17,9 @@
 
 ### 访谈视频（`/inspire-video`）
 
-- **输出：** 1080×1920 MP4（H.264 + AAC，30 fps），时长 40 秒到 2 分 30 秒，另有一张 1080×1920 的封面 PNG。
+- **输出：** 1080×1920 MP4（H.264 + AAC，30 fps），时长 40 秒到 2 分 30 秒，另有一张 1080×1920 的封面 PNG。面向 LinkedIn 和 Facebook 时，同一视频还会渲染一份 1080×1350（4:5）的版本并附带封面，详见“平台与视频格式”。
 - **同步双语字幕：** 一次只显示一句短句（或长句中的一个分句），先英文后中文，随说话同步出现。每条字幕最多 100 个英文字符，且绝不会把两句话放在同一条里。
-- **适配平台安全区：** 微信视频号和抖音在较高的手机上会裁掉 9:16 视频的两侧（每侧约 100 px）。所有内容都距左右边缘至少 114 px；标题固定在距顶部的某个位置（不会偏高）；最下方的内容止于底部按钮区之上（y = 1590）。
+- **适配平台安全区：** 微信视频号和抖音在较高的手机上会裁掉 9:16 视频的两侧（每侧约 100 px）。所有内容都距左右边缘至少 114 px；标题固定在距顶部的某个位置（不会偏高）；最下方的内容止于底部按钮区之上（y = 1590）。4:5 版本有自己的安全区（两侧 60 px，内容止于 y = 1200 之上）。
 - **分隔线与层次：** 标题与视频之间有一条居中的线，视频之后还有同样的一条；线条中间亮、向两端渐隐，上下各留一小段间距；视频面板周围有与主题协调的柔和阴影。
 - **一体式面板：** 视频与字幕区合成一个圆角面板，中间没有缝隙，字幕区的高度随文字自动变化。
 - **标题区：** 分类标签、中文主标题和英文副标题，字号相同。
@@ -27,7 +27,7 @@
 - **多人出镜：** 在 `copy.speakers` 里列出所有人，并给每条字幕标注 `speaker` 编号；底部显示所有人的名字，并高亮当前说话的人。
 - **主题：** `light`（默认）、`mist`、`ivory`、`sage` 和深色 `ink`。
 - **链接或文件输入：** 确认版权后用 `yt-dlp` 下载，或用 `--file` 导入你自己下载好的文件。所有素材都会缓存，同一个视频不会重复获取。对要求登录的 YouTube 页面，提供可选的 `--cookies` 和 `--cookies-from-browser` 选项。
-- **发布文案：** 微信视频号的短标题与描述、抖音的标题与描述，以及话题标签；按可编辑的字数上限校验，输出可直接粘贴的文件，附带来源署名；版权未确认时会显示“未获准发布”警示。
+- **发布文案：** 为每个目标平台（微信视频号、抖音、小红书、B站、LinkedIn、Facebook；LinkedIn 和 Facebook 为英文）生成标题、描述和话题标签；按可编辑的各平台字数上限校验，输出可直接粘贴的文件，附带来源署名；版权未确认时会显示“未获准发布”警示。
 - **安全检查：** 当版权未确认、字幕格式不对或可能截断语音时，`render.py` 会校验清单并拒绝渲染。
 
 ### 展示类视频（`/inspire-showcase`）
@@ -223,7 +223,7 @@ python3 scripts/render.py output/projects/<slug> --platform wechat_channels,douy
 python3 scripts/publish_meta.py output/projects/<slug> --init --platform douyin,linkedin
 ```
 
-多数平台的限制是未经核实的默认值（每个平台有 `verified` 标记）：请到各平台发布页核对。1:1 和 16:9 已登记但暂不支持，会带警告回退到 4:5 和 9:16。新增平台只需在 `config/platforms.yaml` 里加一个块。
+多数平台的限制是未经核实的默认值（每个平台有 `verified` 标记）：请到各平台发布页核对。1:1 和 16:9 已登记但暂不支持，会带警告回退到 4:5 和 9:16。新增平台只需在 `config/platforms.yaml` 里加一个块。展示类视频目前只支持 9:16，对展示类项目使用 `--platform` 和 `--profile` 会被拒绝。
 
 ### 清单（manifest）
 
@@ -402,7 +402,7 @@ config/default.yaml   默认值说明（仅供参考）
 config/platforms.yaml publish_meta.py 与 render.py 使用的平台字数上限和渲染配置
 schemas/              render.py 读取的清单 schema
 install.sh            在线安装脚本（克隆 + 链接 + 安装依赖）
-scripts/              install.sh、uninstall.sh、check_env.py、check_skills.py、fetch.py、transcribe.py、render.py、publish_meta.py；
+scripts/              install.sh、uninstall.sh、check_env.py、check_skills.py、fetch.py、transcribe.py、render.py、publish_meta.py、platforms.py；
                       showcase/（ingest、manifest、narrate、voices、render_showcase、checks 等）
 video/                Remotion 项目（InspireShort、InspireCover、ShowcaseShort、ShowcaseCover）
 src/inspire_video/    占位的 Python 模块

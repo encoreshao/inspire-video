@@ -17,9 +17,9 @@ The agent follows each skill's `SKILL.md` (in `skills/<name>/`) to do the thinki
 
 ### Speaker videos (`/inspire-video`)
 
-- **Output:** 1080×1920 MP4 (H.264 + AAC, 30 fps), 40 seconds to 2 min 30 s, plus a 1080×1920 cover PNG.
+- **Output:** 1080×1920 MP4 (H.264 + AAC, 30 fps), 40 seconds to 2 min 30 s, plus a 1080×1920 cover PNG. For LinkedIn and Facebook the same video is also rendered as 1080×1350 (4:5) with its own cover; see Platforms and video formats.
 - **Synced bilingual captions:** one short sentence (or one clause of a long sentence) at a time, English first and Chinese second, appearing as it is spoken. Each cue is at most 100 English characters, and two sentences never share a cue.
-- **Platform-safe layout:** WeChat Channels and Douyin crop the sides of 9:16 video on tall phones (about 100 px per side). All content stays 114 px inside the left and right edges, the title is anchored at a fixed distance from the top (so it is never too high), and the lowest content ends above the bottom button zone (y = 1590).
+- **Platform-safe layout:** WeChat Channels and Douyin crop the sides of 9:16 video on tall phones (about 100 px per side). All content stays 114 px inside the left and right edges, the title is anchored at a fixed distance from the top (so it is never too high), and the lowest content ends above the bottom button zone (y = 1590). The 4:5 version has its own safe area (60 px sides, content ends above y = 1200).
 - **Divider lines and depth:** a centered line between the title and the video and the same line after the video, bright in the middle and fading out toward both ends, with a small margin above and below each; plus a soft theme-matched shadow around the video panel.
 - **Joined panel:** the video and its caption area form one rounded panel with no gap. The caption area is only as tall as its text.
 - **Title block:** category label, Chinese headline and English subtitle at the same size.
@@ -27,7 +27,7 @@ The agent follows each skill's `SKILL.md` (in `skills/<name>/`) to do the thinki
 - **Several people on screen:** list them in `copy.speakers` and tag cues with a `speaker` id. All names show at the bottom and the current speaker is highlighted.
 - **Themes:** `light` (default), `mist`, `ivory`, `sage` and a dark `ink`.
 - **URL or file input:** download with `yt-dlp` after a rights confirmation, or import a file you downloaded yourself (`--file`). Everything is cached, so the same video is never fetched twice. For YouTube pages that demand a sign-in, there are opt-in `--cookies` and `--cookies-from-browser` options.
-- **Publishing copy:** a WeChat Channels short title and description, a Douyin title and description, and hashtags, validated against editable length limits and written to ready-to-paste files, with a source credit and a "not cleared" banner when the rights are unresolved.
+- **Publishing copy:** a title, description and hashtags for each target platform (WeChat Channels, Douyin, RedNote, Bilibili, LinkedIn, Facebook; English for LinkedIn and Facebook), validated against editable per-platform length limits and written to ready-to-paste files, with a source credit and a "not cleared" banner when the rights are unresolved.
 - **Safety checks:** `render.py` validates the manifest and refuses to render when rights are not confirmed, captions are malformed, or speech could be cut off.
 
 ### Showcase videos (`/inspire-showcase`)
@@ -223,7 +223,7 @@ python3 scripts/render.py output/projects/<slug> --platform wechat_channels,douy
 python3 scripts/publish_meta.py output/projects/<slug> --init --platform douyin,linkedin
 ```
 
-Most platform limits are unverified defaults (each platform has a `verified` flag): check them on each publish page. 1:1 and 16:9 are registered but not supported yet and fall back to 4:5 and 9:16 with a warning. Adding a platform means adding a block to `config/platforms.yaml`.
+Most platform limits are unverified defaults (each platform has a `verified` flag): check them on each publish page. 1:1 and 16:9 are registered but not supported yet and fall back to 4:5 and 9:16 with a warning. Adding a platform means adding a block to `config/platforms.yaml`. Showcase videos are 9:16 only for now; `--platform` and `--profile` are rejected for showcase projects.
 
 ### The manifest
 
@@ -402,7 +402,7 @@ config/default.yaml   documented defaults (reference only)
 config/platforms.yaml platform limits and render profiles, used by publish_meta.py and render.py
 schemas/              manifest schema read by render.py
 install.sh            online installer (clone + link + dependencies)
-scripts/              install.sh, uninstall.sh, check_env.py, check_skills.py, fetch.py, transcribe.py, render.py, publish_meta.py;
+scripts/              install.sh, uninstall.sh, check_env.py, check_skills.py, fetch.py, transcribe.py, render.py, publish_meta.py, platforms.py;
                       showcase/ (ingest, manifest, narrate, voices, render_showcase, checks, ...)
 video/                Remotion project (InspireShort, InspireCover, ShowcaseShort, ShowcaseCover)
 src/inspire_video/    placeholder Python modules

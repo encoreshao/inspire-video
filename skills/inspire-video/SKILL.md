@@ -176,7 +176,7 @@ Inspect the rendered video, not just the source composition, using every check i
 
 After the video passes QA, write `publish.json` in the project folder for the target platforms (`wechat_channels`, `douyin`, `rednote`, `bilibili`, `linkedin`, `facebook`; ask which ones the user wants), then run `python scripts/publish_meta.py output/projects/<slug>`. It validates the lengths against `config/platforms.yaml` and writes `publish.md` and one `publish_<platform>.txt` per platform into `output/final/<slug>/`, ready to paste, plus `project.json` (schema in `references/publishing.md`, read by the LoopX Creator page; re-run after the cover exists so it lists `cover.png`). `--init` scaffolds a draft from `copy.json`. Follow `references/publishing.md`:
 - Simplified Chinese; truthful to the clip; no clickbait, invented statistics or claims the speaker did not make.
-- WeChat: a short title plus a description; Douyin: a title plus a description; 3-5 relevant hashtags each, written without `#`. English platforms need English copy and `credit_en`.
+- WeChat: a short title plus a description; every other platform: a title plus a description; 3-5 relevant hashtags each, written without `#`. English platforms need English copy and `credit_en`.
 - Always include a credit line (source, speaker, year, and that the subtitles are the publisher's own translation); it is appended to every description.
 - If the rights are not cleared, say so in `notes`; `publish.md` then shows a "NOT CLEARED FOR PUBLICATION" banner. Never claim the content is original.
 - Platform limits are unverified defaults: tell the user to check them in each publish page.
