@@ -55,6 +55,11 @@ def main() -> int:
     ap.add_argument("--force", action="store_true", help="overwrite existing final file")
     a = ap.parse_args()
 
+    manifest_path = Path(a.project_dir).resolve() / "video_manifest.json"
+    if manifest_path.exists() and json.loads(manifest_path.read_text()).get("type") == "showcase":
+        from showcase import render_showcase           # the showcase mode has its own manifest and composition
+        return render_showcase.main(sys.argv[1:])
+
     proj = Path(a.project_dir).resolve()
     m = json.loads((proj / "video_manifest.json").read_text())
     validate(m, None)
