@@ -2,10 +2,12 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SKILL = (ROOT / "skills" / "inspire-showcase" / "SKILL.md").read_text(encoding="utf-8")
+SKILL_DIR = ROOT / "skills" / "inspire-showcase"
+SKILL = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+ALL = SKILL + "".join(f.read_text(encoding="utf-8") for f in sorted((SKILL_DIR / "references").glob("*.md")))
 
 
-def test_frontmatter_names_the_skill_and_says_when_to_use_it():
+def test_the_description_names_what_the_skill_is_for():
     m = re.match(r"^---\nname: inspire-showcase\ndescription: (.+)\n---\n", SKILL)
     assert m and "website" in m.group(1) and "repository" in m.group(1) and "screenshots" in m.group(1)
 
@@ -21,8 +23,10 @@ def test_every_command_in_the_skill_exists():
 def test_the_rules_that_keep_videos_honest_are_stated():
     for needle in ("rights", "never invent", "one sentence", "100", "4 to 6", "focus", "--allow-unresolved-rights",
                    "separate from", "inspire-video"):
-        assert needle.lower() in SKILL.lower(), needle
+        assert needle.lower() in ALL.lower(), needle
 
 
-def test_installer_links_the_showcase_skill():
-    assert "inspire-showcase" in (ROOT / "scripts" / "install.sh").read_text(encoding="utf-8")
+def test_the_input_limits_in_the_reference_match_the_validator():
+    from showcase import manifest as M
+    ref = (SKILL_DIR / "references" / "beat-writing.md").read_text(encoding="utf-8")
+    assert f"at most {M.CALLOUT_UNITS} width units" in ref and f"at most {M.MAX_ZH} characters" in ref

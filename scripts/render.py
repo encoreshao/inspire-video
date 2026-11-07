@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 def validate(m: dict, clip_seconds: float | None) -> None:
     import jsonschema
-    jsonschema.validate(m, json.loads((ROOT / "references/manifest-schema.json").read_text()))
+    jsonschema.validate(m, json.loads((ROOT / "schemas/manifest-schema.json").read_text()))
     s = m["source"]
     if s["end_seconds"] <= s["start_seconds"]:
         raise ValueError("source end_seconds must be after start_seconds")

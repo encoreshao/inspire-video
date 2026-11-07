@@ -47,5 +47,6 @@ done
 bash "$DEST/scripts/install.sh" "$TARGET" ${EXTRA[@]+"${EXTRA[@]}"}
 
 echo
-echo "Installed. Start a NEW Claude Code / Codex session, then try:"
+echo "Installed (inspire-video and inspire-showcase). Start a NEW Claude Code / Codex session, then try:"
 echo "  /inspire-video create from ./podcast.mp4"
+echo "  /inspire-showcase make a video from https://github.com/owner/repo"
