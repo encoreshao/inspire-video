@@ -344,7 +344,7 @@ Screenshots you supply count as yours. Images captured from a page or taken from
 ## Customizing
 
 - **Theme:** the `theme` manifest field or `--theme`. Colors are defined in `video/src/Video.tsx` (`themes`).
-- **Sizes and layout:** constants at the top of `video/src/Video.tsx` (`HEAD`, `MAX_EN`, panel and spacing values) and `video/src/Cover.tsx`.
+- **Sizes and layout:** the profile's `safe` and `title_top` in `config/platforms.yaml` (the 9:16 values are mirrored in `DEFAULT_PROFILE` in `video/src/layout.mjs`, and a test keeps the two equal), caption font sizes in `cardLimits` in `video/src/layout.mjs`, and the other constants (`HEAD`, panel and spacing values) at the top of `video/src/Video.tsx` and in `video/src/Cover.tsx`.
 - **Preview a layout change quickly:** `cd video && npx remotion still src/index.ts InspireShort out.png --props=../output/projects/<slug>/props.json --frame=750 --scale=0.5`. `npm run preview` opens Remotion Studio.
 - `config/default.yaml` documents the defaults but is not read by the code. `config/platforms.yaml` is read by `publish_meta.py` and `render.py`.
 - `skills/inspire-video/references/visual-style.md` and `skills/inspire-video/references/rendering-guide.md` describe the design rules the agent follows.
@@ -365,7 +365,7 @@ Screenshots you supply count as yours. Images captured from a page or taken from
 | "Only images are available" / "n challenge solving failed" | `yt-dlp` has no supported JavaScript runtime. Install Deno or Bun (Node 20.15 is unsupported; 20.19+ works) and make sure `pip install "yt-dlp[default]"` installed `yt-dlp-ejs`. `check_env.py` reports both |
 | "could not find chrome cookies database" or "Operation not permitted" (macOS) | macOS blocks your terminal from reading the browser profile. Grant Full Disk Access to the terminal app and restart it, or use `--cookies <file>` / `--file` instead |
 | Output file exists | Pass `--force` to overwrite |
-| Sides are cut off on WeChat / Douyin | They crop 9:16 video on tall screens. Re-render with the current version (114 px side margins); if a platform still crops, raise `SAFE_X` in `video/src/Video.tsx` |
+| Sides are cut off on WeChat / Douyin | They crop 9:16 video on tall screens. Re-render with the current version (114 px side margins); if a platform still crops, raise `safe.x` of the `vertical-9x16` profile in `config/platforms.yaml` and the matching `safeX` in `DEFAULT_PROFILE` in `video/src/layout.mjs` |
 | `ingest.py` could not read any page of a website | The site blocks crawlers (`robots.txt`), needs a login or is unreachable. Pass your own images with `--screenshots DIR` |
 | "no Chrome or Chromium found" | Install Chrome or Chromium for page screenshots, or pass `--screenshots DIR` |
 | `manifest.py validate` says a line is too wide or too long | Shorten that field (see the limits table under Showcase videos) |
@@ -378,7 +378,7 @@ Screenshots you supply count as yours. Images captured from a page or taken from
 - Caption timing comes from the transcript and is accurate to a fraction of a second. Watch the output once before publishing.
 - Chinese translations and Chinese name transliterations are written by the agent; have a fluent reader review them.
 - The video window is 852 x 488 px and crops about 1% of the width of 16:9 footage (`cover`). Set `video.fit` to `contain` to show the whole frame (smaller, about 477 px tall); `crop_x` / `crop_y` move the crop.
-- Content sits inside the platform safe area, so the video window is about 852 px wide and there is empty space above and below. Adjust `SAFE_X`, `TITLE_TOP` (the title is anchored at a fixed distance from the top so it never moves when blocks below change; the label's top edge sits at about y = 259), `LINE_GAP` (space around each divider line) and `SAFE_BOTTOM` (the lowest content must end above y = 1590) in `video/src/Video.tsx` if a platform behaves differently.
+- Content sits inside the platform safe area, so the video window is about 852 px wide and there is empty space above and below. Adjust `safe` and `title_top` of the profile in `config/platforms.yaml` (mirrored for 9:16 in `DEFAULT_PROFILE` in `video/src/layout.mjs`) for the side margins, the title position (the title is anchored at a fixed distance from the top so it never moves when blocks below change; the label's top edge sits at about y = 259) and the bottom limit (the lowest content must end above y = 1590), and `LINE_GAP` (space around each divider line) in `video/src/Video.tsx`, if a platform behaves differently.
 - No speaker-aware cropping or automatic speaker identification yet.
 - Fonts are system fonts, not bundled.
 - Tested on macOS only.

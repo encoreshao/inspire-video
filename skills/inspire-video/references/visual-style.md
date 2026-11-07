@@ -7,7 +7,7 @@ A calm, editorial bilingual quote video. The footage is the visual anchor; the c
 ## Canvas and themes
 
 - 1080 x 1920 px, 9:16, 30 fps (the file is true 9:16, square pixels).
-- **Safe area (mandatory):** WeChat Channels and Douyin scale the video to the screen height on tall phones (9:19.5 to 9:20) and center-crop the sides, losing about 97-108 px per side. Keep every element at least 114 px from the left and right edges (`SAFE_X`), at least 190 px from the top and 330 px from the bottom (platform buttons and captions). The layout is top-anchored: the title block starts at a fixed `TITLE_TOP` (label top edge at about y = 259, so the title is not too high inside WeChat) and everything else stacks below it. The lowest content must end above y = 1590.
+- **Safe area (mandatory):** WeChat Channels and Douyin scale the video to the screen height on tall phones (9:19.5 to 9:20) and center-crop the sides, losing about 97-108 px per side. Keep every element at least 114 px from the left and right edges (`safe.x` of the profile in `config/platforms.yaml`), at least 190 px from the top and 330 px from the bottom (platform buttons and captions). The layout is top-anchored: the title block starts at a fixed `title_top` (256 px for 9:16; label top edge at about y = 259, so the title is not too high inside WeChat) and everything else stacks below it. The lowest content must end above y = 1590.
 - Themes are defined in `video/src/Video.tsx` (`themes`): `light` (soft off-white, default), `mist` (cool light gray-blue), `ivory` (warm parchment), `sage` (soft green) and dark `ink`.
 - Select with the manifest `theme` field or `render.py --theme`. Avoid pure white pages, oversaturated colors and gradients.
 

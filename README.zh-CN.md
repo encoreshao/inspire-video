@@ -344,7 +344,7 @@ python3 scripts/showcase/narrate.py output/projects/demo --engine cosyvoice --vo
 ## 自定义
 
 - **主题：** 使用清单里的 `theme` 字段或 `--theme`。颜色定义在 `video/src/Video.tsx` 的 `themes` 中。
-- **字号与版式：** 在 `video/src/Video.tsx` 顶部的常量（`HEAD`、`MAX_EN`、面板与间距数值）以及 `video/src/Cover.tsx` 中调整。
+- **字号与版式：** 在 `config/platforms.yaml` 中对应 profile 的 `safe` 与 `title_top`（9:16 的数值在 `video/src/layout.mjs` 的 `DEFAULT_PROFILE` 中有镜像，由测试保证二者一致）、`video/src/layout.mjs` 的 `cardLimits`（字幕字号）以及 `video/src/Video.tsx` 顶部和 `video/src/Cover.tsx` 中的其余常量（`HEAD`、面板与间距数值）里调整。
 - **快速预览版式改动：** `cd video && npx remotion still src/index.ts InspireShort out.png --props=../output/projects/<slug>/props.json --frame=750 --scale=0.5`。`npm run preview` 会打开 Remotion Studio。
 - `config/default.yaml` 只是记录默认值，代码不会读取它。`config/platforms.yaml` 由 `publish_meta.py` 和 `render.py` 读取。
 - `skills/inspire-video/references/visual-style.md` 和 `skills/inspire-video/references/rendering-guide.md` 描述了智能体遵循的设计规则。
@@ -365,7 +365,7 @@ python3 scripts/showcase/narrate.py output/projects/demo --engine cosyvoice --vo
 | “Only images are available” / “n challenge solving failed” | `yt-dlp` 找不到受支持的 JavaScript 运行时。请安装 Deno 或 Bun（Node 20.15 不受支持，20.19+ 可用），并确认 `pip install "yt-dlp[default]"` 装上了 `yt-dlp-ejs`。`check_env.py` 会同时报告这两项 |
 | “could not find chrome cookies database” 或 “Operation not permitted”（macOS） | macOS 阻止终端读取浏览器配置文件。请给终端应用开启“完全磁盘访问权限”并重启它，或改用 `--cookies <文件>` / `--file` |
 | 成品文件已存在 | 加 `--force` 覆盖 |
-| 在微信/抖音里两侧被裁掉 | 它们会在较高的屏幕上裁掉 9:16 视频的两侧。请用当前版本重新渲染（两侧边距 114 px）；若平台仍然裁切，请调大 `video/src/Video.tsx` 中的 `SAFE_X` |
+| 在微信/抖音里两侧被裁掉 | 它们会在较高的屏幕上裁掉 9:16 视频的两侧。请用当前版本重新渲染（两侧边距 114 px）；若平台仍然裁切，请调大 `config/platforms.yaml` 中 `vertical-9x16` profile 的 `safe.x`，并同步修改 `video/src/layout.mjs` 中 `DEFAULT_PROFILE` 的 `safeX` |
 | `ingest.py` 读不到网站的任何页面 | 该网站屏蔽爬虫（`robots.txt`）、需要登录或无法访问。请用 `--screenshots DIR` 提供你自己的图片 |
 | “no Chrome or Chromium found” | 为页面截图安装 Chrome 或 Chromium，或使用 `--screenshots DIR` |
 | `manifest.py validate` 提示某一行太宽或太长 | 缩短该字段（见“展示类视频”下的限制表） |
@@ -378,7 +378,7 @@ python3 scripts/showcase/narrate.py output/projects/demo --engine cosyvoice --vo
 - 字幕时间来自转写稿，精确到零点几秒。发布前请完整看一遍成片。
 - 中文译文和中文人名音译由智能体撰写，请找中文熟练的人审校。
 - 视频窗口为 852 x 488 px，会裁掉 16:9 素材约 1% 的宽度（`cover`）。把 `video.fit` 设为 `contain` 可显示完整画面（窗口更小，约 477 px 高）；`crop_x` / `crop_y` 用于移动裁切位置。
-- 内容位于平台安全区内，所以视频窗口约 852 px 宽，上下会有空白。若某个平台表现不同，可在 `video/src/Video.tsx` 中调整 `SAFE_X`、`TITLE_TOP`（标题固定在距顶部某个位置，下方内容改变时它不会移动；标签顶边约在 y = 259）、`LINE_GAP`（每条分隔线上下的间距）和 `SAFE_BOTTOM`（最下方内容必须止于 y = 1590 之上）。
+- 内容位于平台安全区内，所以视频窗口约 852 px 宽，上下会有空白。若某个平台表现不同，可在 `config/platforms.yaml` 中调整对应 profile 的 `safe` 与 `title_top`（9:16 的数值在 `video/src/layout.mjs` 的 `DEFAULT_PROFILE` 中有镜像）来改变两侧边距和标题位置（标题固定在距顶部某个位置，下方内容改变时它不会移动；标签顶边约在 y = 259）以及底部限制（最下方内容必须止于 y = 1590 之上），并在 `video/src/Video.tsx` 中调整 `LINE_GAP`（每条分隔线上下的间距）。
 - 暂不支持识别说话人的智能裁切，也不支持自动识别说话人身份。
 - 字体使用系统字体，不随项目打包。
 - 仅在 macOS 上测试过。
