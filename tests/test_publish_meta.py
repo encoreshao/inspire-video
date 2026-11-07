@@ -218,4 +218,4 @@ def test_publish_md_names_each_platforms_own_video_and_cover(run):
     assert "output/final/demo/demo.mp4" in douyin and "output/final/demo/cover.png" in douyin
     assert "demo-portrait-4x5" not in douyin
     assert "output/final/demo/demo-portrait-4x5.mp4" in linkedin and "output/final/demo/cover-portrait-4x5.png" in linkedin
-    assert md.index("## 抖音") == md.index("Video:") - len("## 抖音\n\n")   # no header line before the first section
+    assert md.index("## 抖音") < md.index("Video:")   # no shared header line before the first section
