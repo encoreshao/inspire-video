@@ -164,11 +164,14 @@ def init(proj: Path, ids: list[str]) -> None:
     print(f"Wrote draft {out}")
 
 
-def section(pf: platforms.Platform, blk: dict, full: str) -> str:
+def section(pf: platforms.Platform, blk: dict, full: str, slug: str, reg: platforms.Registry) -> str:
     title_label, desc_label, unit = LABELS[pf.lang]
     if pf.title_field == "short_title":
         title_label = "短标题"
-    return (f"## {pf.name}\n\n**{title_label}** ({len(blk['title'])} {unit})\n\n```\n{blk['title']}\n```\n\n"
+    profile_id = reg.resolve(pf.profile)[0].id
+    files = (f"Video: `output/final/{slug}/{platforms.video_name(slug, profile_id)}`  ·  "
+             f"Cover: `output/final/{slug}/{platforms.cover_name(profile_id)}`")
+    return (f"## {pf.name}\n\n{files}\n\n**{title_label}** ({len(blk['title'])} {unit})\n\n```\n{blk['title']}\n```\n\n"
             f"**{desc_label}** ({len(full)} {unit})\n\n```\n{full}\n```\n\n")
 
 
@@ -208,13 +211,12 @@ def main() -> int:
         name = f"publish_{pf.file_stem}.txt"
         (out_dir / name).write_text(f"{blk['title']}\n\n{full}\n")
         written.append(name)
-        sections += section(pf, blk, full)
+        sections += section(pf, blk, full, m["project_id"], reg)
         if not pf.verified:
             unverified.append(pf.name)
     notes = "".join(f"- {n}\n" for n in p.get("notes", []))
     (out_dir / "publish.md").write_text(
         f"# Publishing copy: {m['project_id']}\n\n{warn}"
-        f"Video: `output/final/{m['project_id']}/{m['project_id']}.mp4`  ·  Cover: `output/final/{m['project_id']}/cover.png`\n\n"
         f"{sections}"
         + (f"## Notes\n\n{notes}\n" if notes else "")
         + (f"Limits come from `config/platforms.yaml` and are unverified for: {', '.join(unverified)}. "
