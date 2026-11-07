@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 def validate(m: dict, clip_seconds: float | None) -> None:
     import jsonschema
-    jsonschema.validate(m, json.loads((ROOT / "references/manifest-schema.json").read_text()))
+    jsonschema.validate(m, json.loads((ROOT / "schemas/manifest-schema.json").read_text()))
     s = m["source"]
     if s["end_seconds"] <= s["start_seconds"]:
         raise ValueError("source end_seconds must be after start_seconds")
@@ -46,7 +46,25 @@ def validate(m: dict, clip_seconds: float | None) -> None:
         raise ValueError("review_status is rejected")
 
 
+def _is_showcase_project() -> bool:
+    """True when a project folder named on the command line holds a showcase manifest.
+    Checked before the speaker flags are parsed, so showcase-only flags such as --allow-unresolved-rights work."""
+    for arg in sys.argv[1:]:
+        if arg.startswith("-"):
+            continue
+        manifest = Path(arg).resolve() / "video_manifest.json"
+        try:
+            if manifest.exists() and json.loads(manifest.read_text()).get("type") == "showcase":
+                return True
+        except (OSError, ValueError):
+            pass
+    return False
+
+
 def main() -> int:
+    if _is_showcase_project():
+        from showcase import render_showcase           # the showcase mode has its own manifest and composition
+        return render_showcase.main(sys.argv[1:])
     ap = argparse.ArgumentParser()
     ap.add_argument("project_dir")
     ap.add_argument("--preview", action="store_true", help="half-scale draft render")

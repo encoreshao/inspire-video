@@ -1,0 +1,12 @@
+export type Focus = {x: number; y: number; w: number; h: number};
+export type Rect = {left: number; top: number; width: number; height: number};
+export function clamp(v: number, lo: number, hi: number): number;
+export function easeInOut(t: number): number;
+export function zoomFor(focus: Focus, max?: number): number;
+export function imageRect(a: {iw: number; ih: number; w: number; h: number; focus: Focus; zoom?: number}): Rect;
+export function camera(a: {iw: number; ih: number; w: number; h: number; focus: Focus; progress: number}): Rect;
+export function focusRect(rect: Rect, focus: Focus): Rect;
+export function ringOpacity(t: number, duration: number): number;
+export function calloutPosition(ring: Rect, cw: number, ch: number, w: number, h: number, gap?: number): {left: number; top: number};
+export function textWidth(text: string, size: number): number;
+export function deviceFor(iw: number, ih: number): 'phone' | 'browser';

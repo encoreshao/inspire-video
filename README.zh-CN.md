@@ -2,13 +2,20 @@
 
 [English](README.md) | **简体中文**
 
-一个 Claude Code / Codex 技能（skill）：把已获授权的播客或访谈素材（本地文件或视频链接）做成 9:16 竖屏中英双语短视频，带同步字幕，并生成封面图。
+一个 Claude Code / Codex 工具集，包含两个技能（skill），用来制作 9:16 竖屏中英双语短视频（带同步字幕和封面图）：
 
-智能体按照 `SKILL.md` 完成转写、选段、撰写文案与翻译、剪辑片段；版式和文字则由 [Remotion](https://www.remotion.dev/) 以确定性的方式渲染，因此屏幕上的文字始终准确。
+| 技能 | 命令 | 输入 | 输出 |
+| --- | --- | --- | --- |
+| `inspire-video` | `/inspire-video` | 已获授权的播客、访谈或演讲素材（本地文件或视频链接） | 带同步双语字幕的讲者短视频 |
+| `inspire-showcase` | `/inspire-showcase` | 网站、GitHub 或 GitLab 仓库、本地仓库，或你自己的截图 | 产品展示视频：设备外框、推近与高亮、双语字幕，可选用你自己克隆的声音配音 |
 
-> **状态：** 已在 macOS 上用一条真实视频完整跑通。`fetch.py`、`transcribe.py`、`render.py` 和 Remotion 渲染器均已实现。`src/inspire_video/` 里的模块只是占位：探测素材、选段、翻译和剪辑由智能体按 `SKILL.md` 完成。Linux 和 Windows 尚未测试。
+智能体按照每个技能的 `SKILL.md`（位于 `skills/<名称>/`）完成需要思考的部分：转写并选段，或读取网站或仓库并撰写脚本，再写出文案与翻译；版式和文字则由 [Remotion](https://www.remotion.dev/) 以确定性的方式渲染，因此屏幕上的文字始终准确。两个技能共用同一个渲染器、同一套主题和同一组工具。
+
+> **状态：** 已在 macOS 上用一条真实视频完整跑通。`fetch.py`、`transcribe.py`、`render.py` 和 Remotion 渲染器均已实现。`src/inspire_video/` 里的模块只是占位：探测素材、选段、翻译和剪辑由智能体按 `SKILL.md` 完成。Linux 和 Windows 尚未测试。 展示类视频目前是实验性的：已用生成的测试图片和 macOS `say` 语音完整跑通；CosyVoice 3 声音克隆和 GitHub/GitLab 元数据调用只用测试替身验证过，仍需要你在自己的电脑上做第一次真实运行。
 
 ## 功能
+
+### 访谈视频（`/inspire-video`）
 
 - **输出：** 1080×1920 MP4（H.264 + AAC，30 fps），时长 40 秒到 2 分 30 秒，另有一张 1080×1920 的封面 PNG。
 - **同步双语字幕：** 一次只显示一句短句（或长句中的一个分句），先英文后中文，随说话同步出现。每条字幕最多 100 个英文字符，且绝不会把两句话放在同一条里。
@@ -23,6 +30,15 @@
 - **发布文案：** 微信视频号的短标题与描述、抖音的标题与描述，以及话题标签；按可编辑的字数上限校验，输出可直接粘贴的文件，附带来源署名；版权未确认时会显示“未获准发布”警示。
 - **安全检查：** 当版权未确认、字幕格式不对或可能截断语音时，`render.py` 会校验清单并拒绝渲染。
 
+### 展示类视频（`/inspire-showcase`）
+
+- **输入：** 网站（首页加导航里的页面，遵守 `robots.txt`）、GitHub 或 GitLab 仓库（含自建）、本地仓库，均可附带你自己的截图（截图优先）。
+- **设备演示：** 竖长截图放进手机外框并配模糊背景，其余放进显示网址的浏览器外框；缓慢推近重点区域，配高亮圈和可选标注，镜头之间交叉淡入淡出。
+- **脚本来自事实：** `brief.json` 保存带来源的确定性事实；智能体写 4 到 6 个镜头（一句不超过 100 个字符的英文加中文），绝不编造。
+- **旁白在本机生成：** macOS `say`、Kokoro 或 CosyVoice 3，可使用你自己录音克隆的声音档案；镜头时长跟随音频。
+- **保护措施：** 渲染前校验每个字段（会溢出版面的文字会被拒绝），素材版权未确认时不能渲染成片，并检查真实输出（尺寸、首帧不黑、安全区）。
+- **与访谈视频同样的观感：** 相同的主题（`light` 到 `ink`）、信息卡、分隔线、安全区和封面。
+
 ## 环境要求
 
 - macOS（已测试）或 Linux
@@ -32,6 +48,7 @@
 - FFmpeg 和 ffprobe（`brew install ffmpeg` 或 `apt install ffmpeg`）
 - 仅 Linux：需要 CJK 字体，例如 `fonts-noto-cjk`（macOS 自带宋体-简）。字体使用系统字体，不随项目打包。
 - 约 4 GB 可用磁盘空间，用于 Whisper 模型、Chrome 和项目文件
+- 展示类视频：为网站来源截图需要 Chrome 或 Chromium（自己提供截图则不需要）。旁白可选，引擎有：macOS `say`（无需安装）、Kokoro（`mlx-audio` 和 `brew install espeak-ng`）、CosyVoice 3（`uv`，约 9 GB，建议 Apple Silicon；见“展示类视频”）
 
 ## 安装
 
@@ -41,14 +58,14 @@
 curl -fsSL https://raw.githubusercontent.com/encoreshao/inspire-video/main/install.sh | bash
 ```
 
-它会把仓库克隆到 `~/.inspire-video`，把技能链接到 Claude Code 和 Codex，安装 Python 与 npm 依赖，并运行环境检查。也可以只选一个工具，或跳过依赖安装：
+它会把仓库克隆到 `~/.inspire-video`，把两个技能（`inspire-video` 和 `inspire-showcase`）链接到 Claude Code 和 Codex，安装 Python 与 npm 依赖，并运行环境检查。也可以只选一个工具，或跳过依赖安装：
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/encoreshao/inspire-video/main/install.sh | bash -s -- claude
 curl -fsSL https://raw.githubusercontent.com/encoreshao/inspire-video/main/install.sh | bash -s -- codex --no-deps
 ```
 
-想先看脚本？可以打开 [`install.sh`](install.sh)，或下载后运行 `bash install.sh`。设置 `INSPIRE_VIDEO_HOME` 可以安装到 `~/.inspire-video` 以外的位置（`SKILL.md` 里写的是 `~/.inspire-video`，所以用默认位置最省事）。
+想先看脚本？可以打开 [`install.sh`](install.sh)，或下载后运行 `bash install.sh`。设置 `INSPIRE_VIDEO_HOME` 可以安装到 `~/.inspire-video` 以外的位置（技能里写的是 `~/.inspire-video`，所以用默认位置最省事）。
 
 **更新：** 再运行一次同样的命令即可，它会拉取最新版本并重新链接。
 **卸载：** `bash ~/.inspire-video/scripts/uninstall.sh` 会移除链接（你的输出文件保留；要彻底删除请自己删掉整个文件夹）。
@@ -63,7 +80,7 @@ curl -fsSL https://raw.githubusercontent.com/encoreshao/inspire-video/main/insta
 Install the InspireVideo skill from https://github.com/encoreshao/inspire-video for Claude Code.
 1. Run: curl -fsSL https://raw.githubusercontent.com/encoreshao/inspire-video/main/install.sh | bash -s -- claude
 2. Run python3 ~/.inspire-video/scripts/check_env.py and fix anything missing (Python 3.11+, Node.js 20+, ffmpeg). Ask me before installing any system package with brew or apt.
-3. Tell me to start a new session, then summarize how to use /inspire-video. Do not process any video yet.
+3. Tell me to start a new session, then summarize how to use /inspire-video and /inspire-showcase. Do not process any video yet.
 ```
 
 **Codex**
@@ -72,7 +89,7 @@ Install the InspireVideo skill from https://github.com/encoreshao/inspire-video 
 Install the InspireVideo skill from https://github.com/encoreshao/inspire-video for Codex.
 1. Run: curl -fsSL https://raw.githubusercontent.com/encoreshao/inspire-video/main/install.sh | bash -s -- codex
 2. Run python3 ~/.inspire-video/scripts/check_env.py and fix anything missing (Python 3.11+, Node.js 20+, ffmpeg). Ask me before installing any system package with brew or apt.
-3. Tell me to start a new session, then summarize how to use the inspire-video skill. Do not process any video yet.
+3. Tell me to start a new session, then summarize how to use the inspire-video and inspire-showcase skills. Do not process any video yet.
 ```
 
 **更新或卸载**（两种工具都适用）
@@ -96,7 +113,7 @@ bash ~/.inspire-video/scripts/install.sh claude    # 或：codex | both（加 --
 
 ### 安装脚本做了什么
 
-1. 把技能以符号链接放进 `~/.claude/skills` 和/或 `~/.agents/skills`；
+1. 把 `skills/` 下的每个技能文件夹以符号链接放进 `~/.claude/skills` 和/或 `~/.agents/skills`（之前链接仓库根目录的旧安装会被切换为按技能链接）；
 2. 用 `pip install -e` 安装 Python 依赖（`faster-whisper`、带 `yt-dlp-ejs` 的 `yt-dlp[default]`、`pydantic`、`jsonschema`、`PyYAML`）；
 3. 为 Remotion 项目运行 `npm install`；
 4. 运行环境检查。
@@ -107,7 +124,7 @@ bash ~/.inspire-video/scripts/install.sh claude    # 或：codex | both（加 --
 
 可选：只有使用托管的大模型服务时，才需要把 `.env.example` 复制成 `.env`。切勿提交 `.env`。不支持 Windows，请使用 WSL。
 
-## 快速开始
+## 快速开始：访谈视频
 
 在 Claude Code 中（安装后请新开一个会话）：
 
@@ -145,7 +162,7 @@ bash ~/.inspire-video/scripts/install.sh claude    # 或：codex | both（加 --
 | `final/<slug>/publish.md` | 微信视频号与抖音的标题、描述和话题标签（另有 `publish_wechat.txt`、`publish_douyin.txt`） |
 | `cache/` | 下载的链接素材 |
 
-## 手动流程（不用智能体）
+## 手动流程：访谈视频（不用智能体）
 
 在技能根目录运行（`cd ~/.inspire-video`），把 `<slug>` 换成项目文件夹名。
 
@@ -193,13 +210,13 @@ python3 scripts/publish_meta.py output/projects/<slug> --init   # 根据 copy.js
 python3 scripts/publish_meta.py output/projects/<slug>          # 校验，然后生成 publish.md 和 .txt 文件
 ```
 
-`publish.json` 包含 `wechat_channels`（`short_title`、`description`、`hashtags`）、`douyin`（`title`、`description`、`hashtags`）、必填的 `credit` 署名行以及可选的 `notes`，详见 `references/publishing.md`。话题标签不带 `#`，脚本会自动加上。署名行会追加到每个描述末尾。若项目的 `review_status` 不是 `approved`，`publish.md` 会带上“NOT CLEARED FOR PUBLICATION”（未获准发布）的警示。字数上限写在 `config/publish.yaml` 中，属于未经核实的默认值（微信短标题 6–16、抖音标题 ≤ 30、描述 ≤ 1000、话题 ≤ 5）：请到各平台的发布页面核对并修改该文件。
+`publish.json` 包含 `wechat_channels`（`short_title`、`description`、`hashtags`）、`douyin`（`title`、`description`、`hashtags`）、必填的 `credit` 署名行以及可选的 `notes`，详见 `skills/inspire-video/references/publishing.md`。话题标签不带 `#`，脚本会自动加上。署名行会追加到每个描述末尾。若项目的 `review_status` 不是 `approved`，`publish.md` 会带上“NOT CLEARED FOR PUBLICATION”（未获准发布）的警示。字数上限写在 `config/publish.yaml` 中，属于未经核实的默认值（微信短标题 6–16、抖音标题 ≤ 30、描述 ≤ 1000、话题 ≤ 5）：请到各平台的发布页面核对并修改该文件。
 
 加 `--force` 可覆盖已有的成品文件，加 `--theme light|mist|ivory|sage|ink` 可覆盖主题。`fetch.py --yes-rights` 会跳过交互式的版权确认，只有在你已确认版权时才使用。
 
 ### 清单（manifest）
 
-`video_manifest.json` 遵循 `references/manifest-schema.json`。一个最小示例：
+`video_manifest.json` 遵循 `schemas/manifest-schema.json`。一个最小示例：
 
 ```json
 {
@@ -237,13 +254,90 @@ python3 scripts/publish_meta.py output/projects/<slug>          # 校验，然�
 
 出现以下情况时，它会拒绝渲染：清单不符合 schema；`rights_confirmed` 为 false；`review_status` 为 `rejected`；片段时长不在 40–150 秒之内；字幕重叠、顺序错乱、一条里包含不止一句话、超过 100 个英文字符，或引用了不存在的说话人；第一条或最后一条字幕离片段开头或结尾太近。它会把片段和封面图复制到 `video/public/`（已被 git 忽略），并以 `--crf=18` 调用 Remotion。
 
+## 展示类视频（实验性）
+
+`/inspire-showcase` 可以把网站、GitHub 或 GitLab 仓库、本地仓库，或你自己的一组截图，做成 9:16 竖屏中英双语短视频。每个镜头把截图放进手机或浏览器外框，缓慢推近重点区域并用高亮圈标出，下方是一行英文和一行中文。旁白是可选的，在你自己的电脑上生成，也可以用你自己克隆的声音。
+
+### 快速开始
+
+在 Claude Code 中（安装后请新开一个会话）：
+
+```text
+/inspire-showcase make a video from https://github.com/owner/repo
+/inspire-showcase make a video from https://example.com/ using my screenshots in ~/shots
+```
+
+智能体会读取素材，根据真实找到的信息撰写简短脚本（绝不编造），询问素材版权，按需配音，预览，然后渲染视频和封面。你也可以在 `~/.inspire-video` 下手动逐步运行：
+
+```bash
+python3 scripts/showcase/ingest.py https://example.com/ --project output/projects/demo
+python3 scripts/showcase/manifest.py scaffold output/projects/demo      # 然后填写镜头：标题、项目名，以及每个镜头的 en、zh、focus
+python3 scripts/showcase/manifest.py validate output/projects/demo
+python3 scripts/showcase/narrate.py output/projects/demo --engine say   # 可选；也可以用 cosyvoice 加你自己的声音档案
+python3 scripts/render.py output/projects/demo --preview                # 半尺寸草稿
+python3 scripts/render.py output/projects/demo                          # 视频 + 封面 + 输出检查
+```
+
+### 输入
+
+| 你提供 | 会发生什么 |
+| --- | --- |
+| 网站链接 | 读取首页和导航里的页面（最多 6 个，限同一网站，遵守 `robots.txt`），并用无头 Chrome 截取这些页面。 |
+| 网站链接 + `--screenshots DIR` | 同样读取文字；视觉素材使用你的截图，不使用页面截图。 |
+| GitHub 或 GitLab 链接（或 `git@...`） | 浅克隆仓库（私有仓库使用你本机的 `git`、`gh` 或 `glab` 登录），读取 README、清单文件、文档和图片；star、话题和发布版本在可用时通过 `gh` 或 `glab` 获取。 |
+| 本地仓库目录 | 原地读取。 |
+| 仓库 + `--screenshots DIR` | 视觉素材使用你的截图；仓库里找到的图片只作为候选列出。 |
+
+截图按文件名排序（`01-home.png`、`02-editor.png` ……），支持 PNG、JPG、WebP 和 GIF，短边至少 320 px。自建 GitLab 请加 `--gitlab-host git.example.com` 或设置 `INSPIRE_GITLAB_HOSTS`。内网和本机地址默认被拒绝，除非加 `--allow-private`。`ingest.py` 会把 `brief.json`（带来源的事实、页面和 README 文字、带版权说明的素材，以及未知项）和 `assets/` 写入项目文件夹，并打印被拒绝的每张图片和被跳过的每个页面。没有任何图片的仓库会得到“更适合终端风格视频”的提示；该风格尚未实现，请提供截图。
+
+### 镜头与限制
+
+智能体写 4 到 6 个镜头（开场、问题、它做什么、主要功能、佐证、行动号召）。每个镜头有一句英文、自然的中文、要展示的图片、要推近的 `focus` 矩形和可选的 `callout` 标注。`manifest.py validate` 会拒绝会溢出固定版面的文字：
+
+| 字段 | 限制 |
+| --- | --- |
+| `headline`（中文标题） | 一行，约 19 个汉字 |
+| `subtitle`（英文副标题） | 两行，约 70 个字符 |
+| `project.name`、`name_zh`、`tagline`、`tagline_zh`、`source.label` | 各占一行 |
+| 镜头 `en` 与 `zh` | 一句话，最多 100 个字符；最多 45 个字符 |
+| 镜头 `callout` | 最多 22 个宽度单位（一个汉字算 2） |
+
+镜头时长跟随旁白音频，但不少于 `40 / 镜头数` 秒；没有旁白时每个镜头为 `max(4, 40 / 镜头数)` 秒。整支视频必须在 40 到 150 秒之间。完整字段说明见 `skills/inspire-showcase/references/beat-writing.md`。
+
+### 旁白与你自己的声音
+
+旁白是可选的。引擎：
+
+| 引擎 | 需要 | 说明 |
+| --- | --- | --- |
+| `say` | macOS | 系统自带声音，无需安装；适合预览 |
+| `kokoro` | `pip install mlx-audio` 和 `brew install espeak-ng` | 快速的本地模型，Apple Silicon |
+| `cosyvoice` | `bash scripts/showcase/setup_cosyvoice.sh`（约 9 GB，需要 `uv`） | 音质最好；用你录制的声音档案说话 |
+
+```bash
+ffmpeg -i my-voice.m4a -ar 16000 -ac 1 clip.wav      # 在安静环境里录一段清晰的 10–20 秒
+python3 scripts/showcase/voices.py add --name me --wav clip.wav --text-file clip.txt --lang zh   # clip.txt = 录音里说的原话
+python3 scripts/showcase/narrate.py output/projects/demo --engine cosyvoice --voice me           # 同时在清单里设置 "voice": "me"
+```
+
+音频和 `timings.json` 会写入项目文件夹，渲染时直接使用。修改某个镜头的文字后请重新运行 `narrate.py`：渲染会拒绝过期的音频或用不同声音生成的音频。中文旁白请用 `--lang zh`（或在清单里设置 `"narration_lang": "zh"`）。声音档案保存在 `voices/`，已被 git 忽略，因为它们是个人数据。只使用你自己的声音，并在发布前确认抖音和微信对合成语音的标注规定。
+
+### 输出与检查
+
+`render.py` 会把展示类项目交给 `scripts/showcase/render_showcase.py`，写出 `output/final/<project_id>/<project_id>.mp4` 和 `cover.png`（`--preview` 写 `<project>/preview.mp4`），然后检查真实文件：1080×1920、首帧不黑、y = 1590 以下没有内容、两侧 100 px 内没有内容。随时可以用 `python3 scripts/showcase/checks.py <video> --final` 再检查一次。当截图的形状与设备外框相差很大时也会提醒，因为画面会被裁切（不会被拉伸）。检查无法发现被截断的文字，所以请务必看一遍预览。
+
+### 版权
+
+你提供的截图视为你自己的。从页面截取或从仓库取得的图片带有版权说明并标记 `rights_unresolved: true`：在你确认可以使用之前，成片渲染会拒绝它们（`--allow-unresolved-rights`，并在清单里设置 `provenance.rights_confirmed: true`）。预览不受限制。智能体必须先询问你，并且绝不能编造事实、数字或引文。
+
 ## 自定义
 
 - **主题：** 使用清单里的 `theme` 字段或 `--theme`。颜色定义在 `video/src/Video.tsx` 的 `themes` 中。
 - **字号与版式：** 在 `video/src/Video.tsx` 顶部的常量（`HEAD`、`MAX_EN`、面板与间距数值）以及 `video/src/Cover.tsx` 中调整。
 - **快速预览版式改动：** `cd video && npx remotion still src/index.ts InspireShort out.png --props=../output/projects/<slug>/props.json --frame=750 --scale=0.5`。`npm run preview` 会打开 Remotion Studio。
 - `config/default.yaml` 只是记录默认值，代码不会读取它。`config/publish.yaml` 由 `publish_meta.py` 读取。
-- `references/visual-style.md` 和 `references/rendering-guide.md` 描述了智能体遵循的设计规则。
+- `skills/inspire-video/references/visual-style.md` 和 `skills/inspire-video/references/rendering-guide.md` 描述了智能体遵循的设计规则。
+- **展示类视频版面：** `video/src/showcase/`（`ShowcaseShort.tsx`、`DeviceFrame.tsx`，以及负责镜头与高亮圈计算的 `geometry.mjs`），复用 `video/src/Video.tsx` 的主题和组件。
 
 ## 常见问题
 
@@ -261,6 +355,12 @@ python3 scripts/publish_meta.py output/projects/<slug>          # 校验，然�
 | “could not find chrome cookies database” 或 “Operation not permitted”（macOS） | macOS 阻止终端读取浏览器配置文件。请给终端应用开启“完全磁盘访问权限”并重启它，或改用 `--cookies <文件>` / `--file` |
 | 成品文件已存在 | 加 `--force` 覆盖 |
 | 在微信/抖音里两侧被裁掉 | 它们会在较高的屏幕上裁掉 9:16 视频的两侧。请用当前版本重新渲染（两侧边距 114 px）；若平台仍然裁切，请调大 `video/src/Video.tsx` 中的 `SAFE_X` |
+| `ingest.py` 读不到网站的任何页面 | 该网站屏蔽爬虫（`robots.txt`）、需要登录或无法访问。请用 `--screenshots DIR` 提供你自己的图片 |
+| “no Chrome or Chromium found” | 为页面截图安装 Chrome 或 Chromium，或使用 `--screenshots DIR` |
+| `manifest.py validate` 提示某一行太宽或太长 | 缩短该字段（见“展示类视频”下的限制表） |
+| 渲染提示旁白已过期或声音不一致 | 修改文字或更换声音后重新运行 `narrate.py` |
+| 渲染提示部分素材版权未确认 | 确认可以使用后再加 `--allow-unresolved-rights`（预览不需要） |
+| `CHECK FAILED: content below y = 1590` 或 `within 100 px of the ... edge` | 有文字换行或元素溢出：缩短文字，再用 `--force` 重新渲染 |
 
 ## 已知限制
 
@@ -271,27 +371,43 @@ python3 scripts/publish_meta.py output/projects/<slug>          # 校验，然�
 - 暂不支持识别说话人的智能裁切，也不支持自动识别说话人身份。
 - 字体使用系统字体，不随项目打包。
 - 仅在 macOS 上测试过。
+- 展示类视频：目前只有设备（手机或浏览器）这一种风格，形状与设备相差很大的截图会被裁切。输出检查无法发现被截断的文字。Kokoro 和 CosyVoice 是针对 Apple Silicon 开发的，CosyVoice 克隆和 `gh`/`glab` 元数据调用目前只用测试替身验证过。
 
 ## 版权
 
-切勿提交 cookies 文件或 `.env`。一个链接并不意味着你获得了再利用的权利。请只使用你拥有或已获授权使用的素材，不要绕过 DRM 或访问控制，并在发布前核实每一句引文和署名。有些来源（例如 TED 演讲，CC BY-NC-ND）禁止演绎，因此重新剪辑后的片段未经许可不得发布。你有责任遵守所下载网站的服务条款。
+切勿提交 cookies 文件或 `.env`。一个链接并不意味着你获得了再利用的权利。请只使用你拥有或已获授权使用的素材，不要绕过 DRM 或访问控制，并在发布前核实每一句引文和署名。有些来源（例如 TED 演讲，CC BY-NC-ND）禁止演绎，因此重新剪辑后的片段未经许可不得发布。你有责任遵守所下载网站的服务条款。对于展示类视频，从网站截取或从仓库取得的素材归其所有者所有：见“展示类视频”中的“版权”。
 
 ## 仓库结构
 
 ```text
-SKILL.md              智能体工作流程与质量规则
+SKILL.md              给仍链接仓库根目录的旧安装使用的指引（技能本体在 skills/ 下）
+skills/               每个智能体技能一个文件夹，约定见 skills/README.md
+  inspire-video/      SKILL.md + references/（访谈视频）
+  inspire-showcase/   SKILL.md + references/（展示类视频）
 README.md             英文说明
 README.zh-CN.md       本文件（简体中文）
 LICENSE               MIT
 config/default.yaml   默认值说明（仅供参考）
 config/publish.yaml   publish_meta.py 使用的平台字数上限
-references/           视觉风格、渲染指南、内容提取规范、清单 schema
+schemas/              render.py 读取的清单 schema
 install.sh            在线安装脚本（克隆 + 链接 + 安装依赖）
-scripts/              install.sh、uninstall.sh、check_env.py、fetch.py、transcribe.py、render.py、publish_meta.py
-video/                Remotion 项目（InspireShort 视频、InspireCover 封面）
+scripts/              install.sh、uninstall.sh、check_env.py、check_skills.py、fetch.py、transcribe.py、render.py、publish_meta.py；
+                      showcase/（ingest、manifest、narrate、voices、render_showcase、checks 等）
+video/                Remotion 项目（InspireShort、InspireCover、ShowcaseShort、ShowcaseCover）
 src/inspire_video/    占位的 Python 模块
+tests/                pytest 测试
+voices/               你的声音档案（已被 git 忽略）
 output/               项目、成品文件、下载缓存（已被 git 忽略）
 ```
+
+## 开发
+
+```bash
+python3 -m pytest tests -q               # 单元与集成测试（几何测试需要 Node）
+python3 scripts/check_skills.py          # 校验 skills/ 下的每个技能
+```
+
+新技能放在 `skills/<名称>/`，约定与检查清单见 [`skills/README.md`](skills/README.md)。
 
 ## 许可证
 
