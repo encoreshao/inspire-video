@@ -210,7 +210,7 @@ python3 scripts/publish_meta.py output/projects/<slug> --init   # 根据 copy.js
 python3 scripts/publish_meta.py output/projects/<slug>          # 校验，然后生成 publish.md 和 .txt 文件
 ```
 
-`publish.json` 包含 `wechat_channels`（`short_title`、`description`、`hashtags`）、`douyin`（`title`、`description`、`hashtags`）、必填的 `credit` 署名行以及可选的 `notes`，详见 `skills/inspire-video/references/publishing.md`。话题标签不带 `#`，脚本会自动加上。署名行会追加到每个描述末尾。若项目的 `review_status` 不是 `approved`，`publish.md` 会带上“NOT CLEARED FOR PUBLICATION”（未获准发布）的警示。字数上限写在 `config/publish.yaml` 中，属于未经核实的默认值（微信短标题 6–16、抖音标题 ≤ 30、描述 ≤ 1000、话题 ≤ 5）：请到各平台的发布页面核对并修改该文件。
+`publish.json` 在 `platforms` 下列出目标平台（平台 id → `title`、`description`、`hashtags`），另有必填的 `credit` 署名行、`credit_en`（列出 LinkedIn、Facebook 等英文平台时必填）以及可选的 `notes`，详见 `skills/inspire-video/references/publishing.md`。带顶层 `wechat_channels` / `douyin` 的旧文件仍可使用。话题标签不带 `#`，脚本会自动加上。署名行会追加到每个描述末尾。若项目的 `review_status` 不是 `approved`，`publish.md` 会带上“NOT CLEARED FOR PUBLICATION”（未获准发布）的警示。字数上限写在 `config/platforms.yaml` 中，每个平台有 `verified` 标记，多数为未经核实的默认值：请到各平台的发布页面核对并修改该文件。
 
 加 `--force` 可覆盖已有的成品文件，加 `--theme light|mist|ivory|sage|ink` 可覆盖主题。`fetch.py --yes-rights` 会跳过交互式的版权确认，只有在你已确认版权时才使用。
 
@@ -335,7 +335,7 @@ python3 scripts/showcase/narrate.py output/projects/demo --engine cosyvoice --vo
 - **主题：** 使用清单里的 `theme` 字段或 `--theme`。颜色定义在 `video/src/Video.tsx` 的 `themes` 中。
 - **字号与版式：** 在 `video/src/Video.tsx` 顶部的常量（`HEAD`、`MAX_EN`、面板与间距数值）以及 `video/src/Cover.tsx` 中调整。
 - **快速预览版式改动：** `cd video && npx remotion still src/index.ts InspireShort out.png --props=../output/projects/<slug>/props.json --frame=750 --scale=0.5`。`npm run preview` 会打开 Remotion Studio。
-- `config/default.yaml` 只是记录默认值，代码不会读取它。`config/publish.yaml` 由 `publish_meta.py` 读取。
+- `config/default.yaml` 只是记录默认值，代码不会读取它。`config/platforms.yaml` 由 `publish_meta.py` 和 `render.py` 读取。
 - `skills/inspire-video/references/visual-style.md` 和 `skills/inspire-video/references/rendering-guide.md` 描述了智能体遵循的设计规则。
 - **展示类视频版面：** `video/src/showcase/`（`ShowcaseShort.tsx`、`DeviceFrame.tsx`，以及负责镜头与高亮圈计算的 `geometry.mjs`），复用 `video/src/Video.tsx` 的主题和组件。
 
@@ -388,7 +388,7 @@ README.md             英文说明
 README.zh-CN.md       本文件（简体中文）
 LICENSE               MIT
 config/default.yaml   默认值说明（仅供参考）
-config/publish.yaml   publish_meta.py 使用的平台字数上限
+config/platforms.yaml publish_meta.py 与 render.py 使用的平台字数上限和渲染配置
 schemas/              render.py 读取的清单 schema
 install.sh            在线安装脚本（克隆 + 链接 + 安装依赖）
 scripts/              install.sh、uninstall.sh、check_env.py、check_skills.py、fetch.py、transcribe.py、render.py、publish_meta.py；

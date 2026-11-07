@@ -210,7 +210,7 @@ python3 scripts/publish_meta.py output/projects/<slug> --init   # draft publish.
 python3 scripts/publish_meta.py output/projects/<slug>          # validate, then write publish.md + .txt files
 ```
 
-`publish.json` holds `wechat_channels` (`short_title`, `description`, `hashtags`), `douyin` (`title`, `description`, `hashtags`), a required `credit` line and optional `notes`; see `skills/inspire-video/references/publishing.md`. Hashtags are written without `#`. The credit is appended to every description. If the project's `review_status` is not `approved`, `publish.md` carries a "NOT CLEARED FOR PUBLICATION" banner. Length limits live in `config/publish.yaml` and are unverified defaults (WeChat short title 6–16, Douyin title ≤ 30, descriptions ≤ 1000, hashtags ≤ 5): check each platform's publish page and edit the file.
+`publish.json` lists the target platforms under `platforms` (platform id → `title`, `description`, `hashtags`), a required `credit` line, `credit_en` (required when an English platform such as `linkedin` or `facebook` is listed) and optional `notes`; see `skills/inspire-video/references/publishing.md`. Old files with top-level `wechat_channels` / `douyin` keys still work. Hashtags are written without `#`. The credit is appended to every description. If the project's `review_status` is not `approved`, `publish.md` carries a "NOT CLEARED FOR PUBLICATION" banner. Limits live in `config/platforms.yaml`; each platform has a `verified` flag and most are unverified defaults: check each platform's publish page and edit the file.
 
 Add `--force` to overwrite an existing final file, and `--theme light|mist|ivory|sage|ink` to override the theme. `fetch.py --yes-rights` skips the interactive rights prompt; only use it when you have confirmed the rights.
 
@@ -335,7 +335,7 @@ Screenshots you supply count as yours. Images captured from a page or taken from
 - **Theme:** the `theme` manifest field or `--theme`. Colors are defined in `video/src/Video.tsx` (`themes`).
 - **Sizes and layout:** constants at the top of `video/src/Video.tsx` (`HEAD`, `MAX_EN`, panel and spacing values) and `video/src/Cover.tsx`.
 - **Preview a layout change quickly:** `cd video && npx remotion still src/index.ts InspireShort out.png --props=../output/projects/<slug>/props.json --frame=750 --scale=0.5`. `npm run preview` opens Remotion Studio.
-- `config/default.yaml` documents the defaults but is not read by the code. `config/publish.yaml` is read by `publish_meta.py`.
+- `config/default.yaml` documents the defaults but is not read by the code. `config/platforms.yaml` is read by `publish_meta.py` and `render.py`.
 - `skills/inspire-video/references/visual-style.md` and `skills/inspire-video/references/rendering-guide.md` describe the design rules the agent follows.
 - **Showcase layout:** `video/src/showcase/` (`ShowcaseShort.tsx`, `DeviceFrame.tsx`, and `geometry.mjs` for the camera and ring maths). It reuses the themes and helpers of `video/src/Video.tsx`.
 
@@ -388,7 +388,7 @@ README.md             this file (English)
 README.zh-CN.md       简体中文说明
 LICENSE               MIT
 config/default.yaml   documented defaults (reference only)
-config/publish.yaml   platform length limits used by publish_meta.py
+config/platforms.yaml platform limits and render profiles, used by publish_meta.py and render.py
 schemas/              manifest schema read by render.py
 install.sh            online installer (clone + link + dependencies)
 scripts/              install.sh, uninstall.sh, check_env.py, check_skills.py, fetch.py, transcribe.py, render.py, publish_meta.py;
