@@ -396,7 +396,6 @@ scripts/              install.sh、uninstall.sh、check_env.py、check_skills.py
 video/                Remotion 项目（InspireShort、InspireCover、ShowcaseShort、ShowcaseCover）
 src/inspire_video/    占位的 Python 模块
 tests/                pytest 测试
-docs/superpowers/     设计说明与实施计划
 voices/               你的声音档案（已被 git 忽略）
 output/               项目、成品文件、下载缓存（已被 git 忽略）
 ```
@@ -408,7 +407,7 @@ python3 -m pytest tests -q               # 单元与集成测试（几何测试�
 python3 scripts/check_skills.py          # 校验 skills/ 下的每个技能
 ```
 
-新技能放在 `skills/<名称>/`，约定与检查清单见 [`skills/README.md`](skills/README.md)。设计说明和实施计划在 `docs/superpowers/`。
+新技能放在 `skills/<名称>/`，约定与检查清单见 [`skills/README.md`](skills/README.md)。
 
 ## 许可证
 

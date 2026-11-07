@@ -21,3 +21,7 @@ cookies/
 
 # Personal voice recordings: never commit
 voices/
+
+# Local-only working documents (design specs, implementation plans, agent scratch): never commit
+docs/
+.superpowers/

@@ -396,7 +396,6 @@ scripts/              install.sh, uninstall.sh, check_env.py, check_skills.py, f
 video/                Remotion project (InspireShort, InspireCover, ShowcaseShort, ShowcaseCover)
 src/inspire_video/    placeholder Python modules
 tests/                pytest suite
-docs/superpowers/     design specs and implementation plans
 voices/               your voice profiles (git-ignored)
 output/               projects, final files, download cache (git-ignored)
 ```
@@ -408,7 +407,7 @@ python3 -m pytest tests -q               # unit and integration tests (the geome
 python3 scripts/check_skills.py          # validate every skill under skills/
 ```
 
-New skills go in `skills/<name>/`; see [`skills/README.md`](skills/README.md) for the conventions and the checklist. Design notes and implementation plans are in `docs/superpowers/`.
+New skills go in `skills/<name>/`; see [`skills/README.md`](skills/README.md) for the conventions and the checklist.
 
 ## License
 
