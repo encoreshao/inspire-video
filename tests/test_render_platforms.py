@@ -128,7 +128,7 @@ def test_existing_outputs_are_all_reported_before_any_render(run):
     with pytest.raises(FileExistsError) as e:
         run("--platform", "douyin,linkedin")
     msg = str(e.value)
-    assert "demo-portrait-4x5.mp4 exists" in msg and "cover.png exists" in msg
+    assert "demo-portrait-4x5.mp4 exists" in msg and "cover.png" not in msg
     assert "--force" in msg and "--profile" in msg
     assert "demo.mp4" not in msg.replace("demo-portrait-4x5.mp4", "")
     assert run.calls == []
@@ -143,3 +143,26 @@ def test_force_renders_every_format_over_existing_files(run):
     assert outputs(calls) == [
         ("render", "final/demo/demo.mp4"), ("still", "final/demo/cover.png"),
         ("render", "final/demo/demo-portrait-4x5.mp4"), ("still", "final/demo/cover-portrait-4x5.png")]
+
+
+def test_an_existing_cover_does_not_block_a_video_render(run):
+    final = run.root / "output/final/demo"
+    final.mkdir(parents=True)
+    (final / "cover.png").write_bytes(b"x")
+    rc, calls, _ = run()
+    assert rc == 0
+    assert outputs(calls) == [("render", "final/demo/demo.mp4"), ("still", "final/demo/cover.png")]
+
+
+def test_cover_only_mode_checks_every_cover_before_rendering_any(run):
+    final = run.root / "output/final/demo"
+    final.mkdir(parents=True)
+    (final / "cover-portrait-4x5.png").write_bytes(b"x")
+    with pytest.raises(FileExistsError) as e:
+        run("--cover", "--platform", "douyin,linkedin")
+    msg = str(e.value)
+    assert "cover-portrait-4x5.png exists" in msg and "--force" in msg and "--profile" in msg
+    assert run.calls == []
+    rc, calls, _ = run("--cover", "--platform", "douyin,linkedin", "--force")
+    assert rc == 0
+    assert outputs(calls) == [("still", "final/demo/cover.png"), ("still", "final/demo/cover-portrait-4x5.png")]

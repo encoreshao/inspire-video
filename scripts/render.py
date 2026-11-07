@@ -134,14 +134,10 @@ def main() -> int:
     final_dir = ROOT / "output/final" / m["project_id"]
     default_id = platforms.DEFAULT_PROFILE
 
-    if not a.force:  # report every existing output up front, before any minutes-long render starts
-        existing = []
-        for profile in targets:
-            if not a.preview and not a.cover:
-                existing.append(final_dir / platforms.video_name(m["project_id"], profile.id))
-            if not a.preview:
-                existing.append(final_dir / platforms.cover_name(profile.id))
-        existing = [f for f in existing if f.exists()]
+    if not a.force and not a.preview:  # report every existing output up front, before any minutes-long render starts
+        # a video render always overwrites its own cover afterwards, so only the files this run refuses to overwrite count
+        name = (lambda pr: platforms.cover_name(pr.id)) if a.cover else (lambda pr: platforms.video_name(m["project_id"], pr.id))
+        existing = [f for f in (final_dir / name(pr) for pr in targets) if f.exists()]
         if existing:
             raise FileExistsError("; ".join(f"{f} exists" for f in existing) + "; use --force to overwrite "
                                   "(it re-renders every format listed), or --profile <id> to render a single format")
