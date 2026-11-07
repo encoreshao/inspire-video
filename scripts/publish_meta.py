@@ -12,7 +12,7 @@ publish.json (platform ids and their limits live in config/platforms.yaml):
     "wechat_channels": {"title": "...", "description": "...", "hashtags": ["拖延症", "..."]},
     "linkedin":        {"title": "...", "description": "...", "hashtags": ["Growth", "..."]}
   },
-  "credit": "内容来源：...",          # appended to Chinese platforms' descriptions
+  "credit": "内容来源：...",          # appended to Chinese platforms' descriptions; required when a Chinese platform is listed
   "credit_en": "Source: ...",         # required when an English platform (lang: en) is listed
   "notes": ["optional reminders for the publisher"]
 }
@@ -58,9 +58,9 @@ def normalize(p: dict) -> dict:
 
 def validate(p: dict, reg: platforms.Registry) -> list[str]:
     errs = []
-    if not p.get("credit", "").strip():
-        errs.append("credit is required (source, speaker, and that subtitles are your own translation)")
     listed = p.get("platforms") or {}
+    if any(pid in reg.platforms and reg.platforms[pid].lang == "zh" for pid in listed) and not p.get("credit", "").strip():
+        errs.append("credit is required for Chinese platforms (source, speaker, and that subtitles are your own translation)")
     if not listed:
         errs.append(f"platforms is empty; list at least one of: {', '.join(reg.platforms)}")
         return errs

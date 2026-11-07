@@ -219,3 +219,16 @@ def test_publish_md_names_each_platforms_own_video_and_cover(run):
     assert "demo-portrait-4x5" not in douyin
     assert "output/final/demo/demo-portrait-4x5.mp4" in linkedin and "output/final/demo/cover-portrait-4x5.png" in linkedin
     assert md.index("## 抖音") < md.index("Video:")   # no shared header line before the first section
+
+
+def test_an_english_only_publish_json_needs_no_chinese_credit(run):
+    en_only = {"platforms": {"linkedin": NEW["platforms"]["linkedin"]}, "credit_en": NEW["credit_en"]}
+    rc, out, err = run(en_only)
+    assert rc == 0, err
+    assert (out / "publish_linkedin.txt").exists()
+    assert json.loads((out / "project.json").read_text())["publish"]["linkedin"]["caption"].endswith(NEW["credit_en"])
+
+
+def test_a_chinese_platform_without_credit_is_still_rejected(run):
+    rc, _, err = run({"platforms": {"douyin": NEW["platforms"]["douyin"]}})
+    assert rc == 1 and "credit is required" in err

@@ -19,7 +19,7 @@ Platform ids and their limits live in `config/platforms.yaml`: `wechat_channels`
 }
 ```
 
-List only the platforms the user wants. Hashtags are written without `#`; the script adds it. `credit` is appended to Chinese platforms (`lang: zh`), `credit_en` to English platforms (`lang: en`, currently `linkedin` and `facebook`); `credit_en` is required when an English platform is listed. The credit line is followed by the hashtags. The old shape (top-level `wechat_channels` with `short_title`, and `douyin`) still loads.
+List only the platforms the user wants. Hashtags are written without `#`; the script adds it. `credit` is appended to Chinese platforms (`lang: zh`), `credit_en` to English platforms (`lang: en`, currently `linkedin` and `facebook`); `credit` is required when a Chinese platform is listed and `credit_en` when an English platform is listed (a file with only English platforms needs only `credit_en`). The credit line is followed by the hashtags. The old shape (top-level `wechat_channels` with `short_title`, and `douyin`) still loads.
 
 ## project.json (written automatically)
 
