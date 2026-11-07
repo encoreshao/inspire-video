@@ -134,6 +134,18 @@ def main() -> int:
     final_dir = ROOT / "output/final" / m["project_id"]
     default_id = platforms.DEFAULT_PROFILE
 
+    if not a.force:  # report every existing output up front, before any minutes-long render starts
+        existing = []
+        for profile in targets:
+            if not a.preview and not a.cover:
+                existing.append(final_dir / platforms.video_name(m["project_id"], profile.id))
+            if not a.preview:
+                existing.append(final_dir / platforms.cover_name(profile.id))
+        existing = [f for f in existing if f.exists()]
+        if existing:
+            raise FileExistsError("; ".join(f"{f} exists" for f in existing) + "; use --force to overwrite "
+                                  "(it re-renders every format listed), or --profile <id> to render a single format")
+
     def suffixed(name: str, profile) -> str:
         """props.json for the default profile, props-<profile>.json otherwise."""
         stem, ext = name.rsplit(".", 1)

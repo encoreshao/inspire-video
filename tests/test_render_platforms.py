@@ -52,6 +52,7 @@ def run(tmp_path, monkeypatch):
         return rc, calls, proj
 
     go.root = tmp_path
+    go.calls = calls
     return go
 
 
@@ -117,3 +118,28 @@ def test_a_showcase_project_rejects_the_platform_flag(tmp_path, monkeypatch):
     with pytest.raises(SystemExit) as e:
         render.main()
     assert e.value.code == 2
+
+
+def test_existing_outputs_are_all_reported_before_any_render(run):
+    final = run.root / "output/final/demo"
+    final.mkdir(parents=True)
+    (final / "demo-portrait-4x5.mp4").write_bytes(b"x")
+    (final / "cover.png").write_bytes(b"x")
+    with pytest.raises(FileExistsError) as e:
+        run("--platform", "douyin,linkedin")
+    msg = str(e.value)
+    assert "demo-portrait-4x5.mp4 exists" in msg and "cover.png exists" in msg
+    assert "--force" in msg and "--profile" in msg
+    assert "demo.mp4" not in msg.replace("demo-portrait-4x5.mp4", "")
+    assert run.calls == []
+
+
+def test_force_renders_every_format_over_existing_files(run):
+    final = run.root / "output/final/demo"
+    final.mkdir(parents=True)
+    (final / "demo-portrait-4x5.mp4").write_bytes(b"x")
+    rc, calls, _ = run("--platform", "douyin,linkedin", "--force")
+    assert rc == 0
+    assert outputs(calls) == [
+        ("render", "final/demo/demo.mp4"), ("still", "final/demo/cover.png"),
+        ("render", "final/demo/demo-portrait-4x5.mp4"), ("still", "final/demo/cover-portrait-4x5.png")]
