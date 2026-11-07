@@ -320,3 +320,17 @@ python3 scripts/showcase/ingest.py ~/code/app --screenshots ~/shots             
 ```
 
 结果写入 `output/projects/<slug>/brief.json` 和 `assets/`。自建 GitLab：`--gitlab-host git.example.com` 或环境变量 `INSPIRE_GITLAB_HOSTS`。抓取遵守 `robots.txt`，默认拒绝内网地址（除非加 `--allow-private`）。来自网页或仓库的图片都带有版权说明：发布前请确认可以使用。
+
+## 展示类视频（实验性）
+
+用网站、GitHub/GitLab 仓库或本地仓库（可附带你自己的截图）生成 9:16 中英双语视频，旁白由本地语音模型生成：
+
+```bash
+python3 scripts/showcase/ingest.py https://example.com/ --project output/projects/demo
+python3 scripts/showcase/manifest.py scaffold output/projects/demo     # 然后填写各个镜头（inspire-showcase 技能会帮你完成）
+python3 scripts/showcase/narrate.py output/projects/demo --engine say  # 或使用你自己的声音档案的 cosyvoice
+python3 scripts/render.py output/projects/demo --preview
+python3 scripts/render.py output/projects/demo                          # 视频 + 封面 + 输出检查
+```
+
+完整流程和规则（事实只来自素材简报、版权、安全区）见 `skills/inspire-showcase/SKILL.md`。

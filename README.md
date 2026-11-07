@@ -320,3 +320,17 @@ python3 scripts/showcase/ingest.py ~/code/app --screenshots ~/shots             
 ```
 
 It writes `output/projects/<slug>/brief.json` and `assets/`. Self-hosted GitLab: `--gitlab-host git.example.com` or `INSPIRE_GITLAB_HOSTS`. The crawl respects `robots.txt` and refuses private addresses unless `--allow-private`. Assets from pages or repositories carry a rights note: confirm you may reuse them before publishing.
+
+## Showcase videos (experimental)
+
+Make a 9:16 bilingual video from a website, a GitHub/GitLab repository or a local repo, with or without your own screenshots, narrated by a local voice model:
+
+```bash
+python3 scripts/showcase/ingest.py https://example.com/ --project output/projects/demo
+python3 scripts/showcase/manifest.py scaffold output/projects/demo     # then fill in the beats (the inspire-showcase skill does this)
+python3 scripts/showcase/narrate.py output/projects/demo --engine say  # or cosyvoice with your own voice profile
+python3 scripts/render.py output/projects/demo --preview
+python3 scripts/render.py output/projects/demo                          # video + cover + output checks
+```
+
+See `skills/inspire-showcase/SKILL.md` for the full workflow and the rules (facts only from the brief, rights, safe area).
