@@ -60,3 +60,13 @@ def test_cli_exit_codes(tmp_path, capsys):
     bad = make(tmp_path, "bad.mp4", "drawbox=x=100:y=1700:w=800:h=120:color=black:t=fill")
     assert checks.main([str(bad)]) == 1 and "1590" in capsys.readouterr().out
     assert checks.main([str(tmp_path / "missing.mp4")]) == 1
+
+
+def test_a_soft_shadow_near_the_side_edges_is_not_content(tmp_path):
+    # A drop shadow fades into the margin (luma differences of about 10-15); real content differs by 30 or more.
+    soft_left = make(tmp_path, "soft-left.mp4", "drawbox=x=40:y=600:w=40:h=300:color=0xEEEEEE:t=fill")
+    assert checks.check_video(soft_left) == []
+    soft_right = make(tmp_path, "soft-right.mp4", "drawbox=x=1000:y=600:w=40:h=300:color=0xEEEEEE:t=fill")
+    assert checks.check_video(soft_right) == []
+    strong = make(tmp_path, "strong.mp4", "drawbox=x=40:y=600:w=40:h=300:color=0xCCCCCC:t=fill")
+    assert any("left" in p for p in checks.check_video(strong))

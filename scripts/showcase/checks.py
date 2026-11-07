@@ -17,6 +17,7 @@ from pathlib import Path
 SAFE_BOTTOM_Y = 1590
 EDGE = 100
 FLAT = 8                                   # a flat background strip varies by at most this much in luma
+SIDE_FLAT = 24                             # side strips also see the panel's soft drop shadow (about 10-15); content is 30+
 STATS = re.compile(r"lavfi\.signalstats\.(YMIN|YMAX|YAVG)=([\d.]+)")
 
 
@@ -51,16 +52,16 @@ def check_video(path, scale: float = 1.0, duration_range=None, run=subprocess.ru
         problems.append("the first frame is black (the video must not fade in from black)")
     bottom_y, edge = round(h * SAFE_BOTTOM_Y / 1920), max(2, round(w * EDGE / 1080))   # from the real size, so a wrong size cannot crash ffmpeg
     strips = {
-        f"content below y = {SAFE_BOTTOM_Y}": f"crop={w}:{max(1, h - bottom_y)}:0:{bottom_y}",
-        f"content within {EDGE} px of the left edge": f"crop={edge}:{h}:0:0",
-        f"content within {EDGE} px of the right edge": f"crop={edge}:{h}:{w - edge}:0",
+        f"content below y = {SAFE_BOTTOM_Y}": (f"crop={w}:{max(1, h - bottom_y)}:0:{bottom_y}", FLAT),
+        f"content within {EDGE} px of the left edge": (f"crop={edge}:{h}:0:0", SIDE_FLAT),
+        f"content within {EDGE} px of the right edge": (f"crop={edge}:{h}:{w - edge}:0", SIDE_FLAT),
     }
     hit: dict[str, float] = {}
     for frac in (0.1, 0.3, 0.5, 0.7, 0.9):
         at = dur * frac
-        for label, crop in strips.items():
+        for label, (crop, tolerance) in strips.items():
             s = _stats(path, crop, at, run)
-            if label not in hit and s["YMAX"] - s["YMIN"] > FLAT:
+            if label not in hit and s["YMAX"] - s["YMIN"] > tolerance:
                 hit[label] = at
     problems += [f"{label} (first seen at {at:.1f} s)" for label, at in hit.items()]
     return problems
