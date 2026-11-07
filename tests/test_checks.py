@@ -27,6 +27,12 @@ def test_wrong_size_is_reported(tmp_path):
     assert checks.check_video(make(tmp_path, "half.mp4", "", size="540x960"), scale=0.5) == []
 
 
+def test_a_fade_out_to_black_is_reported(tmp_path):
+    out = make(tmp_path, "fade.mp4", "fade=t=out:st=1.5:d=0.5", seconds=2)
+    assert any("last frame" in p for p in checks.check_video(out))
+    assert not any("last frame" in p for p in checks.check_video(make(tmp_path, "hold.mp4", "")))
+
+
 def test_a_black_first_frame_is_reported(tmp_path):
     out = tmp_path / "black.mp4"
     subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i",

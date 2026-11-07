@@ -3,7 +3,7 @@
 
   python scripts/showcase/checks.py <video.mp4> [--preview] [--final]
 
-Checks: size, a bright first frame, nothing below y = 1590, nothing within 100 px of the side edges.
+Checks: size, a bright first frame and last frame, nothing below y = 1590, nothing within 100 px of the side edges.
 """
 from __future__ import annotations
 
@@ -31,7 +31,8 @@ def _probe(path, run):
 
 def _stats(path, vf, at, run):
     chain = ",".join(x for x in (vf, "signalstats", "metadata=print:file=-") if x)
-    r = run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", f"{at:.3f}", "-i", str(path), "-vf", chain,
+    seek = ["-sseof", f"{at:.3f}"] if at < 0 else ["-ss", f"{at:.3f}"]   # a negative time counts back from the end
+    r = run(["ffmpeg", "-hide_banner", "-loglevel", "error", *seek, "-i", str(path), "-vf", chain,
              "-frames:v", "1", "-f", "null", "-"], check=True, capture_output=True, text=True)
     found = {k: float(v) for k, v in STATS.findall(r.stdout)}
     if not {"YMIN", "YMAX", "YAVG"} <= found.keys():
@@ -50,6 +51,10 @@ def check_video(path, scale: float = 1.0, duration_range=None, run=subprocess.ru
         problems.append(f"the video is {dur:.1f} s but it must be {duration_range[0]:g} to {duration_range[1]:g} s")
     if _stats(path, "", 0, run)["YAVG"] < 20:          # pure black is 16 in video luma; the dark "ink" theme is about 37
         problems.append("the first frame is black (the video must not fade in from black)")
+    last = _stats(path, "", -0.04, run)["YAVG"]
+    before = _stats(path, "", max(0.0, dur - 1.0), run)["YAVG"]
+    if last < 20 or last < 0.7 * before:     # a fade never quite reaches black on its last frame, so also compare with 1 s earlier
+        problems.append("the last frame is black or faded (the video must hold its last image, not fade out)")
     bottom_y, edge = round(h * SAFE_BOTTOM_Y / 1920), max(2, round(w * EDGE / 1080))   # from the real size, so a wrong size cannot crash ffmpeg
     strips = {
         f"content below y = {SAFE_BOTTOM_Y}": (f"crop={w}:{max(1, h - bottom_y)}:0:{bottom_y}", FLAT),

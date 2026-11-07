@@ -47,11 +47,10 @@ export const ShowcaseShort: React.FC<ShowcaseProps> = ({headline, subtitle, cate
   const c = pickTheme(theme);
   const frame = useCurrentFrame();
   const {durationInFrames} = useVideoConfig();
-  const fadeOut = interpolate(frame, [durationInFrames - 10, durationInFrames], [1, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
   const reserve = cardHeight(beats);
   return (
     <ThemeCtx.Provider value={c}>
-      <AbsoluteFill style={{opacity: fadeOut, backgroundColor: c.paper, color: c.ink, padding: `${TITLE_TOP}px ${SAFE_X}px 0`,
+      <AbsoluteFill style={{backgroundColor: c.paper, color: c.ink, padding: `${TITLE_TOP}px ${SAFE_X}px 0`,
         display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', fontFamily: 'Arial, sans-serif', boxSizing: 'border-box'}}>
         <div style={{flexShrink: 0, display: 'flex', flexDirection: 'column'}}>
           <div style={{fontSize: 22, letterSpacing: 1.5, color: c.muted, marginBottom: 16}}>{category || 'SHOWCASE / 项目展示'}</div>
