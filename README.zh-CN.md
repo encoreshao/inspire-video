@@ -309,3 +309,14 @@ python3 scripts/showcase/narrate.py output/projects/<slug> --engine cosyvoice --
 ```
 
 `--engine say`（macOS，无需安装）和 `--engine kokoro`（需要 `mlx-audio` 与 `brew install espeak-ng`）可用于快速预览。声音档案保存在 `voices/`，已被 git 忽略：这是个人数据。
+
+### 展示类视频素材采集（实验性）
+
+```bash
+python3 scripts/showcase/ingest.py https://example.com/                         # 网站：抓取首页和导航页面并截图
+python3 scripts/showcase/ingest.py https://example.com/ --screenshots ~/shots   # 网站 + 你自己的截图
+python3 scripts/showcase/ingest.py https://github.com/owner/repo                # 代码仓库（也支持 GitLab 和本地目录）
+python3 scripts/showcase/ingest.py ~/code/app --screenshots ~/shots             # 本地仓库 + 你自己的截图
+```
+
+结果写入 `output/projects/<slug>/brief.json` 和 `assets/`。自建 GitLab：`--gitlab-host git.example.com` 或环境变量 `INSPIRE_GITLAB_HOSTS`。抓取遵守 `robots.txt`，默认拒绝内网地址（除非加 `--allow-private`）。来自网页或仓库的图片都带有版权说明：发布前请确认可以使用。

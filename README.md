@@ -309,3 +309,14 @@ python3 scripts/showcase/narrate.py output/projects/<slug> --engine cosyvoice --
 ```
 
 `--engine say` (macOS, no setup) and `--engine kokoro` (needs `mlx-audio` and `brew install espeak-ng`) are lighter options for previews. Voice profiles live in `voices/`, which is git-ignored: they are personal data.
+
+### Showcase ingest (experimental)
+
+```bash
+python3 scripts/showcase/ingest.py https://example.com/                         # site: crawls the homepage and nav pages, captures screenshots
+python3 scripts/showcase/ingest.py https://example.com/ --screenshots ~/shots   # site + your screenshots
+python3 scripts/showcase/ingest.py https://github.com/owner/repo                # repository (GitLab and local folders work too)
+python3 scripts/showcase/ingest.py ~/code/app --screenshots ~/shots             # local repository + your screenshots
+```
+
+It writes `output/projects/<slug>/brief.json` and `assets/`. Self-hosted GitLab: `--gitlab-host git.example.com` or `INSPIRE_GITLAB_HOSTS`. The crawl respects `robots.txt` and refuses private addresses unless `--allow-private`. Assets from pages or repositories carry a rights note: confirm you may reuse them before publishing.
