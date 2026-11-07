@@ -83,24 +83,24 @@ export const SAFE_BOTTOM = 330; // the lowest content must end above 1920 - SAFE
 // 22 px label it puts the label's top edge at about y = 259 (the user-approved position).
 export const TITLE_TOP = 256;
 export const LINE_GAP = 26; // space above and below each divider line
-const PANEL_W = 1080 - SAFE_X * 2; // 852
+export const PANEL_W = 1080 - SAFE_X * 2; // 852
 const CARD_TEXT_W = PANEL_W - 6 - 64; // panel inner width minus card padding
-const CARD_PAD_Y = 12; // vertical padding inside the card
+export const CARD_PAD_Y = 12; // vertical padding inside the card
 const MAX_EN = 32;
-const needed = (cue: {en: string; zh: string}, en: number) => {
+export const needed = (cue: {en: string; zh: string}, en: number) => {
   const zh = en + 2;
   const enLines = Math.ceil((cue.en.length * en * 0.54) / CARD_TEXT_W);
   const zhLines = Math.ceil((cue.zh.length * zh * 1.04) / CARD_TEXT_W);
   return enLines * en * 1.28 + zhLines * zh * 1.38 + 14;
 };
-const fit = (cue: {en: string; zh: string}) => {
+export const fit = (cue: {en: string; zh: string}) => {
   for (let en = MAX_EN; en >= 26; en -= 2) {
     if (needed(cue, en) <= 400) return {en, zh: en + 2};
   }
   return {en: 26, zh: 28};
 };
 const HEAD = 42; // headline and English subtitle share this size
-const cardHeight = (cues: {en: string; zh: string}[]) =>
+export const cardHeight = (cues: {en: string; zh: string}[]) =>
   Math.max(64, ...cues.map((q) => needed(q, fit(q).en))) + CARD_PAD_Y * 2 + 4;
 
 export const SpeakerBlock: React.FC<{speaker: string; speakerZh?: string; role?: string; roleZh?: string;
