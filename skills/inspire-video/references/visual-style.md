@@ -41,3 +41,16 @@ A calm, editorial bilingual quote video. The footage is the visual anchor; the c
 
 - The layout stays fixed while the video plays. Captions fade in over about 0.1 s; the whole composition fades in and out over about 0.2-0.3 s.
 - No bouncing, glitch, particles or flashy transitions.
+
+## Platform profiles
+
+The layout above is the `vertical-9x16` profile (WeChat Channels, Douyin, RedNote, Bilibili). `config/platforms.yaml` defines the others; the compositions read the profile and size themselves from it.
+
+| Profile | Canvas | Safe area | Title top | Notes |
+|---|---|---|---|---|
+| `vertical-9x16` | 1080 x 1920 px | 114 px left/right, 190 px top, 330 px bottom | 256 px | Default. Tall phones center-crop the sides. |
+| `portrait-4x5` | 1080 x 1350 px | 60 px left/right, 90 px top, 150 px bottom | 110 px | LinkedIn and Facebook feed. Compact density: type and gaps about 18% smaller, the caption card limited to 300 px, the video panel takes the remaining height (at least 320 px). Feeds do not crop the sides. |
+
+`square-1x1` and `landscape-16x9` are registered but not supported yet: the stacked layout leaves too little video height at 1:1 and 16:9 needs a side-by-side layout. Rendering them falls back to `portrait-4x5` and `vertical-9x16` with a warning.
+
+Both profiles keep the bilingual captions. Only the geometry and density change, never the content.

@@ -20,6 +20,7 @@ Create a finished vertical MP4 inspired by the supplied visual references:
 - no imitation of the source app's status bar, navigation, engagement icons, or account UI.
 
 Default output: 1080×1920, 30 fps, H.264 MP4, 40 seconds to 2 min 30 s (40–150 s), bilingual Chinese/English.
+Other platform formats (4:5 for LinkedIn and Facebook) come from `config/platforms.yaml`: render them with `--platform` or `--profile`, see `references/rendering-guide.md`.
 
 ## Operating principles
 
@@ -159,7 +160,7 @@ Validate JSON before rendering. Reject missing required fields, negative timesta
 ### 8. Render
 
 Use the Remotion composition `InspireShort`.
-- Render at 1080×1920, 30 fps, H.264.
+- Render at 1080×1920, 30 fps, H.264. For other platforms add `--platform <ids>`; profiles shared by several platforms render once.
 - Use bundled/local fonts; never depend on a remote font at render time.
 - Ensure Chinese glyph coverage. Preferred fallback chain: Noto Serif CJK SC / Source Han Serif SC / Songti SC; English: Inter / Arial.
 - Use FFmpeg for final audio normalization and muxing only when required.

@@ -16,6 +16,8 @@ video:
   codec: h264
   audio_codec: aac
   pixel_format: yuv420p
+# Other video formats (4:5 and so on) and per-platform limits live in config/platforms.yaml; the values here
+# are the default `vertical-9x16` profile.
 
 style:
   theme: light                 # light | mist | ivory | sage | ink

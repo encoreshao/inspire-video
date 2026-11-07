@@ -140,7 +140,7 @@ bash ~/.inspire-video/scripts/install.sh claude    # 或：codex | both（加 --
 3. 提出 1–3 个候选片段，请你选择；
 4. 撰写标题、副标题、字幕、译文和说话人信息；
 5. 剪辑片段、写出 `video_manifest.json`，先渲染预览，经你确认后再渲染最终 MP4 和封面；
-6. 为微信视频号和抖音撰写发布文案（标题、描述、话题标签）。
+6. 为每个目标平台撰写发布文案（标题、描述、话题标签）。
 
 其他命令：
 
@@ -159,7 +159,7 @@ bash ~/.inspire-video/scripts/install.sh claude    # 或：codex | both（加 --
 | `final/<slug>/` | 每个项目一个文件夹，发布所需文件都在里面： |
 | `final/<slug>/<slug>.mp4` | 成品视频 |
 | `final/<slug>/cover.png` | 封面图（每次渲染成品视频时自动生成） |
-| `final/<slug>/publish.md` | 微信视频号与抖音的标题、描述和话题标签（另有 `publish_wechat.txt`、`publish_douyin.txt`） |
+| `final/<slug>/publish.md` | 每个目标平台的标题、描述和话题标签（另有每个平台各一份 `publish_<platform>.txt`） |
 | `cache/` | 下载的链接素材 |
 
 ## 手动流程：访谈视频（不用智能体）
@@ -213,6 +213,17 @@ python3 scripts/publish_meta.py output/projects/<slug>          # 校验，然�
 `publish.json` 在 `platforms` 下列出目标平台（平台 id → `title`、`description`、`hashtags`），另有必填的 `credit` 署名行、`credit_en`（列出 LinkedIn、Facebook 等英文平台时必填）以及可选的 `notes`，详见 `skills/inspire-video/references/publishing.md`。带顶层 `wechat_channels` / `douyin` 的旧文件仍可使用。话题标签不带 `#`，脚本会自动加上。署名行会追加到每个描述末尾。若项目的 `review_status` 不是 `approved`，`publish.md` 会带上“NOT CLEARED FOR PUBLICATION”（未获准发布）的警示。字数上限写在 `config/platforms.yaml` 中，每个平台有 `verified` 标记，多数为未经核实的默认值：请到各平台的发布页面核对并修改该文件。
 
 加 `--force` 可覆盖已有的成品文件，加 `--theme light|mist|ivory|sage|ink` 可覆盖主题。`fetch.py --yes-rights` 会跳过交互式的版权确认，只有在你已确认版权时才使用。
+
+### 平台与视频格式
+
+`config/platforms.yaml` 列出支持的平台（`wechat_channels`、`douyin`、`rednote`、`bilibili`、`linkedin`、`facebook`）、各自的发布字数限制和使用的视频规格。`render.py` 的 `--platform` 会为这些平台所需的每种规格各渲染一次（国内平台 9:16，LinkedIn 和 Facebook 为 4:5）；`publish_meta.py` 为每个平台生成一份文案，LinkedIn 和 Facebook 为英文，视频仍为中英双语。
+
+```bash
+python3 scripts/render.py output/projects/<slug> --platform wechat_channels,douyin,linkedin
+python3 scripts/publish_meta.py output/projects/<slug> --init --platform douyin,linkedin
+```
+
+多数平台的限制是未经核实的默认值（每个平台有 `verified` 标记）：请到各平台发布页核对。1:1 和 16:9 已登记但暂不支持，会带警告回退到 4:5 和 9:16。新增平台只需在 `config/platforms.yaml` 里加一个块。
 
 ### 清单（manifest）
 

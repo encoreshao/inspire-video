@@ -140,7 +140,7 @@ For a URL, add a rights statement so the agent can download it, for example: "I 
 3. proposes 1–3 candidate segments and asks you to choose;
 4. writes the headline, subtitle, captions, translation and speaker details;
 5. cuts the clip, writes `video_manifest.json`, and renders a preview, then the final MP4 and cover after you approve;
-6. writes the publishing copy (title, description, hashtags) for WeChat Channels and Douyin.
+6. writes the publishing copy (title, description, hashtags) for each target platform.
 
 Other commands:
 
@@ -159,7 +159,7 @@ Everything is written under `~/.inspire-video/output/`:
 | `final/<slug>/` | everything to publish, in one folder per project: |
 | `final/<slug>/<slug>.mp4` | the finished video |
 | `final/<slug>/cover.png` | the cover image (rendered with every final video) |
-| `final/<slug>/publish.md` | title, description and hashtags for WeChat Channels and Douyin (plus `publish_wechat.txt`, `publish_douyin.txt`) |
+| `final/<slug>/publish.md` | title, description and hashtags for each target platform (plus one `publish_<platform>.txt` each) |
 | `cache/` | downloaded URL sources |
 
 ## Manual workflow: speaker videos (without the agent)
@@ -213,6 +213,17 @@ python3 scripts/publish_meta.py output/projects/<slug>          # validate, then
 `publish.json` lists the target platforms under `platforms` (platform id → `title`, `description`, `hashtags`), a required `credit` line, `credit_en` (required when an English platform such as `linkedin` or `facebook` is listed) and optional `notes`; see `skills/inspire-video/references/publishing.md`. Old files with top-level `wechat_channels` / `douyin` keys still work. Hashtags are written without `#`. The credit is appended to every description. If the project's `review_status` is not `approved`, `publish.md` carries a "NOT CLEARED FOR PUBLICATION" banner. Limits live in `config/platforms.yaml`; each platform has a `verified` flag and most are unverified defaults: check each platform's publish page and edit the file.
 
 Add `--force` to overwrite an existing final file, and `--theme light|mist|ivory|sage|ink` to override the theme. `fetch.py --yes-rights` skips the interactive rights prompt; only use it when you have confirmed the rights.
+
+### Platforms and video formats
+
+`config/platforms.yaml` lists the supported platforms (`wechat_channels`, `douyin`, `rednote`, `bilibili`, `linkedin`, `facebook`) with their publishing limits and the video profile each one uses. `--platform` on `render.py` renders every distinct profile those platforms need (9:16 for the Chinese platforms, 4:5 for LinkedIn and Facebook); `publish_meta.py` writes one copy file per platform, in English for LinkedIn and Facebook while the video stays bilingual.
+
+```bash
+python3 scripts/render.py output/projects/<slug> --platform wechat_channels,douyin,linkedin
+python3 scripts/publish_meta.py output/projects/<slug> --init --platform douyin,linkedin
+```
+
+Most platform limits are unverified defaults (each platform has a `verified` flag): check them on each publish page. 1:1 and 16:9 are registered but not supported yet and fall back to 4:5 and 9:16 with a warning. Adding a platform means adding a block to `config/platforms.yaml`.
 
 ### The manifest
 
