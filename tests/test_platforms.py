@@ -118,3 +118,24 @@ def test_the_duration_check_names_the_platform_that_fails(tmp_path):
     assert P.check_duration(reg, ["a", "b"], 60) == []
     errs = P.check_duration(reg, ["a", "b"], 120)
     assert len(errs) == 1 and errs[0].startswith("a:") and "100" in errs[0]
+
+
+def test_a_duplicate_platform_id_is_rejected(tmp_path):
+    copied = GOOD + """  a: {name: A2, lang: zh, profile: vertical-9x16, duration: {min: 3, max: 9}, title_field: title,
+      title: {max: 10}, description_max: 100, hashtags_max: 3, file_stem: a2}
+"""
+    with pytest.raises(P.RegistryError, match="duplicate key 'a'"):
+        reg_from(tmp_path, copied)
+
+
+def test_a_duplicate_profile_id_is_rejected(tmp_path):
+    dup = GOOD.replace("platforms:\n", "  portrait-4x5: {width: 1, height: 1, safe: {x: 1, top: 1, bottom: 1}, title_top: 1}\nplatforms:\n", 1)
+    with pytest.raises(P.RegistryError, match="duplicate key 'portrait-4x5'"):
+        reg_from(tmp_path, dup)
+
+
+def test_two_platforms_may_not_share_a_file_stem(tmp_path):
+    clash = GOOD.replace("hashtags_max: 3, verified: true, file_stem: bee}", "hashtags_max: 3, file_stem: a}", 1)
+    assert clash != GOOD
+    with pytest.raises(P.RegistryError, match="platforms a and b share file_stem 'a'"):
+        reg_from(tmp_path, clash)

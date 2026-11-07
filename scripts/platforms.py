@@ -81,6 +81,23 @@ class Registry:
         return fallback, f"profile {profile.id} is not supported yet; rendering {fallback.id} instead"
 
 
+class _UniqueKeyLoader(yaml.SafeLoader):
+    """SafeLoader that rejects a repeated mapping key instead of keeping the last one."""
+
+    def construct_mapping(self, node, deep=False):
+        seen = set()
+        for key_node, _ in node.value:
+            if key_node.tag == "tag:yaml.org,2002:merge":
+                continue
+            key = self.construct_object(key_node, deep=True)
+            if isinstance(key, (str, int, float, bool)) or key is None:
+                if key in seen:
+                    raise RegistryError(f"duplicate key '{key}' at line {key_node.start_mark.line + 1}; "
+                                        "each id must be unique (rename the copied block)")
+                seen.add(key)
+        return super().construct_mapping(node, deep)
+
+
 def _need(block, keys, where: str) -> None:
     if not isinstance(block, dict):
         raise RegistryError(f"{where} must be a mapping")
@@ -90,7 +107,7 @@ def _need(block, keys, where: str) -> None:
 
 
 def load(path=None) -> Registry:
-    raw = yaml.safe_load(Path(path or DEFAULT_PATH).read_text(encoding="utf-8"))
+    raw = yaml.load(Path(path or DEFAULT_PATH).read_text(encoding="utf-8"), Loader=_UniqueKeyLoader)
     _need(raw, ("profiles", "platforms"), "registry")
 
     profiles: dict[str, Profile] = {}
@@ -126,6 +143,12 @@ def load(path=None) -> Registry:
         platforms[pid] = Platform(pid, b["name"], b["lang"], b["profile"], b["duration"]["min"], b["duration"]["max"],
                                   b["title_field"], b["title"].get("min", 1), b["title"]["max"], b["description_max"],
                                   b["hashtags_max"], bool(b.get("verified", False)), b.get("file_stem", pid))
+    stems: dict[str, str] = {}
+    for pf in platforms.values():
+        if pf.file_stem in stems:
+            raise RegistryError(f"platforms {stems[pf.file_stem]} and {pf.id} share file_stem '{pf.file_stem}'; "
+                                "their publish files would overwrite each other")
+        stems[pf.file_stem] = pf.id
     return Registry(profiles, platforms)
 
 
