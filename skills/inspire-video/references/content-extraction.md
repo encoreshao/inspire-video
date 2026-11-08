@@ -29,6 +29,7 @@ A high score does not override a misleading or incomplete statement. Reject cand
 - End after the thought resolves.
 - Avoid joining separate moments into one quote.
 - Record exact source in/out timestamps.
+- After choosing a range from `transcript.json`, run `python scripts/refine_segment.py <project-dir> --start <s> --end <s> --write`. It snaps both ends to transcript cue edges, extends a short range or trims a long one to fit 40-150 s without crossing a pause over 5 s, and writes `segment_report.json`. Use its start and end, not your estimate. Read every `warnings` entry (a clip that starts or ends mid-sentence) and either choose a different range or say why the cut is acceptable. An error means the range has too little connected speech: choose another.
 
 ## Translation
 
