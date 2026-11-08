@@ -222,3 +222,11 @@ def test_crop_warnings_are_printed_at_render_time(tmp_path, sandbox, capsys):
     assert R.main([str(p), "--preview"], run=FakeRun()) == 0
     err = capsys.readouterr().err
     assert "warning:" in err and "cropped" in err
+
+
+def test_build_props_adds_chinese_break_units_unless_disabled(tmp_path, sandbox):
+    p, m = project(tmp_path)
+    staged = R.stage(p, sandbox / "video" / "public", m, None)
+    on = R.build_props(m, p, None, staged)["beats"][0]
+    assert "".join(on["zhUnits"]) == on["zh"]
+    assert "zhUnits" not in R.build_props(m, p, None, staged, zh_breaks=False)["beats"][0]

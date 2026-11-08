@@ -1,12 +1,20 @@
 InspireVideo
 Copyright (c) 2026 InspireVideo contributors, MIT License (see LICENSE).
 
-This product includes material adapted from video-shotcraft
-(https://github.com/Vincentwei1021/video-shotcraft), Copyright Vincentwei1021,
-licensed under the Apache License, Version 2.0, full text in LICENSES/Apache-2.0.txt (http://www.apache.org/licenses/LICENSE-2.0).
+This product includes material adapted from other projects.
 
-Adapted files, each marked with a header that states the changes:
+video-shotcraft (https://github.com/Vincentwei1021/video-shotcraft), Copyright Vincentwei1021, Apache License 2.0,
+full text in LICENSES/Apache-2.0.txt. Adapted files:
   skills/inspire-showcase/references/final-review.md
   skills/inspire-showcase/references/aesthetic-rules.md
+Those files remain available under the Apache License 2.0.
 
-Those files remain available under the Apache License 2.0. The rest of the repository is MIT.
+autoclip (https://github.com/zhouxiaoka/autoclip), Copyright (c) 2024 AutoClip Team, MIT License,
+full text in LICENSES/MIT-autoclip.txt. Adapted file:
+  scripts/zh_break.py
+
+jieba (https://github.com/fxsjy/jieba), Copyright (c) 2013 Sun Junyi, MIT License, full text in
+LICENSES/MIT-jieba.txt. The word list assets/lexicon/zh_words.txt.gz is derived from jieba's dictionary
+(the Chinese words of one to four characters with their frequencies), as shipped by autoclip.
+
+Each adapted file states its source and changes in its header. The rest of the repository is MIT.

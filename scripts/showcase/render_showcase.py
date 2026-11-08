@@ -17,6 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from zh_break import with_units  # noqa: E402
 from showcase.assets import image_size  # noqa: E402
 from showcase.checks import check_video  # noqa: E402
 from showcase.manifest import FPS, ManifestError, beat_seconds_list, crop_warnings, frame_windows, validate_showcase  # noqa: E402
@@ -43,7 +44,7 @@ def stage(project: Path, public: Path, m: dict, timings: dict | None) -> dict:
     return out
 
 
-def build_props(m: dict, project: Path, timings: dict | None, staged: dict) -> dict:
+def build_props(m: dict, project: Path, timings: dict | None, staged: dict, zh_breaks: bool = True) -> dict:
     seconds = beat_seconds_list(m, timings)
     windows = frame_windows(seconds, FPS)
     beats = []
@@ -52,6 +53,7 @@ def build_props(m: dict, project: Path, timings: dict | None, staged: dict) -> d
         beats.append({"id": b["id"], "en": b["en"], "zh": b["zh"], "asset": staged[b["id"]]["asset"], "iw": iw, "ih": ih,
                       "focus": b["focus"], "callout": b.get("callout"), "audio": staged[b["id"]]["audio"],
                       "startFrame": w["start"], "frames": w["frames"]})
+    beats = with_units(beats, zh_breaks)
     p = m["project"]
     return {"headline": m["headline"], "subtitle": m["subtitle"], "category": m.get("category") or "SHOWCASE / 项目展示",
             "theme": m.get("theme", "light"), "name": p["name"], "nameZh": p.get("name_zh", ""),
@@ -78,6 +80,7 @@ def main(argv=None, run=subprocess.run) -> int:
     ap.add_argument("--allow-unresolved-rights", action="store_true",
                     help="render a final video although some asset rights are unresolved (you have confirmed them)")
     ap.add_argument("--no-check", action="store_true", help="skip the output checks")
+    ap.add_argument("--no-zh-breaks", action="store_true", help="wrap Chinese captions between any two characters, as before")
     a = ap.parse_args(argv)
     try:
         project = Path(a.project_dir).resolve()
@@ -96,7 +99,7 @@ def main(argv=None, run=subprocess.run) -> int:
         if not a.preview and not a.cover and (final_dir / "cover.png").exists() and not a.force:
             raise ManifestError(f"{final_dir / 'cover.png'} exists; use --force to overwrite")     # before the long render
         staged = stage(project, ROOT / "video" / "public", m, timings)
-        props = build_props(m, project, timings, staged)
+        props = build_props(m, project, timings, staged, not a.no_zh_breaks)
     except (ValueError, OSError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 1

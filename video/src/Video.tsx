@@ -9,7 +9,13 @@ export type {Profile};
 export {CARD_PAD_Y, cardHeight, fit, needed};
 
 
-export type Cue = {start: number; end: number; en: string; zh: string; speaker?: string};
+export type Cue = {start: number; end: number; en: string; zh: string; zhUnits?: string[]; speaker?: string};
+
+// Chinese caption text that wraps only between units (words), never inside one. Without units it is plain text.
+export const ZhText: React.FC<{text: string; units?: string[]}> = ({text, units}) =>
+  units && units.length > 0 && units.join('').replace(/ /g, '') === text.replace(/ /g, '')
+    ? <>{units.map((u, i) => <span key={i} style={{display: 'inline-block'}}>{u}</span>)}</>
+    : <>{text}</>;
 export type Person = {id: string; name: string; name_zh?: string; title?: string; title_zh?: string; org?: string};
 
 export type Props = {
@@ -17,6 +23,7 @@ export type Props = {
   subtitle: string;
   quoteEn: string;
   quoteZh: string;
+  quoteZhUnits?: string[];
   speaker: string;
   source: string;
   clip: string | null;
@@ -157,7 +164,7 @@ export const Divider: React.FC<{gap?: number}> = ({gap = LINE_GAP}) => {
 };
 
 export const InspireShort: React.FC<Props> = ({
-  headline, subtitle, quoteEn, quoteZh, speaker, source, clip, category,
+  headline, subtitle, quoteEn, quoteZh, quoteZhUnits, speaker, source, clip, category,
   cues, talkTitle, excerptLabel, speakerZh, role, roleZh, theme, people, videoFit = 'cover', cropX = 0.5, cropY = 0.5,
   profile = DEFAULT_PROFILE,
 }) => {
@@ -181,7 +188,7 @@ export const InspireShort: React.FC<Props> = ({
   if (synced) {
     for (const q of cues!) if (t >= q.start - 0.05) active = q;
   }
-  const cue = synced ? active : {start: 0, end: 0, en: quoteEn, zh: quoteZh};
+  const cue = synced ? active : {start: 0, end: 0, en: quoteEn, zh: quoteZh, zhUnits: quoteZhUnits};
   const cueAlpha = !synced ? 1 : active
     ? interpolate(t - active.start, [-0.05, 0.12], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'})
     : 0;
@@ -224,7 +231,7 @@ export const InspireShort: React.FC<Props> = ({
               <div style={{opacity: cueAlpha, display: 'flex', flexDirection: 'column', gap: 6}}>
                 <div style={{fontSize: size.en, fontWeight: 600, lineHeight: 1.28, overflowWrap: 'break-word', textWrap: 'balance' as any}}>{cue.en}</div>
                 <div style={{fontFamily: SERIF, fontSize: size.zh, fontWeight: 500, lineHeight: 1.38,
-                  color: c.accent, overflowWrap: 'break-word', textWrap: 'balance' as any}}>{cue.zh}</div>
+                  color: c.accent, overflowWrap: 'break-word', textWrap: 'balance' as any}}><ZhText text={cue.zh} units={cue.zhUnits} /></div>
               </div>
             )}
           </div>
