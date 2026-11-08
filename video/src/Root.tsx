@@ -3,6 +3,7 @@ import {Composition} from 'remotion';
 import {InspireShort} from './Video';
 import {InspireCover} from './Cover';
 import {ShowcaseShort} from './showcase/ShowcaseShort';
+import {ShowcasePromo} from './showcase/ShowcasePromo';
 import {ShowcaseCover} from './showcase/ShowcaseCover';
 import {DEFAULT_PROFILE} from './layout.mjs';
 import type {Profile} from './layout.mjs';
@@ -63,6 +64,17 @@ export const Root: React.FC = () => (
   <Composition
     id="ShowcaseShort"
     component={ShowcaseShort}
+    durationInFrames={45 * FPS}
+    fps={FPS}
+    width={1080}
+    height={1920}
+    calculateMetadata={({props}) => ({durationInFrames: Math.max(1, Math.round((props.durationSeconds ?? 45) * FPS))})}
+    defaultProps={{headline: '任何网站都能变成短视频', subtitle: 'Turn any site into a short video', theme: 'light', name: 'Project', sourceLabel: 'example.com',
+      beats: [] as any[], durationSeconds: 45}}
+  />
+  <Composition
+    id="ShowcasePromo"
+    component={ShowcasePromo}
     durationInFrames={45 * FPS}
     fps={FPS}
     width={1080}
