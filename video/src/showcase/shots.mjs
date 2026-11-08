@@ -136,7 +136,7 @@ export function statementReveal(index, frame) {
 }
 export const statementDoneFrame = (count) => (count - 1) * STATEMENT_STAGGER + STATEMENT_ENTER;
 // Type size in px for a statement of `widthUnits` (a Chinese character counts 2): bigger when there is less to say.
-export const statementFontSize = (widthUnits) => (widthUnits <= 14 ? 76 : widthUnits <= 20 ? 64 : 54);
+export const statementFontSize = (widthUnits) => (widthUnits <= 14 ? 88 : widthUnits <= 20 ? 76 : 66);   // longer lines wrap onto two or three
 
 // Plain data for the Python validator (scripts/showcase/manifest.py keeps a copy; a test compares the two).
 export const shotMeta = () => Object.fromEntries(Object.values(SHOTS).map((s) =>

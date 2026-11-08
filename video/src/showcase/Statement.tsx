@@ -29,6 +29,7 @@ export const Statement: React.FC<StatementProps> = ({text, units, stage, frame})
             <React.Fragment key={i}>
               <span style={{display: 'inline-block', opacity: r.opacity, transform: `translateY(${r.dy}px)`}}>{space ? u.slice(0, -1) : u}</span>
               {space ? ' ' : null}
+              {/[.!?。！？]\s*$/.test(u) && i < units.length - 1 ? <br /> : null}     {/* a sentence ends its line */}
             </React.Fragment>
           );
         })}
