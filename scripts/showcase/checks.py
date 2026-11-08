@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Post-render checks for a showcase video, using ffprobe and ffmpeg's signalstats (no extra dependencies).
 
-  python scripts/showcase/checks.py <video.mp4> [--preview] [--final]
+  python scripts/showcase/checks.py <video.mp4> [--preview] [--final] [--sheet sheet.png]
 
 Checks: size, a bright first frame and last frame, nothing below y = 1590, nothing within 100 px of the side edges.
 """
@@ -72,13 +72,29 @@ def check_video(path, scale: float = 1.0, duration_range=None, run=subprocess.ru
     return problems
 
 
+def contact_sheet(path, out, frames: int = 12, run=subprocess.run) -> Path:
+    """Write a PNG grid of `frames` evenly spaced frames, for the independent review (references/final-review.md)."""
+    if frames < 1:
+        raise ValueError("frames must be at least 1")
+    _, _, dur = _probe(path, run)
+    cols = min(frames, 4)
+    rows = -(-frames // cols)
+    vf = f"fps={frames / dur:.6f},scale=270:-1,tile={cols}x{rows}"      # one frame per dur / frames seconds
+    run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", str(path), "-vf", vf, "-frames:v", "1", "-y", str(out)],
+        check=True, capture_output=True, text=True)
+    return Path(out)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Check a rendered showcase video")
     ap.add_argument("video")
     ap.add_argument("--preview", action="store_true", help="half-scale draft render")
     ap.add_argument("--final", action="store_true", help="also require a 40-150 s duration")
+    ap.add_argument("--sheet", metavar="PNG", help="also write a contact sheet of 12 frames for the independent review")
     a = ap.parse_args(argv)
     try:
+        if a.sheet:
+            print(f"contact sheet: {contact_sheet(a.video, a.sheet)}")
         problems = check_video(a.video, 0.5 if a.preview else 1.0, (40, 150) if a.final else None)
     except (OSError, ValueError, KeyError, RuntimeError, subprocess.CalledProcessError) as e:
         print(f"error: {e}", file=sys.stderr)

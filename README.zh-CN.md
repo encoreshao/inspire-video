@@ -398,6 +398,8 @@ skills/               每个智能体技能一个文件夹，约定见 skills/RE
 README.md             英文说明
 README.zh-CN.md       本文件（简体中文）
 LICENSE               MIT
+NOTICE                第三方署名（改编自 video-shotcraft 的 Apache-2.0 内容）
+LICENSES/             第三方许可证全文
 config/default.yaml   默认值说明（仅供参考）
 config/platforms.yaml publish_meta.py 与 render.py 使用的平台字数上限和渲染配置
 schemas/              render.py 读取的清单 schema

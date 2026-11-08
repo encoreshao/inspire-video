@@ -315,6 +315,8 @@ The agent writes 4 to 6 beats (hook, problem, what it does, key features, proof,
 
 Beat length follows the narration audio but is never less than `40 / number of beats` seconds; without narration each beat lasts `max(4, 40 / beats)` seconds. The whole video must be 40 to 150 seconds. The full field list is in `skills/inspire-showcase/references/beat-writing.md`.
 
+Before delivery the skill self-checks the preview against `skills/inspire-showcase/references/aesthetic-rules.md` and runs an independent clean-context review (`skills/inspire-showcase/references/final-review.md`; `python3 scripts/showcase/checks.py <video> --sheet sheet.png` writes the contact sheet it needs). Both files are adapted from [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft) (Apache-2.0, see `NOTICE`).
+
 ### Narration and your own voice
 
 Narration is optional. Engines:
@@ -398,6 +400,8 @@ skills/               one folder per agent skill, conventions in skills/README.m
 README.md             this file (English)
 README.zh-CN.md       简体中文说明
 LICENSE               MIT
+NOTICE                third-party attribution (Apache-2.0 material adapted from video-shotcraft)
+LICENSES/             full text of the third-party licenses
 config/default.yaml   documented defaults (reference only)
 config/platforms.yaml platform limits and render profiles, used by publish_meta.py and render.py
 schemas/              manifest schema read by render.py
