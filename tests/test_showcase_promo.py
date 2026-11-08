@@ -1,0 +1,117 @@
+import copy
+import json
+import shutil
+import subprocess
+from pathlib import Path
+
+import pytest
+
+from imgs import png
+from promo_fixtures import promo_project
+from showcase import manifest as M
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def beat_with(m, index, **changes):
+    m = copy.deepcopy(m)
+    m["beats"][index].update(changes)
+    return m
+
+
+def beat_without(m, index, *keys):
+    m = copy.deepcopy(m)
+    for key in keys:
+        m["beats"][index].pop(key, None)
+    return m
+
+
+def test_a_valid_promo_manifest_passes_and_the_style_is_known(tmp_path):
+    p, m = promo_project(tmp_path)
+    assert M.STYLES == ("device", "promo")
+    M.validate_showcase(m, p)
+
+
+@pytest.mark.parametrize("make, message", [
+    (lambda m: beat_with(m, 0, shot="whip-pan"), "unknown shot"),
+    (lambda m: beat_with(m, 0, callout="Look here"), "callout"),
+    (lambda m: beat_with(m, 0, focus={"x": 0.1, "y": 0.1, "w": 0.5, "h": 0.4}), "exactly one"),
+    (lambda m: beat_without(m, 0, "target"), "exactly one"),
+    (lambda m: beat_with(m, 0, target="heading-9"), "heading-9"),
+    (lambda m: beat_with(m, 0, target=""), "target"),
+    (lambda m: beat_with(m, 1, shot="hero-push"), "back to back"),
+])
+def test_promo_beats_are_validated(tmp_path, make, message):
+    p, m = promo_project(tmp_path)
+    with pytest.raises(M.ManifestError, match=message):
+        M.validate_showcase(make(m), p)
+
+
+def test_the_error_names_the_beat_and_lists_the_elements_that_exist(tmp_path):
+    p, m = promo_project(tmp_path)
+    with pytest.raises(M.ManifestError) as e:
+        M.validate_showcase(beat_with(m, 2, target="nope-1"), p)
+    assert "'what'" in str(e.value) and "heading-1" in str(e.value)
+
+
+def test_a_target_needs_a_layout_file_beside_a_promo_capture(tmp_path):
+    p, m = promo_project(tmp_path)
+    (p / "assets" / "promo-1.layout.json").unlink()
+    with pytest.raises(M.ManifestError, match="layout"):
+        M.validate_showcase(m, p)
+
+
+def test_a_target_needs_an_image_named_like_a_promo_capture(tmp_path):
+    p, m = promo_project(tmp_path)
+    (p / "assets" / "shot.png").write_bytes(png(1440, 900))
+    with pytest.raises(M.ManifestError, match="layout"):
+        M.validate_showcase(beat_with(m, 0, asset="assets/shot.png"), p)
+
+
+def test_a_broken_layout_file_is_reported_with_the_beat(tmp_path):
+    p, m = promo_project(tmp_path)
+    (p / "assets" / "promo-1.layout.json").write_text("{not json", encoding="utf-8")
+    with pytest.raises(M.ManifestError, match="'hook'"):
+        M.validate_showcase(m, p)
+
+
+def test_a_user_screenshot_works_with_a_focus_rectangle_and_no_layout(tmp_path):
+    p, m = promo_project(tmp_path)
+    (p / "assets" / "shot.png").write_bytes(png(1440, 900))
+    m = beat_with(beat_without(m, 0, "target"), 0, asset="assets/shot.png", focus={"x": 0.1, "y": 0.1, "w": 0.5, "h": 0.4})
+    M.validate_showcase(m, p)
+    box, info = M.beat_target(m["beats"][0], p)
+    assert box == {"x": 144, "y": 90, "w": 720, "h": 360}
+    assert info == {"page": {"w": 1440, "h": 900}, "scale": 1, "layout": None}
+
+
+def test_beat_target_reads_the_element_box_and_the_page_from_the_layout(tmp_path):
+    p, m = promo_project(tmp_path)
+    box, info = M.beat_target(m["beats"][1], p)
+    assert box == {"x": 100, "y": 300, "w": 200, "h": 48}
+    assert info["page"] == {"w": 1440, "h": 1500} and info["scale"] == 2 and info["layout"]["version"] == 1
+
+
+def test_a_shot_limit_and_a_minimum_length_come_from_the_shot_table(tmp_path, monkeypatch):
+    p, m = promo_project(tmp_path)
+    limited = {**M.PROMO_SHOTS, "hero-push": {**M.PROMO_SHOTS["hero-push"], "maxPerVideo": 1}}
+    monkeypatch.setattr(M, "PROMO_SHOTS", limited)
+    with pytest.raises(M.ManifestError, match="at most 1"):
+        M.validate_showcase(m, p)                                  # hero-push is used twice
+    slow = {**M.PROMO_SHOTS, "hero-push": {**M.PROMO_SHOTS["hero-push"], "minSeconds": 20, "maxPerVideo": None}}
+    monkeypatch.setattr(M, "PROMO_SHOTS", slow)
+    with pytest.raises(M.ManifestError, match="at least 20"):
+        M.validate_showcase(m, p)                                  # the default beat is 10 s
+
+
+def test_the_device_checks_do_not_apply_to_a_promo_manifest(tmp_path):
+    p, m = promo_project(tmp_path)
+    assert M.crop_warnings(m, p) == []
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
+def test_the_python_shot_table_matches_the_javascript_registry():
+    code = "import('./video/src/showcase/shots.mjs').then((m) => console.log(JSON.stringify(m.shotMeta())))"
+    r = subprocess.run(["node", "-e", code], cwd=ROOT, capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stderr
+    assert json.loads(r.stdout) == M.PROMO_SHOTS

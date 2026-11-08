@@ -15,12 +15,18 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from showcase import page_layout as L  # noqa: E402
 from showcase.assets import AssetError, image_size  # noqa: E402
 from showcase.narrate import BEAT_ID  # noqa: E402
 from showcase.timing import LengthError, MAX_TOTAL, MIN_TOTAL, check_total  # noqa: E402
 
 THEMES = ("light", "mist", "ivory", "ink", "sage")
-STYLES = ("device",)
+STYLES = ("device", "promo")
+# The promo shots. Keep equal to shotMeta() in video/src/showcase/shots.mjs (tests/test_showcase_promo.py compares them).
+PROMO_SHOTS = {
+    "hero-push": {"minSeconds": 4, "maxPerVideo": None, "needsTallPage": False},
+    "spotlight-focus": {"minSeconds": 4, "maxPerVideo": None, "needsTallPage": False},
+}
 MIN_BEATS, MAX_BEATS = 4, 6
 FPS = 30
 PROJECT_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
@@ -49,6 +55,39 @@ def text_px(s: str, latin: float, cjk: float) -> float:
     return sum(cjk if _cjk(c) else latin for c in s)
 
 
+def page_info(project, asset: str) -> dict:
+    """The page size (CSS px), the capture scale and the layout (None without one) for a beat's image."""
+    project = Path(project)
+    try:
+        layout_file = project / L.layout_path_for(asset)
+    except L.LayoutError:
+        layout_file = None                                  # a user screenshot has no layout
+    if layout_file is not None and layout_file.is_file():
+        layout = L.load_layout(layout_file)
+        return {"page": dict(layout["page"]), "scale": layout["scale"], "layout": layout}
+    iw, ih = image_size(project / asset)
+    return {"page": {"w": iw, "h": ih}, "scale": 1, "layout": None}
+
+
+def beat_target(b: dict, project) -> tuple[dict, dict]:
+    """The target box in page CSS px (from the element id or the focus rectangle) and the page info."""
+    bid = b.get("id")
+    info = page_info(project, b["asset"])
+    if b.get("target") is not None:
+        if info["layout"] is None:
+            raise ManifestError(f"beat {bid!r}: target {b['target']!r} needs a layout file beside {b['asset']!r} "
+                                f"(capture the page with capture_page.py), or use focus instead")
+        box = L.find_element(info["layout"], b["target"])
+        if box is None:
+            ids = ", ".join(e["id"] for e in info["layout"]["elements"][:12]) or "none"
+            raise ManifestError(f"beat {bid!r}: target {b['target']!r} is not an element of the layout; "
+                                f"available: {ids}")
+        return dict(box), info
+    f, page = b["focus"], info["page"]
+    return ({"x": round(f["x"] * page["w"]), "y": round(f["y"] * page["h"]),
+             "w": round(f["w"] * page["w"]), "h": round(f["h"] * page["h"])}, info)
+
+
 def _check_layout(m: dict) -> None:
     """Refuse text that would not fit the fixed layout (the speaker pipeline warns about long lines; here it is an error)."""
     px = text_px(m["headline"], 24, 43)
@@ -69,6 +108,8 @@ def _check_layout(m: dict) -> None:
 
 def crop_warnings(m: dict, project) -> list[str]:
     """Beats whose image shape is far from the device screen: the picture is cropped to fit (never stretched)."""
+    if m.get("style", "device") == "promo":
+        return []
     out = []
     for b in m["beats"]:
         iw, ih = image_size(Path(project) / b["asset"])
@@ -105,7 +146,14 @@ def _text(m: dict, key: str, where: str = "") -> str:
     return v
 
 
-def _check_beat(b: dict, project: Path) -> None:
+def _check_focus(f, bid) -> None:
+    ok = isinstance(f, dict) and all(isinstance(f.get(k), (int, float)) and not isinstance(f.get(k), bool) for k in "xywh")
+    if not ok or not (0 <= f["x"] <= 1 and 0 <= f["y"] <= 1 and 0 < f["w"] <= 1 and 0 < f["h"] <= 1
+                      and f["x"] + f["w"] <= 1.001 and f["y"] + f["h"] <= 1.001):
+        raise ManifestError(f"beat {bid!r}: focus must be x, y in [0,1], w, h in (0,1] and stay inside the image")
+
+
+def _check_beat(b: dict, project: Path, style: str = "device") -> None:
     bid = b.get("id")
     for key in ("en", "zh"):
         if not isinstance(b.get(key), str) or not b[key].strip():
@@ -116,15 +164,15 @@ def _check_beat(b: dict, project: Path) -> None:
         raise ManifestError(f"beat {bid!r}: en holds more than one sentence; use one sentence per beat")
     if len(b["zh"]) > MAX_ZH:
         raise ManifestError(f"beat {bid!r}: zh is {len(b['zh'])} characters; keep it to {MAX_ZH} or fewer")
-    callout = b.get("callout")
-    if callout is not None and (not isinstance(callout, str) or width_units(callout) > CALLOUT_UNITS):
-        raise ManifestError(f"beat {bid!r}: callout must be short: at most {CALLOUT_UNITS} width units "
-                            f"(a Chinese character counts as 2, so about 11 Chinese characters or 22 letters)")
-    f = b.get("focus")
-    ok = isinstance(f, dict) and all(isinstance(f.get(k), (int, float)) and not isinstance(f.get(k), bool) for k in "xywh")
-    if not ok or not (0 <= f["x"] <= 1 and 0 <= f["y"] <= 1 and 0 < f["w"] <= 1 and 0 < f["h"] <= 1
-                      and f["x"] + f["w"] <= 1.001 and f["y"] + f["h"] <= 1.001):
-        raise ManifestError(f"beat {bid!r}: focus must be x, y in [0,1], w, h in (0,1] and stay inside the image")
+    if style == "promo":
+        if b.get("callout") is not None:
+            raise ManifestError(f"beat {bid!r}: callout is not used in the promo style (spotlight-focus replaces the ring)")
+    else:
+        callout = b.get("callout")
+        if callout is not None and (not isinstance(callout, str) or width_units(callout) > CALLOUT_UNITS):
+            raise ManifestError(f"beat {bid!r}: callout must be short: at most {CALLOUT_UNITS} width units "
+                                f"(a Chinese character counts as 2, so about 11 Chinese characters or 22 letters)")
+        _check_focus(b.get("focus"), bid)
     asset = b.get("asset")
     if not isinstance(asset, str) or not asset or Path(asset).is_absolute():
         raise ManifestError(f"beat {bid!r}: asset must be a path relative to the project folder")
@@ -135,6 +183,42 @@ def _check_beat(b: dict, project: Path) -> None:
         image_size(path)
     except AssetError as e:
         raise ManifestError(f"beat {bid!r}: asset {asset!r} is not a usable image ({e})") from None
+    if style == "promo":
+        _check_promo_beat(b, project)
+
+
+def _check_promo_beat(b: dict, project: Path) -> None:
+    bid = b.get("id")
+    shot = b.get("shot", "hero-push")
+    if shot not in PROMO_SHOTS:
+        raise ManifestError(f"beat {bid!r}: unknown shot {shot!r}; use one of {', '.join(PROMO_SHOTS)}")
+    has_target, has_focus = b.get("target") is not None, b.get("focus") is not None
+    if has_target == has_focus:
+        raise ManifestError(f"beat {bid!r}: give exactly one of target (an element id) and focus (a rectangle)")
+    if has_target and (not isinstance(b["target"], str) or not b["target"].strip()):
+        raise ManifestError(f"beat {bid!r}: target must be an element id such as heading-1")
+    if has_focus:
+        _check_focus(b["focus"], bid)
+    try:
+        beat_target(b, project)                           # the element and the layout must exist and be valid
+    except L.LayoutError as e:
+        raise ManifestError(f"beat {bid!r}: {e}") from None
+
+
+def _check_promo_sequence(beats: list, seconds: list) -> None:
+    shots = [b.get("shot", "hero-push") for b in beats]
+    for before, after, a, c in zip(beats, beats[1:], shots, shots[1:]):
+        if a == c:
+            raise ManifestError(f"beats {before['id']!r} and {after['id']!r} use the same shot {a!r} back to back; "
+                                f"one idea per beat, so vary the shot")
+    for name, meta in PROMO_SHOTS.items():
+        limit = meta["maxPerVideo"]
+        if limit is not None and shots.count(name) > limit:
+            raise ManifestError(f"shot {name!r} is used {shots.count(name)} times; use it at most {limit} time(s) per video")
+    for beat, secs, shot in zip(beats, seconds, shots):
+        if secs < PROMO_SHOTS[shot]["minSeconds"]:
+            raise ManifestError(f"beat {beat['id']!r} is {secs:g} s but shot {shot!r} needs at least "
+                                f"{PROMO_SHOTS[shot]['minSeconds']} s")
 
 
 def validate_showcase(m: dict, project, timings: dict | None = None) -> None:
@@ -143,7 +227,8 @@ def validate_showcase(m: dict, project, timings: dict | None = None) -> None:
         raise ManifestError("type must be 'showcase'")
     if not isinstance(m.get("project_id"), str) or not PROJECT_ID.fullmatch(m["project_id"]):
         raise ManifestError("project_id must be lowercase letters, digits and '-' (at most 64 characters)")
-    if m.get("style", "device") not in STYLES:
+    style = m.get("style", "device")
+    if style not in STYLES:
         raise ManifestError(f"style must be one of {STYLES}")
     if m.get("theme", "light") not in THEMES:
         raise ManifestError(f"theme must be one of {THEMES}")
@@ -167,7 +252,7 @@ def validate_showcase(m: dict, project, timings: dict | None = None) -> None:
         if bid in seen:
             raise ManifestError(f"duplicate beat id {bid!r}")
         seen.add(bid)
-        _check_beat(b, project)
+        _check_beat(b, project, style)
     prov = m.get("provenance")
     if not isinstance(prov, dict) or prov.get("rights_confirmed") is not True:
         raise ManifestError("provenance.rights_confirmed is not true; refusing to render")
@@ -185,6 +270,8 @@ def validate_showcase(m: dict, project, timings: dict | None = None) -> None:
             sha = row.get("text_sha")
             if sha and sha != hashlib.sha256((b.get(lang) or "").strip().encode("utf-8")).hexdigest():
                 raise ManifestError(f"narration for beat {b['id']!r} is out of date (its text changed): run narrate again")
+    if style == "promo":
+        _check_promo_sequence(beats, beat_seconds_list(m, timings))
     try:
         check_total(beat_seconds_list(m, timings), MIN_TOTAL, MAX_TOTAL)
     except LengthError as e:
