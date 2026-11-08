@@ -2,7 +2,7 @@
 Adapted from references/final-review.md of video-shotcraft (https://github.com/Vincentwei1021/video-shotcraft),
 Copyright Vincentwei1021, licensed under the Apache License 2.0 (see NOTICE at the repo root).
 Changes: translated from Chinese; cut the shot-card, Gallery, BGM and sound-effect items; added bilingual caption,
-narration and rights items for InspireShowcase.
+narration and rights items for InspireShowcase and a block (S) for the promo style's shots.
 -->
 # Independent final review
 
@@ -44,6 +44,14 @@ The reviewer reports every item below as `ID ✓` or `ID ✗ (time, evidence)`, 
 - V3: Is the pacing calm: each caption readable twice, the key beat held, no beat rushed?
 - V4: Are there any seams, cropped screenshots, blurry frames or flashes at the cross-fades?
 - V5: Does the first frame show content and the last frame hold the last real image, never black or faded?
+
+**S: promo shots** (only for `style: "promo"`)
+- S1: Does every beat use the shot its storyboard row names, and does its target match what its caption talks about?
+- S2: At the end of each beat, is the target fully in view and clear of the stage edge?
+- S3: Is text sharp at the end of each beat, with no soft zoom?
+- S4: Are the shot rules kept: no shot twice in a row, `crash-zoom-punch` once, `pan-reveal` only on a tall page, at most 2 statements?
+- S5: Does each beat hold still for its last second, judged at least 10 frames before the cross-fade into the next beat?
+- S6: Is the cover the hero view, neither dimmed nor a blend?
 
 **D: data and rights**
 - D1: Do the screenshots show customer, personal, internal or secret data (emails, tokens, addresses, names)?

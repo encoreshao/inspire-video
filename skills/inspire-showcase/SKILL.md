@@ -24,16 +24,25 @@ A second mode of the InspireVideo repo (`~/.inspire-video`), separate from the s
 6. **Preview, then render.** Run `python3 scripts/render.py output/projects/<slug> --preview`, inspect it, then run `python3 scripts/render.py output/projects/<slug>`. The render runs the output checks and writes the cover; re-run the checks any time with `python3 scripts/showcase/checks.py <video> --final`.
 7. **Review before delivery.** Check the preview against `references/aesthetic-rules.md`, write the contact sheet with `python3 scripts/showcase/checks.py <video> --sheet <sheet.png>`, and run the independent review in `references/final-review.md` with a clean-context subagent. Fix every must-fix item and render again before telling the user the video is done; never leave the first review to the user.
 
+## Promo style (experimental)
+
+Use it for a site or product page when the user wants a camera flying over the real page instead of a device frame. Read `references/promo-style.md` first. Three steps change:
+
+1. After ingest, capture each page with `python3 scripts/showcase/capture_page.py <url> --project output/projects/<slug>`. It needs Chrome and Playwright (`python3 -m pip install 'playwright>=1.40'`) and follows the ingest rules (public hosts, robots.txt; `--hide <css>` removes a cookie banner). Look at the capture and list its element ids.
+2. Write a storyboard (beat, seconds, shot, target, caption) in the reply. Run the scaffold, set `"style": "promo"`, and give each beat a `shot` and exactly one of `target` (an element id) or `focus`; a `statement` shot shows text and no capture. `callout` is not used.
+3. Validate, narrate, preview, review and render as above.
+
 ## Reference files
 
 - `references/beat-writing.md`: beat structure, every field and limit that `validate` enforces, narration language and timing. Read before writing the beats.
 - `references/aesthetic-rules.md`: pacing, text legibility, camera and copy rules to self-check the preview. Read before the preview.
 - `references/final-review.md`: the independent clean-context review and its report format. Read before delivery.
+- `references/promo-style.md`: the promo style's shots, storyboard format, manifest fields, pitfalls and credits. Read before capturing for it.
 - `references/rights-and-safety.md`: rights and consent, synthetic-voice labelling, crawl rules, safe area. Read before the first render.
 
 ## Notes
 
 - `references/aesthetic-rules.md` and `references/final-review.md` are adapted from video-shotcraft (Apache-2.0); see `NOTICE`.
-- The `device` style is the default; an experimental `promo` style is described in the last note. A repository without images gets `hints.suggested_style: "terminal"` in the brief; that style is not built, so ask the user for screenshots instead.
+- The `device` style is the default; an experimental `promo` style is described above. A repository without images gets `hints.suggested_style: "terminal"` in the brief; that style is not built, so ask the user for screenshots instead.
 - CosyVoice 3 is optional and installed outside the repo with `bash scripts/showcase/setup_cosyvoice.sh` (about 9 GB).
-- Experimental, for the promo style that is being built: `python3 scripts/showcase/capture_page.py <url> --project output/projects/<slug>` saves a 2x full-page capture and its `promo-<n>.layout.json` (element boxes) in `assets/` and registers the image in `brief.json` with unresolved rights. It needs Chrome and Playwright (`python3 -m pip install 'playwright>=1.40'`, or `pip install '.[promo]'`) and follows the same rules as ingest (public hosts, robots.txt; `--allow-private` only for local sites the user owns, `--hide <css>` for a cookie banner). The device style does not use these captures. Beats of a manifest with `"style": "promo"` take `shot` (`hero-push` or `spotlight-focus`) and `target` (an element id from the layout) or `focus`; `callout` is not used. The full shot catalog and storyboard format come with the next release.
+- Promo captures register in `brief.json` with unresolved rights, like any captured asset, so the rights confirmation applies before a public render.

@@ -8,6 +8,9 @@ full text in LICENSES/Apache-2.0.txt. Adapted files:
   skills/inspire-showcase/references/final-review.md
   skills/inspire-showcase/references/aesthetic-rules.md
 Those files remain available under the Apache License 2.0.
+The promo shots in video/src/showcase/shots.mjs (hero-push, spotlight-focus, crash-zoom-punch) were written from
+scratch after reading the video-shotcraft cards spotlight-hero-card and crash-zoom-punch; no code, copy, UI or colours
+were taken. Each shot's source comment and skills/inspire-showcase/references/promo-style.md say what was borrowed.
 
 autoclip (https://github.com/zhouxiaoka/autoclip), Copyright (c) 2024 AutoClip Team, MIT License,
 full text in LICENSES/MIT-autoclip.txt. Adapted file:
