@@ -230,3 +230,43 @@ def test_build_props_adds_chinese_break_units_unless_disabled(tmp_path, sandbox)
     on = R.build_props(m, p, None, staged)["beats"][0]
     assert "".join(on["zhUnits"]) == on["zh"]
     assert "zhUnits" not in R.build_props(m, p, None, staged, zh_breaks=False)["beats"][0]
+
+
+def test_promo_props_carry_the_shot_target_page_and_scale(tmp_path, sandbox):
+    from promo_fixtures import promo_project
+    p, m = promo_project(tmp_path)
+    props = R.build_props(m, p, None, R.stage(p, sandbox / "video" / "public", m, None))
+    b0, b1 = props["beats"][0], props["beats"][1]
+    assert (b0["shot"], b1["shot"]) == ("hero-push", "spotlight-focus")
+    assert b0["box"] == {"x": 100, "y": 100, "w": 600, "h": 80}
+    assert b0["page"] == {"w": 1440, "h": 1500} and b0["imageScale"] == 2
+    assert (b0["iw"], b0["ih"]) == (2880, 3000) and b0["asset"] == "acme-promo-hook.png"
+
+
+def test_a_promo_beat_without_a_layout_uses_the_image_as_the_page(tmp_path, sandbox):
+    from promo_fixtures import promo_project
+    p, m = promo_project(tmp_path)
+    (p / "assets" / "shot.png").write_bytes(png(1440, 900))
+    beat = {k: v for k, v in m["beats"][0].items() if k != "target"}
+    m["beats"][0] = {**beat, "asset": "assets/shot.png", "focus": {"x": 0.1, "y": 0.1, "w": 0.5, "h": 0.4}}
+    b0 = R.build_props(m, p, None, R.stage(p, sandbox / "video" / "public", m, None))["beats"][0]
+    assert b0["page"] == {"w": 1440, "h": 900} and b0["imageScale"] == 1
+    assert b0["box"] == {"x": 144, "y": 90, "w": 720, "h": 360}
+
+
+def test_device_props_are_unchanged_by_the_promo_fields(tmp_path, sandbox):
+    p, m = project(tmp_path)
+    b0 = R.build_props(m, p, None, R.stage(p, sandbox / "video" / "public", m, None))["beats"][0]
+    assert not {"shot", "box", "page", "imageScale"} & set(b0)
+
+
+def test_the_composition_follows_the_style(tmp_path, sandbox):
+    from promo_fixtures import promo_project
+    device, _ = project(tmp_path / "d")
+    fake = FakeRun()
+    assert R.main([str(device), "--preview"], run=fake) == 0
+    assert fake.calls[0][0][4] == "ShowcaseShort"
+    promo, _ = promo_project(tmp_path / "p")
+    fake = FakeRun()
+    assert R.main([str(promo), "--preview"], run=fake) == 0
+    assert fake.calls[0][0][4] == "ShowcasePromo"

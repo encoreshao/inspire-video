@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from zh_break import with_units  # noqa: E402
 from showcase.assets import image_size  # noqa: E402
 from showcase.checks import check_video  # noqa: E402
-from showcase.manifest import FPS, ManifestError, beat_seconds_list, crop_warnings, frame_windows, validate_showcase  # noqa: E402
+from showcase.manifest import FPS, ManifestError, beat_seconds_list, beat_target, crop_warnings, frame_windows, validate_showcase  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -44,15 +44,24 @@ def stage(project: Path, public: Path, m: dict, timings: dict | None) -> dict:
     return out
 
 
+def composition_for(m: dict) -> str:
+    return "ShowcasePromo" if m.get("style", "device") == "promo" else "ShowcaseShort"
+
+
 def build_props(m: dict, project: Path, timings: dict | None, staged: dict, zh_breaks: bool = True) -> dict:
     seconds = beat_seconds_list(m, timings)
     windows = frame_windows(seconds, FPS)
+    promo = m.get("style", "device") == "promo"
     beats = []
     for b, w in zip(m["beats"], windows):
         iw, ih = image_size(project / b["asset"])
-        beats.append({"id": b["id"], "en": b["en"], "zh": b["zh"], "asset": staged[b["id"]]["asset"], "iw": iw, "ih": ih,
-                      "focus": b["focus"], "callout": b.get("callout"), "audio": staged[b["id"]]["audio"],
-                      "startFrame": w["start"], "frames": w["frames"]})
+        entry = {"id": b["id"], "en": b["en"], "zh": b["zh"], "asset": staged[b["id"]]["asset"], "iw": iw, "ih": ih,
+                 "focus": b.get("focus") or {"x": 0, "y": 0, "w": 1, "h": 1}, "callout": b.get("callout"),
+                 "audio": staged[b["id"]]["audio"], "startFrame": w["start"], "frames": w["frames"]}
+        if promo:
+            box, info = beat_target(b, project)
+            entry.update({"shot": b.get("shot", "hero-push"), "box": box, "page": info["page"], "imageScale": info["scale"]})
+        beats.append(entry)
     beats = with_units(beats, zh_breaks)
     p = m["project"]
     return {"headline": m["headline"], "subtitle": m["subtitle"], "category": m.get("category") or "SHOWCASE / 项目展示",
@@ -138,7 +147,7 @@ def main(argv=None, run=subprocess.run) -> int:
         print(f"error: {out} exists; use --force to overwrite", file=sys.stderr)
         return 1
     out.parent.mkdir(parents=True, exist_ok=True)
-    cmd = ["npx", "remotion", "render", "src/index.ts", "ShowcaseShort", str(out), f"--props={props_file}",
+    cmd = ["npx", "remotion", "render", "src/index.ts", composition_for(m), str(out), f"--props={props_file}",
            "--codec=h264", "--crf=18"] + (["--scale=0.5"] if a.preview else [])
     print("+", " ".join(cmd))
     rc = go(cmd)
