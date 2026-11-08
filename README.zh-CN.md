@@ -315,6 +315,8 @@ python3 scripts/render.py output/projects/demo                          # 视频
 
 镜头时长跟随旁白音频，但不少于 `40 / 镜头数` 秒；没有旁白时每个镜头为 `max(4, 40 / 镜头数)` 秒。整支视频必须在 40 到 150 秒之间。完整字段说明见 `skills/inspire-showcase/references/beat-writing.md`。
 
+中文字幕按词换行，不会把一个词拆在两行（`scripts/zh_break.py`）；给 `render.py` 或展示类渲染器传 `--no-zh-breaks` 可恢复为任意两字之间换行。
+
 ### 旁白与你自己的声音
 
 旁白是可选的。引擎：
@@ -398,8 +400,7 @@ skills/               每个智能体技能一个文件夹，约定见 skills/RE
 README.md             英文说明
 README.zh-CN.md       本文件（简体中文）
 LICENSE               MIT
-NOTICE                第三方署名（改编自 video-shotcraft 的 Apache-2.0 内容）
-LICENSES/             第三方许可证全文
+NOTICE, LICENSES/    第三方署名与许可证全文（video-shotcraft、autoclip、jieba）
 config/default.yaml   默认值说明（仅供参考）
 config/platforms.yaml publish_meta.py 与 render.py 使用的平台字数上限和渲染配置
 schemas/              render.py 读取的清单 schema

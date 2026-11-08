@@ -10,6 +10,7 @@ import argparse, json, re, shutil, subprocess, sys
 from pathlib import Path
 
 import platforms
+from zh_break import with_units
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -75,6 +76,7 @@ def main() -> int:
     ap.add_argument("--theme", choices=["light", "mist", "ivory", "ink", "sage"], help="background theme (default: manifest theme, else light)")
     ap.add_argument("--cover", action="store_true", help="render the cover image only")
     ap.add_argument("--force", action="store_true", help="overwrite existing final file")
+    ap.add_argument("--no-zh-breaks", action="store_true", help="wrap Chinese captions between any two characters, as before")
     ap.add_argument("--platform", default="", help="comma-separated platform ids from config/platforms.yaml: render each "
                     "distinct video profile they use, and check their clip-length limits")
     ap.add_argument("--profile", help="render this profile only (for example portrait-4x5), overriding the profiles implied by --platform")
@@ -110,11 +112,11 @@ def main() -> int:
     dur = clip_seconds
     props = {
         "headline": cp["headline_zh"], "subtitle": cp["subtitle_en"],
-        "quoteEn": cp["quote_en"], "quoteZh": cp["quote_zh"],
+        "quoteEn": cp["quote_en"], "quoteZh": cp["quote_zh"], "quoteZhUnits": with_units([{"zh": cp["quote_zh"]}], not a.no_zh_breaks)[0].get("zhUnits"),
         "speaker": credit, "speakerZh": cp.get("speaker_name_zh", ""), "role": role_en, "roleZh": role_zh, "source": src_line or "Source unknown",
         "clip": staged, "durationSeconds": dur,
         "category": cp.get("category") or "INSPIRATION / 向上生长",
-        "cues": [{k: c[k] for k in ("start", "end", "en", "zh", "speaker") if k in c} for c in m["subtitles"]],
+        "cues": with_units([{k: c[k] for k in ("start", "end", "en", "zh", "speaker") if k in c} for c in m["subtitles"]], not a.no_zh_breaks),
         "people": cp.get("speakers", []),
         "theme": a.theme or m.get("theme", "light"), "videoFit": m["video"].get("fit", "cover"), "cropX": m["video"].get("crop_x", 0.5), "cropY": m["video"].get("crop_y", 0.5),
         "talkTitle": cp.get("talk_title", ""), "excerptLabel": cp.get("excerpt_label", ""),

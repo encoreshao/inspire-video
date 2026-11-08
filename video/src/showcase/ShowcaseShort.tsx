@@ -1,10 +1,10 @@
 import React from 'react';
 import {AbsoluteFill, Audio, Sequence, interpolate, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
-import {CARD_PAD_Y, Divider, HeadlineLines, InfoCard, LINE_GAP, PANEL_W, SAFE_X, SERIF, SpeakerBlock, TITLE_TOP, ThemeCtx, cardHeight, fit, pickTheme, useTheme} from '../Video';
+import {CARD_PAD_Y, Divider, HeadlineLines, InfoCard, LINE_GAP, PANEL_W, SAFE_X, SERIF, SpeakerBlock, TITLE_TOP, ThemeCtx, ZhText, cardHeight, fit, pickTheme, useTheme} from '../Video';
 import {DeviceFrame} from './DeviceFrame';
 import type {Focus} from './DeviceFrame';
 
-export type ShowcaseBeat = {id: string; en: string; zh: string; asset: string; iw: number; ih: number; focus: Focus;
+export type ShowcaseBeat = {id: string; en: string; zh: string; zhUnits?: string[]; asset: string; iw: number; ih: number; focus: Focus;
   callout?: string; audio?: string | null; startFrame: number; frames: number};
 export type ShowcaseProps = {headline: string; subtitle: string; category?: string; theme?: string; name: string; nameZh?: string;
   tagline?: string; taglineZh?: string; sourceLabel: string; beats: ShowcaseBeat[]; durationSeconds: number};
@@ -35,7 +35,7 @@ const BeatLayer: React.FC<{beat: ShowcaseBeat; index: number; sourceLabel: strin
           <div style={{opacity: textAlpha, display: 'flex', flexDirection: 'column', gap: 6}}>
             <div style={{fontSize: size.en, fontWeight: 600, lineHeight: 1.28, overflowWrap: 'break-word', textWrap: 'balance' as any}}>{beat.en}</div>
             <div style={{fontFamily: SERIF, fontSize: size.zh, fontWeight: 500, lineHeight: 1.38, color: c.accent,
-              overflowWrap: 'break-word', textWrap: 'balance' as any}}>{beat.zh}</div>
+              overflowWrap: 'break-word', textWrap: 'balance' as any}}><ZhText text={beat.zh} units={beat.zhUnits} /></div>
           </div>
         </div>
       </div>

@@ -82,3 +82,7 @@ Nothing (text, panel edge, progress bar) may touch or pass the crop edges.
 ```bash
 cd video && npx remotion still src/index.ts InspireShort output/projects/<slug>/still.png --props=<project>/props.json --frame=750 --scale=0.5
 ```
+
+## Chinese caption line breaks
+
+`render.py` (and the showcase renderer) split each Chinese caption into word units with `scripts/zh_break.py` and pass them as `zhUnits`, so a caption wraps between words (`但|我们`, not `但我|们`) and a line never starts with a closing mark. Pass `--no-zh-breaks` to wrap between any two characters as before. Without `assets/lexicon/zh_words.txt.gz` the units are single characters.
