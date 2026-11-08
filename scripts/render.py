@@ -161,7 +161,20 @@ def main() -> int:
                            cwd=ROOT / "video")
         if r.returncode == 0:
             print(f"Rendered: {out}")
-        return r.returncode
+            return 0
+        return cover_frame_grab(profile, out, r.returncode)
+
+    def cover_frame_grab(profile, out, failed_code: int) -> int:
+        """A failed cover must not block delivery: use a frame of the finished video (else of the clip)."""
+        video = final_dir / platforms.video_name(m["project_id"], profile.id)
+        source = video if video.exists() else clip
+        g = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", "1", "-i", str(source),
+                            "-frames:v", "1", "-y", str(out)])
+        if g.returncode != 0:
+            return failed_code
+        print(f"WARNING: the designed cover failed to render; {out} is a frame grab from {source.name}. "
+              "Fix the problem and run --cover --force for the designed cover.", file=sys.stderr)
+        return 0
 
     def render_video(profile) -> int:
         pprops = props if profile.id == default_id else {**props, "profile": profile.props()}
