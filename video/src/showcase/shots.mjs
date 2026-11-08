@@ -3,9 +3,7 @@
 import {clamp, easeInOut} from './geometry.mjs';
 import {clampCenter, fitZoom, lerp, maxZoom, minZoom, targetCenter, viewSize} from './promo.mjs';
 
-const PUSH_END = 0.65;      // the push arrives at 65% of the beat
-const DRIFT_END = 0.9;      // then a slow drift to 90%; the last 10% is a true still
-const DRIFT = 0.015;        // at most 1.5% more zoom
+const PUSH_END = 0.65;      // the push arrives at 65% of the beat; the camera is then dead still (no drift: the card forbids it)
 
 const easeIn = (t) => { const x = clamp(t, 0, 1); return x * x * x; };
 const easeOut = (t) => { const x = clamp(t, 0, 1); return 1 - Math.pow(1 - x, 3); };
@@ -33,15 +31,14 @@ function moveCenter({target, page, stage, zoom, z0, t}) {
     cy: within(lerp(start.cy, end.cy, t), target.y, target.h, v.h, page.h)};
 }
 
-// Push from the page-width framing (target in context) to `endZoom`, then drift, then rest.
+// Push from the page-width framing (target in context) to `endZoom`, then rest.
 function push({target, page, stage, scale, progress}, endZoom) {
   const z0 = minZoom(page, stage);
   const cap = maxZoom(page, stage, scale);
   const z1 = clamp(endZoom, z0, cap);
   const p = clamp(progress, 0, 1);
   const pushT = easeInOut(p / PUSH_END);
-  const driftT = z1 > z0 ? easeInOut((p - PUSH_END) / (DRIFT_END - PUSH_END)) : 0;     // a target too big to push does not drift
-  const zoom = Math.min(cap, z0 * Math.pow(z1 / z0, pushT) * (1 + DRIFT * driftT));    // geometric: steady apparent speed
+  const zoom = Math.min(cap, z0 * Math.pow(z1 / z0, pushT));                            // geometric: steady apparent speed
   return {zoom, ...moveCenter({target, page, stage, zoom, z0, t: pushT})};
 }
 
@@ -90,13 +87,15 @@ function pan({target, page, stage, scale, progress}) {
 }
 
 export const SHOTS = Object.freeze({
-  // Card studied: spotlight-hero-card.
+  // Card studied: spotlight-hero-card (opening). Borrowed: one hero element with a complete action arc, and a hold that
+  // is dead still (the card forbids tail drift). Not borrowed: its dark theatre, light beam, hover and outline light.
   'hero-push': Object.freeze({
     id: 'hero-push', summary: 'Slow push from the page-width framing onto the target, then a hold.',
     minSeconds: 4, maxPerVideo: null, needsTallPage: false, needsTarget: true, settle: 0.1,
     camera: (a) => ({...push(a, fitZoom(a.page, a.stage, a.target)), dim: 0}),
   }),
-  // Card studied: spotlight-hero-card.
+  // Card studied: spotlight-hero-card (opening). Borrowed: only the target is lit, by a card-shaped soft hole and not a
+  // circle (the card's pitfall), the camera still at the end. Not borrowed: the theatre, beam, hover and outline light.
   'spotlight-focus': Object.freeze({
     id: 'spotlight-focus', summary: 'A gentler push while everything outside the target dims to 55%.',
     minSeconds: 4, maxPerVideo: null, needsTallPage: false, needsTarget: true, settle: 0.1,
@@ -119,8 +118,8 @@ export const SHOTS = Object.freeze({
     minSeconds: 5, maxPerVideo: null, needsTallPage: true, needsTarget: true, settle: 0.25, reveals: true,
     camera: (a) => ({...pan(a), dim: 0}),
   }),
-  // Card studied: one of the `opening` cards, for the staggered word entrance. No capture and no camera: large text
-  // on the theme background, for the hook and the call to action.
+  // No card: a plain staggered fade and rise. No capture and no camera: large text on the theme background, for the
+  // hook and the call to action.
   'statement': Object.freeze({
     id: 'statement', summary: 'The statement text large on the theme background, words arriving 4 frames apart, then a hold.',
     minSeconds: 4, maxPerVideo: 2, needsTallPage: false, needsTarget: false, settle: 0, camera: null,

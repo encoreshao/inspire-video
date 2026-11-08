@@ -77,6 +77,13 @@ test('the last 10% is still for beats of any length', () => {
   }
 });
 
+test('the push shots rest completely from 65% of the beat: no tail drift', () => {
+  for (const id of ['hero-push', 'spotlight-focus']) for (const [page, target] of CASES) {
+    const at65 = run(id, target, 0.65, page);
+    for (const p of [0.7, 0.8, 0.9, 1]) assert.deepEqual(run(id, target, p, page), at65, `${id} at ${p}`);
+  }
+});
+
 test('crash-zoom-punch: a wide hold, a punch of about 6 frames with a small overshoot, then a true still', () => {
   const zoomAt = (t, seconds = 10, target = TARGETS.interior) => run('crash-zoom-punch', target, t / seconds, tall, 2, seconds).zoom;
   const z0 = minZoom(tall, stage);
