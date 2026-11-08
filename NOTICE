@@ -1,0 +1,12 @@
+InspireVideo
+Copyright (c) 2026 InspireVideo contributors, MIT License (see LICENSE).
+
+This product includes material adapted from video-shotcraft
+(https://github.com/Vincentwei1021/video-shotcraft), Copyright Vincentwei1021,
+licensed under the Apache License, Version 2.0, full text in LICENSES/Apache-2.0.txt (http://www.apache.org/licenses/LICENSE-2.0).
+
+Adapted files, each marked with a header that states the changes:
+  skills/inspire-showcase/references/final-review.md
+  skills/inspire-showcase/references/aesthetic-rules.md
+
+Those files remain available under the Apache License 2.0. The rest of the repository is MIT.

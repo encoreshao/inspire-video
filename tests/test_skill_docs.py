@@ -30,3 +30,13 @@ def test_the_input_limits_in_the_reference_match_the_validator():
     from showcase import manifest as M
     ref = (SKILL_DIR / "references" / "beat-writing.md").read_text(encoding="utf-8")
     assert f"at most {M.CALLOUT_UNITS} width units" in ref and f"at most {M.MAX_ZH} characters" in ref
+
+
+def test_the_review_references_are_loaded_credited_and_licensed():
+    for name in ("aesthetic-rules.md", "final-review.md"):
+        assert f"references/{name}" in SKILL
+        head = (SKILL_DIR / "references" / name).read_text(encoding="utf-8")[:600]
+        assert "video-shotcraft" in head and "Apache License 2.0" in head
+    assert "video-shotcraft" in (ROOT / "NOTICE").read_text(encoding="utf-8")
+    assert "Apache License" in (ROOT / "LICENSES" / "Apache-2.0.txt").read_text(encoding="utf-8")
+    assert "checks.py <video> --sheet" in SKILL

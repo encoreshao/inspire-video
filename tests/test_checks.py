@@ -76,3 +76,10 @@ def test_a_soft_shadow_near_the_side_edges_is_not_content(tmp_path):
     assert checks.check_video(soft_right) == []
     strong = make(tmp_path, "strong.mp4", "drawbox=x=40:y=600:w=40:h=300:color=0xCCCCCC:t=fill")
     assert any("left" in p for p in checks.check_video(strong))
+
+
+def test_a_contact_sheet_is_written(tmp_path):
+    video = make(tmp_path, "ok.mp4", "", seconds=3)
+    sheet = checks.contact_sheet(video, tmp_path / "sheet.png")
+    assert sheet.exists() and sheet.stat().st_size > 0
+    assert checks.main([str(video), "--sheet", str(tmp_path / "cli.png")]) == 0 and (tmp_path / "cli.png").exists()
