@@ -246,3 +246,14 @@ def test_odd_image_shapes_get_a_crop_warning(tmp_path):
     p2, m2 = project(tmp_path / "sq", shape=(1000, 1000))
     w = M.crop_warnings(m2, p2)
     assert len(w) == 4 and "cropped" in w[0] and "'hook'" in w[0]
+
+
+def test_the_device_scaffold_ignores_promo_page_captures():
+    base = {"source": {"kind": "website", "url": "https://example.com/", "host": "example.com", "repo_path": ""}}
+    brief = {**base, "assets": [{"path": "assets/promo-1@2x.png", "role": "promo-page"},
+                                {"path": "assets/capture-a-01-desktop.png"}]}
+    beats = M.scaffold_manifest(brief, "demo", 4)["beats"]
+    assert {b["asset"] for b in beats} == {"assets/capture-a-01-desktop.png"}
+    only_promo = {**base, "assets": [{"path": "assets/promo-1@2x.png", "role": "promo-page"}]}
+    with pytest.raises(M.ManifestError, match="no assets"):
+        M.scaffold_manifest(only_promo, "demo", 4)

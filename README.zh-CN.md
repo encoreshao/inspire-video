@@ -315,6 +315,8 @@ python3 scripts/render.py output/projects/demo                          # 视频
 
 镜头时长跟随旁白音频，但不少于 `40 / 镜头数` 秒；没有旁白时每个镜头为 `max(4, 40 / 镜头数)` 秒。整支视频必须在 40 到 150 秒之间。完整字段说明见 `skills/inspire-showcase/references/beat-writing.md`。
 
+实验性：`python3 scripts/showcase/capture_page.py <url> --project output/projects/<slug>` 以 2 倍分辨率截取页面并生成元素布局，供即将推出的 promo 风格使用（需要 Chrome 和 `pip install '.[promo]'`；device 风格不使用它）。
+
 中文字幕按词换行，不会把一个词拆在两行（`scripts/zh_break.py`）；给 `render.py` 或展示类渲染器传 `--no-zh-breaks` 可恢复为任意两字之间换行。
 
 ### 旁白与你自己的声音

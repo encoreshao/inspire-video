@@ -40,3 +40,15 @@ def test_the_review_references_are_loaded_credited_and_licensed():
     assert "video-shotcraft" in (ROOT / "NOTICE").read_text(encoding="utf-8")
     assert "Apache License" in (ROOT / "LICENSES" / "Apache-2.0.txt").read_text(encoding="utf-8")
     assert "checks.py <video> --sheet" in SKILL
+
+
+def test_the_promo_capture_command_is_documented_and_its_dependency_is_optional():
+    assert "scripts/showcase/capture_page.py" in SKILL and "Playwright" in SKILL
+    assert (ROOT / "scripts" / "showcase" / "capture_page.py").exists()
+    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    assert 'promo = ["playwright' in pyproject
+    import ast
+    for module in ("capture_page", "page_layout"):
+        tree = ast.parse((ROOT / "scripts" / "showcase" / f"{module}.py").read_text(encoding="utf-8"))
+        top_level = [n for n in tree.body if isinstance(n, (ast.Import, ast.ImportFrom))]
+        assert not any("playwright" in ast.dump(n) for n in top_level), f"{module} imports playwright at load"

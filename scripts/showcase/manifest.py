@@ -192,7 +192,7 @@ def validate_showcase(m: dict, project, timings: dict | None = None) -> None:
 
 
 def scaffold_manifest(brief: dict, project_id: str, n_beats: int = 5) -> dict:
-    assets = [a["path"] for a in brief.get("assets", [])]
+    assets = [a["path"] for a in brief.get("assets", []) if a.get("role") != "promo-page"]
     if not assets:
         raise ManifestError("the brief has no assets: provide screenshots (or use the terminal style when it exists)")
     n = max(MIN_BEATS, min(MAX_BEATS, n_beats))

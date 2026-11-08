@@ -315,6 +315,8 @@ The agent writes 4 to 6 beats (hook, problem, what it does, key features, proof,
 
 Beat length follows the narration audio but is never less than `40 / number of beats` seconds; without narration each beat lasts `max(4, 40 / beats)` seconds. The whole video must be 40 to 150 seconds. The full field list is in `skills/inspire-showcase/references/beat-writing.md`.
 
+Experimental: `python3 scripts/showcase/capture_page.py <url> --project output/projects/<slug>` captures a page at 2x with a layout of its elements for the upcoming promo style (needs Chrome and `pip install '.[promo]'`; the device style does not use it).
+
 Before delivery the skill self-checks the preview against `skills/inspire-showcase/references/aesthetic-rules.md` and runs an independent clean-context review (`skills/inspire-showcase/references/final-review.md`; `python3 scripts/showcase/checks.py <video> --sheet sheet.png` writes the contact sheet it needs). Both files are adapted from [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft) (Apache-2.0, see `NOTICE`).
 
 Chinese captions wrap between words, not inside them (`scripts/zh_break.py`); pass `--no-zh-breaks` to `render.py` or the showcase renderer to wrap between any two characters as before.
