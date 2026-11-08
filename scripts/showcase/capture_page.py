@@ -9,14 +9,20 @@ capture whose rights are unresolved.
 """
 from __future__ import annotations
 
+import argparse
 import json
+import re
 import sys
+import urllib.robotparser
 from pathlib import Path
 from urllib.parse import urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from showcase import assets as A  # noqa: E402
+from showcase import ingest as I  # noqa: E402
 from showcase import page_layout as L  # noqa: E402
+from showcase import webcrawl as W  # noqa: E402
 from showcase.capture import CaptureError  # noqa: E402
 
 GOTO_MS = 30_000
@@ -87,3 +93,91 @@ def capture_page(url, out_dir, index: int, hide=(), host_check=None, project=Non
     L.validate_layout(layout)
     layout_file.write_text(json.dumps(layout, ensure_ascii=False, indent=1), encoding="utf-8")
     return {"image": image, "layout": layout_file, "layout_data": layout}
+
+
+def check_url(url, allow_private=False, fetch=None, host_check=None) -> None:
+    """The same rules as ingest's crawl: http(s) only, a public host, and robots.txt must allow the page."""
+    parts = urlsplit(url)
+    if parts.scheme not in ("http", "https") or not parts.hostname:
+        raise CaptureError("only http(s) pages can be captured")
+    if allow_private:
+        check = host_check or (lambda host: True)
+    else:
+        check = host_check or W.is_public_host
+    if not check(parts.hostname):
+        raise CaptureError(f"{parts.hostname} is not a public host; pass --allow-private only for your own local sites")
+    fetch = fetch or W.make_fetcher(check)
+    robots = urllib.robotparser.RobotFileParser()
+    try:
+        robots.parse(W._decode(fetch(f"{parts.scheme}://{parts.netloc.lower()}/robots.txt")).splitlines())
+    except W.CrawlError as e:
+        robots.parse(["User-agent: *", "Disallow: /"] if str(e) in ("HTTP 401", "HTTP 403") else [])
+    except Exception:  # noqa: BLE001  an unreadable robots.txt does not forbid the page
+        robots.parse([])
+    if not robots.can_fetch(W.USER_AGENT, url):
+        raise CaptureError(f"{url} is disallowed by robots.txt")
+
+
+def next_index(assets_dir) -> int:
+    folder = Path(assets_dir)
+    if not folder.is_dir():
+        return 1
+    pattern = re.compile(rf"promo-(\d+){re.escape(L.SUFFIX)}")
+    numbers = [int(m.group(1)) for p in folder.iterdir() if (m := pattern.fullmatch(p.name))]
+    return max(numbers, default=0) + 1
+
+
+def register_in_brief(project, image, url) -> dict:
+    """Add the capture to brief.json as an unresolved-rights asset (role promo-page), replacing the same path."""
+    project = Path(project)
+    brief_file = project / "brief.json"
+    if not brief_file.is_file():
+        raise CaptureError(f"{brief_file} not found: run scripts/showcase/ingest.py for this project first")
+    brief = json.loads(brief_file.read_text(encoding="utf-8"))
+    asset, why = A.try_describe(image, "capture", url, A.rights_note("capture", url))
+    if asset is None:
+        raise CaptureError(f"the capture is not a usable image: {why}")
+    asset = {**asset, "path": Path(image).relative_to(project).as_posix(), "role": "promo-page"}
+    brief["assets"] = [a for a in brief["assets"] if a["path"] != asset["path"]] + [asset]
+    brief["rights_unresolved"] = True
+    I.validate_brief(brief)
+    brief_file.write_text(json.dumps(brief, ensure_ascii=False, indent=1), encoding="utf-8")
+    return asset
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(description="Capture a page at 2x with an element layout for the promo style")
+    ap.add_argument("url")
+    ap.add_argument("--project", required=True, help="the project folder (it must already have a brief.json)")
+    ap.add_argument("--hide", action="append", default=[], metavar="CSS",
+                    help="CSS selector to hide before the shot (a cookie banner, a chat widget); repeatable")
+    ap.add_argument("--allow-private", action="store_true", help="allow local or private addresses (your own sites only)")
+    ap.add_argument("--index", type=int, help="the number in the file name (default: the next free one)")
+    a = ap.parse_args(argv)
+    project = Path(a.project)
+    try:
+        check_url(a.url, a.allow_private)
+        assets = project / "assets"
+        host_check = (lambda host: True) if a.allow_private else W.is_public_host
+        result = capture_page(a.url, assets, a.index or next_index(assets), hide=a.hide, host_check=host_check,
+                              project=project)
+        asset = register_in_brief(project, result["image"], a.url)
+    except (CaptureError, OSError, L.LayoutError, I.IngestError) as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+    layout = result["layout_data"]
+    roles: dict[str, int] = {}
+    for e in layout["elements"]:
+        roles[e["role"]] = roles.get(e["role"], 0) + 1
+    print(f"captured {asset['path']} ({asset['width']}x{asset['height']}, page {layout['page']['w']}x{layout['page']['h']} px) "
+          f"and {result['layout'].name}")
+    print("elements: " + (", ".join(f"{n} {role}" for role, n in sorted(roles.items())) or "none"))
+    if not layout["elements"]:
+        print("warning: no elements found; give each beat a focus rectangle instead of a target", file=sys.stderr)
+    print("rights: the capture is registered as unresolved; confirm before a public render "
+          "(skills/inspire-showcase/references/rights-and-safety.md)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
