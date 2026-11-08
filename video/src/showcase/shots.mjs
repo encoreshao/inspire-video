@@ -11,13 +11,14 @@ const easeOut = (t) => { const x = clamp(t, 0, 1); return 1 - Math.pow(1 - x, 3)
 // Clamp one axis of the view centre to the page, and, when the target fits the view, keep the whole target in view:
 // the zoom grows faster than a straight centre move, so without this a target near an edge slides out and back.
 function within(c, boxStart, boxSize, viewLen, pageLen) {
-  let lo = viewLen / 2;
-  let hi = pageLen - viewLen / 2;
+  const pageLo = viewLen / 2;
+  const pageHi = pageLen - viewLen / 2;
   if (boxSize <= viewLen) {
-    lo = Math.max(lo, boxStart + boxSize - viewLen / 2);
-    hi = Math.min(hi, boxStart + viewLen / 2);
+    const lo = Math.max(pageLo, boxStart + boxSize - viewLen / 2);
+    const hi = Math.min(pageHi, boxStart + viewLen / 2);
+    if (lo <= hi) return clamp(c, lo, hi);
   }
-  return clamp(c, lo, Math.max(lo, hi));
+  return clamp(c, pageLo, pageHi);          // the target cannot be held in view (too big, or not on the page): stay on the page
 }
 
 // The view centre at `zoom`: it travels from the target-centred page-width framing (zoom z0) to the target-centred
@@ -48,7 +49,8 @@ function push({target, page, stage, scale, progress}, endZoom) {
 // camera never moves backwards) and its second punch per video (the manifest allows one).
 const CRASH = Object.freeze({pushSeconds: 6 / 30, settleSeconds: 5 / 30, creep: 0.025, overshoot: 0.03, fill: 0.7});
 
-function crash({target, page, stage, scale, progress, seconds}) {
+function crash({target, page, stage, scale, progress, seconds: beatSeconds}) {
+  const seconds = beatSeconds > 0 && Number.isFinite(beatSeconds) ? beatSeconds : 10;     // a bad length falls back to the default
   const z0 = minZoom(page, stage);
   const cap = maxZoom(page, stage, scale);
   const zFinal = clamp(fitZoom(page, stage, target, CRASH.fill), z0, cap / (1 + CRASH.overshoot));

@@ -203,3 +203,25 @@ def test_the_python_punch_rule_agrees_with_the_javascript_camera():
     assert len(moves) == len(cases) and any(moves) and not all(moves)           # the grid has both kinds
     for (page, box, scale), js in zip(cases, moves):
         assert M.crash_punch_possible(box, page, scale) == js, (page, box, scale)
+
+
+def test_a_layout_that_does_not_match_its_image_is_reported_with_the_beat(tmp_path):
+    p, m = promo_project(tmp_path)
+    M.validate_showcase(m, p)                                               # 2880x3000 is exactly 1440x1500 at 2x
+    (p / "assets" / "promo-1@2x.png").write_bytes(png(2880, 2000))          # a stale image: the layout says 3000 px high
+    with pytest.raises(M.ManifestError, match="'hook'.*layout.*capture the page again"):
+        M.validate_showcase(m, p)
+
+
+def test_a_focus_rectangle_that_rounds_to_nothing_is_rejected(tmp_path):
+    p, m = promo_project(tmp_path)
+    tiny = beat_with(beat_without(m, 0, "target"), 0, focus={"x": 0.1, "y": 0.1, "w": 0.0001, "h": 0.05})
+    with pytest.raises(M.ManifestError, match="too small"):
+        M.validate_showcase(tiny, p)
+
+
+@pytest.mark.parametrize("shot", [["hero-push"], {"a": 1}, 7, ""])
+def test_a_shot_of_the_wrong_type_is_a_clear_error_not_a_traceback(tmp_path, shot):
+    p, m = promo_project(tmp_path)
+    with pytest.raises(M.ManifestError, match="shot"):
+        M.validate_showcase(beat_with(m, 0, shot=shot), p)

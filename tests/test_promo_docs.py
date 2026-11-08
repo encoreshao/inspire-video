@@ -46,3 +46,20 @@ def test_both_readmes_describe_the_promo_style():
 
 def test_the_final_review_checks_the_promo_shots():
     assert "promo" in REVIEW.lower() and "S1" in REVIEW and "S6" in REVIEW
+
+
+def test_the_reference_states_every_limit_the_registry_has():
+    for shot, meta in M.PROMO_SHOTS.items():
+        limit = meta["maxPerVideo"]
+        if limit is not None:
+            assert (f"at most {limit}" in STYLE) or (limit == 1 and "once per video" in STYLE), shot
+        if meta["minSeconds"] != 4:
+            assert f"`{shot}` {meta['minSeconds']} s" in STYLE or f"{meta['minSeconds']} s" in STYLE, shot
+    assert "Chinese or English" in STYLE or "either language" in STYLE                 # which language a statement may use
+    assert "finished statement" in STYLE                                              # what a statement-first cover shows
+
+
+def test_the_notice_names_every_promo_shot():
+    notice = (ROOT / "NOTICE").read_text(encoding="utf-8")
+    for shot in M.PROMO_SHOTS:
+        assert shot in notice, shot

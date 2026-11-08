@@ -90,6 +90,11 @@ def page_info(project, asset: str) -> dict:
         layout_file = None                                  # a user screenshot has no layout
     if layout_file is not None and layout_file.is_file():
         layout = L.load_layout(layout_file)
+        iw, ih = image_size(project / asset)
+        want_w, want_h = layout["page"]["w"] * layout["scale"], layout["page"]["h"] * layout["scale"]
+        if (iw, ih) != (want_w, want_h):                    # a stale image or layout would silently stretch the picture
+            raise ManifestError(f"{asset} is {iw}x{ih} but its layout describes a {layout['page']['w']}x{layout['page']['h']} "
+                                f"page at {layout['scale']}x ({want_w}x{want_h}); capture the page again")
         return {"page": dict(layout["page"]), "scale": layout["scale"], "layout": layout}
     iw, ih = image_size(project / asset)
     return {"page": {"w": iw, "h": ih}, "scale": 1, "layout": None}
@@ -98,7 +103,10 @@ def page_info(project, asset: str) -> dict:
 def beat_target(b: dict, project) -> tuple[dict, dict]:
     """The target box in page CSS px (from the element id or the focus rectangle) and the page info."""
     bid = b.get("id")
-    info = page_info(project, b["asset"])
+    try:
+        info = page_info(project, b["asset"])
+    except ManifestError as e:
+        raise ManifestError(f"beat {bid!r}: {e}") from None
     if b.get("target") is not None:
         if info["layout"] is None:
             raise ManifestError(f"beat {bid!r}: target {b['target']!r} needs a layout file beside {b['asset']!r} "
@@ -110,8 +118,11 @@ def beat_target(b: dict, project) -> tuple[dict, dict]:
                                 f"available: {ids}")
         return dict(box), info
     f, page = b["focus"], info["page"]
-    return ({"x": round(f["x"] * page["w"]), "y": round(f["y"] * page["h"]),
-             "w": round(f["w"] * page["w"]), "h": round(f["h"] * page["h"])}, info)
+    box = {"x": round(f["x"] * page["w"]), "y": round(f["y"] * page["h"]),
+           "w": round(f["w"] * page["w"]), "h": round(f["h"] * page["h"])}
+    if box["w"] < 1 or box["h"] < 1:
+        raise ManifestError(f"beat {bid!r}: the focus rectangle is too small: it rounds to {box['w']}x{box['h']} px on the page")
+    return box, info
 
 
 def _check_layout(m: dict) -> None:
@@ -193,6 +204,8 @@ def _check_beat(b: dict, project: Path, style: str = "device") -> None:
     if style == "promo":
         if b.get("callout") is not None:
             raise ManifestError(f"beat {bid!r}: callout is not used in the promo style (spotlight-focus replaces the ring)")
+        if not isinstance(b.get("shot", "hero-push"), str):
+            raise ManifestError(f"beat {bid!r}: shot must be one of {', '.join(PROMO_SHOTS)}")
         if PROMO_SHOTS.get(b.get("shot", "hero-push"), {}).get("needsTarget") is False:
             _check_promo_beat(b, project)                  # a statement shows no capture, so there is no asset to check
             return

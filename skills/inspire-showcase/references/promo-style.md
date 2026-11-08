@@ -36,7 +36,7 @@ A user's own screenshot has no layout file; give the beat a `focus` rectangle in
 | `spotlight-focus` | A gentler push while everything outside the target dims to 55% | pointing at one block among many | none |
 | `crash-zoom-punch` | A wide hold with a slow creep, a 6-frame punch with a 3% overshoot, then still | the one moment that must land ("this one") | once per video; the target must be small enough to punch in on (the validator rejects one that would not move) |
 | `pan-reveal` | Travels down a tall page from its top to the target, then rests | showing how much page there is before landing | a tall page (at least 1350 px), at least 5 s |
-| `statement` | The beat's `statement` text large on the theme background, words arriving 4 frames apart | the hook and the call to action | at most 2 per video; no capture; at most 28 width units |
+| `statement` | The beat's `statement` text large on the theme background, words arriving 4 frames apart | the hook and the call to action | at most 2 per video; no capture; at most 28 width units; Chinese or English |
 
 Every shot needs at least 4 s (`pan-reveal` 5 s). Two beats in a row may not use the same shot ("back to back"): one idea per beat, so vary them.
 
@@ -70,7 +70,7 @@ Run `python3 scripts/showcase/manifest.py validate output/projects/<slug>`; ever
 
 - A very large target (a full-width dashboard image) hardly pushes, because it already fills the frame. Pick a smaller element inside it, or a different shot.
 - The last 9 frames of a beat cross-fade into the next, so a still at the last frame of a beat is a blend. Judge a beat's own framing from 10 or more frames before its end.
-- The cover shows the first beat's final framing. A `spotlight-focus` first beat gets a plain `hero-push` cover (no dimming).
+- The cover shows the first beat's final framing (a statement-first project gets the finished statement). A `spotlight-focus` first beat gets a plain `hero-push` cover (no dimming).
 - Text is sharp because the captures are 2x and the zoom is capped at the capture's resolution; do not capture at a smaller size to save space.
 - The video is determinism-checked: no random or time-based motion in shots.
 

@@ -184,6 +184,19 @@ test('a target wider than the fit does not push or drift', () => {
   for (const id of IDS) for (const p of STEPS) near(run(id, TARGETS.wide, p).zoom, minZoom(tall, stage));
 });
 
+test('the camera survives a zero, negative or missing beat length and a target off the page', () => {
+  for (const id of IDS) for (const seconds of [0, -3, NaN, 1e-9, undefined]) for (const p of [0, 0.3, 1]) {
+    const c = run(id, TARGETS.interior, p, tall, 2, seconds);
+    assert.ok([c.zoom, c.cx, c.cy].every(Number.isFinite), `${id} with ${seconds}s at ${p}`);
+  }
+  for (const id of IDS) for (const target of [{x: 1500, y: 100, w: 100, h: 50}, {x: 100, y: 6100, w: 100, h: 50}, {x: -200, y: 100, w: 100, h: 50}]) for (const p of STEPS) {
+    const cam = run(id, target, p);
+    const v = viewSize(tall, stage, cam.zoom);
+    assert.ok(cam.cx - v.w / 2 >= -EPS && cam.cx + v.w / 2 <= tall.w + EPS && cam.cy - v.h / 2 >= -EPS && cam.cy + v.h / 2 <= tall.h + EPS,
+      `${id} stays on the page for an off-page target ${JSON.stringify(target)} at ${p}`);
+  }
+});
+
 test('the camera is a pure function', () => {
   for (const id of IDS) assert.deepEqual(run(id, TARGETS.interior, 0.37), run(id, TARGETS.interior, 0.37));
 });
