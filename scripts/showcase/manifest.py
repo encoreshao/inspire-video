@@ -55,6 +55,11 @@ def text_px(s: str, latin: float, cjk: float) -> float:
     return sum(cjk if _cjk(c) else latin for c in s)
 
 
+def subtitle_lines(subtitle: str) -> int:
+    """1 or 2: how many lines the subtitle needs in the 852 px panel, by the same estimate _check_layout limits to two."""
+    return 1 if text_px(subtitle, 23.5, 42) <= 852 else 2
+
+
 def page_info(project, asset: str) -> dict:
     """The page size (CSS px), the capture scale and the layout (None without one) for a beat's image."""
     project = Path(project)

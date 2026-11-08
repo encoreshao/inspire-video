@@ -47,5 +47,7 @@ export const promoCamera = ({shot, target, page, stage, scale, progress}) => sho
 
 // The stage fills the room left under the headline, above the caption card and info card. 1575 is the safe line
 // (1590) minus a margin; 777 is the measured height of everything else at a zero caption reserve (LoopX: content
-// ended at y = 1483 with a 217.76 px reserve and a 488 px stage). Never smaller than the device zone.
-export const stageHeight = (reserve) => clamp(Math.floor(1575 - 777 - reserve), 488, 600);
+// ended at y = 1483 with a 217.76 px reserve and a 488 px stage). That was measured with a one-line subtitle; each
+// extra line takes 53 px (42 px type at a line height of 1.25). Never smaller than the device zone.
+export const stageHeight = (reserve, subtitleLines = 1) =>
+  clamp(Math.floor(1575 - 777 - reserve - 53 * (subtitleLines - 1)), 488, 600);

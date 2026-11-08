@@ -28,9 +28,9 @@ const BeatLayer: React.FC<{beat: ShowcaseBeat; index: number; stageH: number}> =
   );
 };
 
-export const ShowcasePromo: React.FC<ShowcaseProps> = ({headline, subtitle, category, theme, name, nameZh, tagline, taglineZh, sourceLabel, beats}) => {
+export const ShowcasePromo: React.FC<ShowcaseProps> = ({headline, subtitle, category, theme, name, nameZh, tagline, taglineZh, sourceLabel, beats, subtitleLines = 1}) => {
   const reserve = cardHeight(beats);
-  const stageH = stageHeight(reserve);
+  const stageH = stageHeight(reserve, subtitleLines);
   return (
     <ShowcaseFrame headline={headline} subtitle={subtitle} category={category} theme={theme} name={name} nameZh={nameZh}
       tagline={tagline} taglineZh={taglineZh} sourceLabel={sourceLabel} zoneHeight={stageH + 3 + reserve}>

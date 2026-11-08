@@ -1,7 +1,7 @@
 // The promo shots: frozen presets. Each camera is a pure function of {target, page, stage, scale, progress}.
 // Techniques are written from scratch after reading the named video-shotcraft cards (Apache-2.0); no demo code is reused.
 import {clamp, easeInOut} from './geometry.mjs';
-import {clampCenter, fitZoom, lerp, maxZoom, minZoom, targetCenter} from './promo.mjs';
+import {clampCenter, fitZoom, lerp, maxZoom, minZoom, targetCenter, viewSize} from './promo.mjs';
 
 const PUSH_END = 0.65;      // the push arrives at 65% of the beat
 const DRIFT_END = 0.9;      // then a slow drift to 90%; the last 10% is a true still
@@ -19,8 +19,21 @@ function push({target, page, stage, scale, progress}, endZoom) {
   const c = targetCenter(target);
   const start = clampCenter(page, stage, z0, c);
   const end = clampCenter(page, stage, zoom, c);
-  const center = clampCenter(page, stage, zoom, {cx: lerp(start.cx, end.cx, pushT), cy: lerp(start.cy, end.cy, pushT)});
-  return {zoom, cx: center.cx, cy: center.cy};
+  const v = viewSize(page, stage, zoom);
+  return {zoom, cx: within(lerp(start.cx, end.cx, pushT), target.x, target.w, v.w, page.w),
+    cy: within(lerp(start.cy, end.cy, pushT), target.y, target.h, v.h, page.h)};
+}
+
+// Clamp one axis of the view centre to the page, and, when the target fits the view, keep the whole target in view:
+// the zoom grows faster than a straight centre move, so without this a target near an edge slides out and back.
+function within(c, boxStart, boxSize, viewLen, pageLen) {
+  let lo = viewLen / 2;
+  let hi = pageLen - viewLen / 2;
+  if (boxSize <= viewLen) {
+    lo = Math.max(lo, boxStart + boxSize - viewLen / 2);
+    hi = Math.min(hi, boxStart + viewLen / 2);
+  }
+  return clamp(c, lo, Math.max(lo, hi));
 }
 
 export const SHOTS = Object.freeze({

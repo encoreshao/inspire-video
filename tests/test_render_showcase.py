@@ -270,3 +270,17 @@ def test_the_composition_follows_the_style(tmp_path, sandbox):
     fake = FakeRun()
     assert R.main([str(promo), "--preview"], run=fake) == 0
     assert fake.calls[0][0][4] == "ShowcasePromo"
+
+
+def test_promo_props_tell_the_composition_how_many_subtitle_lines_there_are(tmp_path, sandbox):
+    from promo_fixtures import promo_project
+    p, m = promo_project(tmp_path)
+    staged = R.stage(p, sandbox / "video" / "public", m, None)
+    assert R.build_props(m, p, None, staged)["subtitleLines"] == 1
+    m["subtitle"] = "A local-first AI agent app that runs AI agents on a schedule"
+    assert R.build_props(m, p, None, staged)["subtitleLines"] == 2
+
+
+def test_device_props_have_no_subtitle_lines(tmp_path, sandbox):
+    p, m = project(tmp_path)
+    assert "subtitleLines" not in R.build_props(m, p, None, R.stage(p, sandbox / "video" / "public", m, None))

@@ -19,4 +19,4 @@ export function lerp(a: number, b: number, t: number): number;
 export function placeImage(page: Size, stage: Size, cam: {zoom: number; cx: number; cy: number}): Place;
 export function stageRect(box: Box, place: Place): Rect;
 export function promoCamera(a: {shot: Shot} & CameraArgs): Cam;
-export function stageHeight(reserve: number): number;
+export function stageHeight(reserve: number, subtitleLines?: number): number;

@@ -115,3 +115,8 @@ def test_the_python_shot_table_matches_the_javascript_registry():
     r = subprocess.run(["node", "-e", code], cwd=ROOT, capture_output=True, text=True, timeout=60)
     assert r.returncode == 0, r.stderr
     assert json.loads(r.stdout) == M.PROMO_SHOTS
+
+
+def test_subtitle_lines_follow_the_layout_estimate():
+    assert M.subtitle_lines("A local-first AI agent app for macOS") == 1
+    assert M.subtitle_lines("A local-first AI agent app that runs AI agents on a schedule") == 2

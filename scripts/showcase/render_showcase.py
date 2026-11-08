@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from zh_break import with_units  # noqa: E402
 from showcase.assets import image_size  # noqa: E402
 from showcase.checks import check_video  # noqa: E402
-from showcase.manifest import FPS, ManifestError, beat_seconds_list, beat_target, crop_warnings, frame_windows, validate_showcase  # noqa: E402
+from showcase.manifest import FPS, ManifestError, beat_seconds_list, beat_target, crop_warnings, frame_windows, subtitle_lines, validate_showcase  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -64,10 +64,13 @@ def build_props(m: dict, project: Path, timings: dict | None, staged: dict, zh_b
         beats.append(entry)
     beats = with_units(beats, zh_breaks)
     p = m["project"]
-    return {"headline": m["headline"], "subtitle": m["subtitle"], "category": m.get("category") or "SHOWCASE / 项目展示",
-            "theme": m.get("theme", "light"), "name": p["name"], "nameZh": p.get("name_zh", ""),
-            "tagline": p.get("tagline", ""), "taglineZh": p.get("tagline_zh", ""), "sourceLabel": m["source"]["label"],
-            "beats": beats, "durationSeconds": round(sum(w["frames"] for w in windows) / FPS, 2)}
+    props = {"headline": m["headline"], "subtitle": m["subtitle"], "category": m.get("category") or "SHOWCASE / 项目展示",
+             "theme": m.get("theme", "light"), "name": p["name"], "nameZh": p.get("name_zh", ""),
+             "tagline": p.get("tagline", ""), "taglineZh": p.get("tagline_zh", ""), "sourceLabel": m["source"]["label"],
+             "beats": beats, "durationSeconds": round(sum(w["frames"] for w in windows) / FPS, 2)}
+    if promo:
+        props["subtitleLines"] = subtitle_lines(m["subtitle"])      # the promo stage leaves room for a wrapped subtitle
+    return props
 
 
 def cover_props(props: dict) -> dict:

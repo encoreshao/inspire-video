@@ -18,6 +18,7 @@ const TARGETS = {
   bottom: {x: 600, y: 5880, w: 300, h: 120},
   wide: {x: 0, y: 0, w: 1440, h: 400},
   tiny: {x: 700, y: 900, w: 20, h: 10},
+  nearRight: {x: 900, y: 3000, w: 480, h: 60},   // the review's case: the target slid out of frame mid-push
 };
 const CASES = [...Object.values(TARGETS).map((t) => [tall, t]), [short, {x: 520, y: 100, w: 400, h: 120}]];
 const run = (id, target, progress, page = tall, scale = 2) =>
@@ -80,6 +81,20 @@ test('the final framing keeps an interior target 8% clear of every side, and nev
   }
 });
 
+test('the target stays in view for the whole beat whenever it fits the view', () => {
+  const inView = (id, page, target, p) => {
+    const cam = run(id, target, p, page);
+    const v = viewSize(page, stage, cam.zoom);
+    if (target.w <= v.w) assert.ok(target.x >= cam.cx - v.w / 2 - EPS && target.x + target.w <= cam.cx + v.w / 2 + EPS, `${id} x at ${p} for ${JSON.stringify(target)}`);
+    if (target.h <= v.h) assert.ok(target.y >= cam.cy - v.h / 2 - EPS && target.y + target.h <= cam.cy + v.h / 2 + EPS, `${id} y at ${p} for ${JSON.stringify(target)}`);
+  };
+  for (const id of IDS) for (const [page, target] of CASES) for (const p of STEPS) inView(id, page, target, p);
+  for (const id of IDS) for (const x of [0, 300, 600, 900, 1100]) for (const y of [0, 1500, 3000, 5800]) for (const [w, h] of [[100, 60], [340, 200], [480, 60]]) {
+    if (x + w > tall.w || y + h > tall.h) continue;
+    for (const p of STEPS) inView(id, tall, {x, y, w, h}, p);
+  }
+});
+
 test('zoom stays within the sharpness of the capture, even for a tiny target', () => {
   for (const scale of [1, 2]) for (const id of IDS) for (const p of STEPS) {
     const z = run(id, TARGETS.tiny, p, tall, scale).zoom;
@@ -127,6 +142,11 @@ test('the stage grows into the room the caption card leaves, between 488 and 600
   assert.equal(stageHeight(217.76), 580);   // the LoopX caption reserve
   assert.equal(stageHeight(0), 600);
   assert.equal(stageHeight(400), 488);
+  // a two-line subtitle takes another 53 px (42 px type at a line height of 1.25) out of the room
+  assert.equal(stageHeight(217.76, 2), 527);
+  assert.equal(stageHeight(0, 2), 600);
+  assert.equal(stageHeight(400, 2), 488);
+  assert.equal(stageHeight(217.76, 1), stageHeight(217.76));
 });
 
 test('framing helpers: fit, limits and centre clamping', () => {
