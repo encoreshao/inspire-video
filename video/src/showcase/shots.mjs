@@ -44,7 +44,8 @@ function push({target, page, stage, scale, progress}, endZoom) {
 
 // The punch: a wide hold with a slow creep, a 6-frame ease-in push that overshoots a little, a 5-frame settle, then still.
 // The card's numbers: push 4-8 frames (over 10 it reads as an ordinary push), the target fills 60-75% of the frame,
-// the rebound is 3-6%. The card's second variant (a screen shake) is left out on purpose: the camera stays steady.
+// the rebound is 3-6%. Left out on purpose: the card's screen-shake variant, its motion blur, its pre-pull-back (the
+// camera never moves backwards) and its second punch per video (the manifest allows one).
 const CRASH = Object.freeze({pushSeconds: 6 / 30, settleSeconds: 5 / 30, creep: 0.025, overshoot: 0.03, fill: 0.7});
 
 function crash({target, page, stage, scale, progress, seconds}) {
@@ -87,8 +88,8 @@ function pan({target, page, stage, scale, progress}) {
 }
 
 export const SHOTS = Object.freeze({
-  // Card studied: spotlight-hero-card (opening). Borrowed: one hero element with a complete action arc, and a hold that
-  // is dead still (the card forbids tail drift). Not borrowed: its dark theatre, light beam, hover and outline light.
+  // Card studied: spotlight-hero-card (opening). Borrowed: a single hero target, and a hold that is dead still (the card
+  // forbids tail drift). Not borrowed: its action arc, dark theatre, light beam, hover and outline light.
   'hero-push': Object.freeze({
     id: 'hero-push', summary: 'Slow push from the page-width framing onto the target, then a hold.',
     minSeconds: 4, maxPerVideo: null, needsTallPage: false, needsTarget: true, settle: 0.1,

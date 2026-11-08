@@ -30,6 +30,12 @@ PROMO_SHOTS = {
     "pan-reveal": {"minSeconds": 5, "maxPerVideo": None, "needsTallPage": True, "needsTarget": True},
     "statement": {"minSeconds": 4, "maxPerVideo": 2, "needsTallPage": False, "needsTarget": False},
 }
+# The punch rule below mirrors the camera in video/src/showcase/shots.mjs (a test compares them over a grid): the stage
+# width, the zoom cap, and the punch's fill (0.7), overshoot (3%) and smallest move (5% above the page-fitting zoom).
+STAGE_W = 846
+STAGE_H_MAX = 600                                       # decided at the tallest stage, so a target that cannot move there never moves
+ZOOM_CAP = 3.2
+CRASH_FILL, CRASH_OVERSHOOT, CRASH_MIN_MOVE = 0.7, 0.03, 1.05
 STATEMENT_UNITS = 28                                   # the statement's width limit (a Chinese character counts as 2)
 TALL_PAGE_PX = round(1.5 * L.VIEWPORT["h"])      # "tall" for a pan: at least one and a half capture viewports
 MIN_BEATS, MAX_BEATS = 4, 6
@@ -58,6 +64,16 @@ def width_units(s: str) -> int:
 def text_px(s: str, latin: float, cjk: float) -> float:
     """Rough rendered width of a line: the layout cannot wrap these lines, so the estimate gates them."""
     return sum(cjk if _cjk(c) else latin for c in s)
+
+
+def crash_punch_possible(box: dict, page: dict, scale: float) -> bool:
+    """Whether crash-zoom-punch would move at all for this target: a target that already fills the frame cannot be punched in on."""
+    base = STAGE_W / page["w"]
+    z0 = max(1.0, STAGE_H_MAX / base / page["h"])
+    cap = max(z0, min(ZOOM_CAP, 0.95 * scale / base))
+    fit = min(page["w"] / max(1, box["w"]), (STAGE_H_MAX / base) / max(1, box["h"])) * CRASH_FILL
+    z_final = min(max(fit, z0), cap / (1 + CRASH_OVERSHOOT))
+    return z_final >= z0 * CRASH_MIN_MOVE
 
 
 def subtitle_lines(subtitle: str) -> int:
@@ -226,9 +242,12 @@ def _check_promo_beat(b: dict, project: Path) -> None:
     if has_focus:
         _check_focus(b["focus"], bid)
     try:
-        _, info = beat_target(b, project)                 # the element and the layout must exist and be valid
+        box, info = beat_target(b, project)               # the element and the layout must exist and be valid
     except L.LayoutError as e:
         raise ManifestError(f"beat {bid!r}: {e}") from None
+    if shot == "crash-zoom-punch" and not crash_punch_possible(box, info["page"], info["scale"]):
+        raise ManifestError(f"beat {bid!r}: the target is too large for crash-zoom-punch (the camera would not move and the "
+                            f"once-per-video punch would be wasted); pick a smaller element, or use hero-push")
     if PROMO_SHOTS[shot]["needsTallPage"] and info["page"]["h"] < TALL_PAGE_PX:
         raise ManifestError(f"beat {bid!r}: shot {shot!r} needs a tall page (at least {TALL_PAGE_PX} px) but this one is "
                             f"{info['page']['h']} px; use hero-push or spotlight-focus instead")

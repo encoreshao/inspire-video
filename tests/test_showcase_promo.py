@@ -173,3 +173,33 @@ def test_a_statement_is_limited_by_the_shot_table(tmp_path, monkeypatch):
     monkeypatch.setattr(M, "PROMO_SHOTS", {**M.PROMO_SHOTS, "statement": {**M.PROMO_SHOTS["statement"], "maxPerVideo": 1}})
     with pytest.raises(M.ManifestError, match="at most 1"):
         M.validate_showcase(twice, p)
+
+
+def test_a_crash_zoom_needs_a_target_the_camera_can_punch_in_on(tmp_path):
+    p, m = promo_project(tmp_path)
+    big = beat_with(beat_without(m, 1, "target"), 1, shot="crash-zoom-punch", focus={"x": 0.0, "y": 0.0, "w": 0.95, "h": 0.5})
+    with pytest.raises(M.ManifestError, match="too large for crash-zoom-punch"):
+        M.validate_showcase(big, p)
+    small = beat_with(beat_without(m, 1, "target"), 1, shot="crash-zoom-punch", focus={"x": 0.1, "y": 0.1, "w": 0.2, "h": 0.05})
+    M.validate_showcase(small, p)
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
+def test_the_python_punch_rule_agrees_with_the_javascript_camera():
+    pages = [{"w": 1440, "h": 1500}, {"w": 1440, "h": 6000}, {"w": 1440, "h": 500}]
+    boxes = [{"x": 0, "y": 0, "w": w, "h": h} for w in (20, 200, 600, 900, 1100, 1368, 1440) for h in (10, 80, 400, 750, 1400)]
+    cases = [(pg, b, sc) for pg in pages for b in boxes for sc in (1, 2) if b["h"] <= pg["h"]]
+    code = ("const cases = JSON.parse(process.argv[1]);"
+            "Promise.all([import('./video/src/showcase/promo.mjs'), import('./video/src/showcase/shots.mjs')]).then(([P, S]) => {"
+            "console.log(JSON.stringify(cases.map(([page, box, scale]) => {"
+            "const stage = {w: 846, h: 600};"
+            "const z0 = P.minZoom(page, stage);"
+            "const cam = P.promoCamera({shot: S.SHOTS['crash-zoom-punch'], target: box, page, stage, scale, progress: 1, seconds: 10});"
+            "return cam.zoom > z0 + 1e-9;})));});")
+    import json as _json
+    r = subprocess.run(["node", "-e", code, _json.dumps(cases)], cwd=ROOT, capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stderr
+    moves = _json.loads(r.stdout)
+    assert len(moves) == len(cases) and any(moves) and not all(moves)           # the grid has both kinds
+    for (page, box, scale), js in zip(cases, moves):
+        assert M.crash_punch_possible(box, page, scale) == js, (page, box, scale)

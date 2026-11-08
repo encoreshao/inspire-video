@@ -34,7 +34,7 @@ A user's own screenshot has no layout file; give the beat a `focus` rectangle in
 |---|---|---|---|
 | `hero-push` | A slow push from the page-width framing onto the target, then dead still | the opening, the product itself, the proof | none; the default |
 | `spotlight-focus` | A gentler push while everything outside the target dims to 55% | pointing at one block among many | none |
-| `crash-zoom-punch` | A wide hold with a slow creep, a 6-frame punch with a 3% overshoot, then still | the one moment that must land ("this one") | once per video; the target must be small enough to punch in on |
+| `crash-zoom-punch` | A wide hold with a slow creep, a 6-frame punch with a 3% overshoot, then still | the one moment that must land ("this one") | once per video; the target must be small enough to punch in on (the validator rejects one that would not move) |
 | `pan-reveal` | Travels down a tall page from its top to the target, then rests | showing how much page there is before landing | a tall page (at least 1350 px), at least 5 s |
 | `statement` | The beat's `statement` text large on the theme background, words arriving 4 frames apart | the hook and the call to action | at most 2 per video; no capture; at most 28 width units |
 
@@ -83,7 +83,7 @@ Run `python3 scripts/showcase/manifest.py validate output/projects/<slug>`; ever
 
 Written from scratch after reading the named cards of video-shotcraft (Apache-2.0); no code, copy, UI or colours are reused, and each shot's source comment says what it borrowed.
 
-- `hero-push` and `spotlight-focus`: `spotlight-hero-card`. Borrowed: one hero element with a complete action arc, a card-shaped light hole instead of a circle, and a hold that is dead still (the card forbids tail drift). Not borrowed: its dark theatre, light beam, hover and outline light.
-- `crash-zoom-punch`: `crash-zoom-punch`. Borrowed: the rebound variant, with its numbers (a push of about 6 frames, the target filling about 70% of the frame, a small rebound, a wide hold before and a long hold after). Not borrowed: the screen-shake variant and the motion blur.
+- `hero-push` and `spotlight-focus`: `spotlight-hero-card`. Borrowed: a single hero target per beat, a card-shaped light hole instead of a circle, and a hold that is dead still (the card forbids tail drift). Not borrowed: its action arc (spotlight, rise, hover, reseat), dark theatre, light beam and outline light.
+- `crash-zoom-punch`: `crash-zoom-punch`. Borrowed: the rebound variant, with its numbers (a push of about 6 frames, the target filling about 70% of the frame, a small rebound, a wide hold before and a long hold after). Not borrowed: the screen-shake variant, the motion blur, the pre-pull-back (the camera never moves backwards, a tested rule) and the allowance of a second punch per video (this tool allows one).
 - `pan-reveal` and `statement`: no card.
 - Read and not shipped: `steep-tilt-glide` (see above).

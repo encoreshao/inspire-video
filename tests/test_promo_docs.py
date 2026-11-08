@@ -25,6 +25,8 @@ def test_the_credits_are_exact_about_what_was_and_was_not_borrowed():
     assert "video-shotcraft" in STYLE and "Apache-2.0" in STYLE
     for card in ("spotlight-hero-card", "crash-zoom-punch", "steep-tilt-glide"):
         assert card in STYLE, card
+    assert "complete action arc" not in STYLE and "single hero target" in STYLE      # the arc of that card was not borrowed
+    assert "pull-back" in STYLE and "second punch" in STYLE                         # what the crash card does that the shot does not
     assert "tilt-glide" in STYLE and "not included" in STYLE.lower()          # the shot that was left out, and why
     notice = (ROOT / "NOTICE").read_text(encoding="utf-8")
     assert "spotlight-hero-card" in notice and "crash-zoom-punch" in notice and "no code" in notice.lower()
