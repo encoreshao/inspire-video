@@ -11,7 +11,7 @@ import render
 REAL_ROOT = Path(__file__).resolve().parent.parent
 
 
-def make_project(root: Path, seconds=60) -> Path:
+def make_project(root: Path, seconds=150) -> Path:
     (root / "schemas").mkdir(exist_ok=True)
     shutil.copy(REAL_ROOT / "schemas/manifest-schema.json", root / "schemas/manifest-schema.json")
     (root / "video").mkdir(exist_ok=True)
@@ -213,3 +213,18 @@ def test_when_the_frame_grab_also_fails_the_cover_error_is_reported(run, monkeyp
     monkeypatch.setattr(render.subprocess, "run", lambda cmd, cwd=None, **kw: Done())
     rc, _, _ = run("--cover")
     assert rc == 1
+
+
+def clip_manifest(tmp_path, seconds):
+    root = tmp_path / f"clip-{seconds}"
+    root.mkdir()
+    return json.loads((make_project(root, seconds) / "video_manifest.json").read_text())
+
+
+def test_the_clip_must_be_two_to_five_minutes_long(tmp_path):
+    assert (render.MIN_CLIP_SEC, render.MAX_CLIP_SEC) == (120.0, 300.0)
+    for seconds in (120.0, 300.0):
+        render.validate(clip_manifest(tmp_path, seconds), seconds)
+    for seconds in (119.9, 300.1):
+        with pytest.raises(ValueError, match="120-300"):
+            render.validate(clip_manifest(tmp_path, seconds), seconds)

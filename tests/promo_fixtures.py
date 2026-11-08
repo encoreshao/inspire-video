@@ -2,6 +2,7 @@
 import json
 
 from imgs import png
+from showcase import manifest as M
 from showcase import page_layout as L
 
 ELEMENTS = [
@@ -9,9 +10,10 @@ ELEMENTS = [
     {"role": "button", "text": "Download", "x": 100, "y": 300, "w": 200, "h": 48},
     {"role": "card", "text": "", "x": 100, "y": 500, "w": 900, "h": 400},
 ]
-BEAT_IDS = ("hook", "problem", "what", "cta")
-SHOTS = ("hero-push", "spotlight-focus", "hero-push", "spotlight-focus")
-TARGETS = ("heading-1", "button-1", "card-1", "heading-1")
+N_BEATS = 12                                      # the shortest comfortable video: 12 beats at 10 s is two minutes
+BEAT_IDS = tuple(M.beat_ids(N_BEATS))
+SHOTS = tuple(("hero-push", "spotlight-focus")[i % 2] for i in range(N_BEATS))
+TARGETS = tuple(("heading-1", "button-1", "card-1", "heading-1")[i % 4] for i in range(N_BEATS))
 
 
 def promo_project(tmp_path):

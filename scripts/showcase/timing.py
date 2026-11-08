@@ -6,8 +6,8 @@ import json
 import wave
 
 PAD = 0.4
-MIN_TOTAL = 40.0
-MAX_TOTAL = 150.0
+MIN_TOTAL = 120.0                # 2 min
+MAX_TOTAL = 300.0                # 5 min
 
 
 class LengthError(ValueError):

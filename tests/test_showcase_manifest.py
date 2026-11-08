@@ -6,15 +6,16 @@ import pytest
 from imgs import png
 from showcase import manifest as M
 
-BEATS = [("hook", "Make videos from any website."), ("problem", "Screenshots alone do not tell the story."),
-         ("what", "It reads the site and writes the beats."), ("cta", "Try it on your own project.")]
+SENTENCES = ["Make videos from any website.", "Screenshots alone do not tell the story.",
+             "It reads the site and writes the beats.", "Try it on your own project."]
 
 
-def project(tmp_path, n=4, shape=(900, 600)):
+def project(tmp_path, n=12, shape=(900, 600)):
     p = tmp_path / "proj"
     (p / "assets").mkdir(parents=True)
     beats = []
-    for i, (bid, en) in enumerate(BEATS[:n]):
+    for i, bid in enumerate(M.beat_ids(n)):
+        en = f"{SENTENCES[i % len(SENTENCES)][:-1]} number {i}."
         (p / "assets" / f"{i}.png").write_bytes(png(*shape))
         beats.append({"id": bid, "en": en, "zh": "这是一句中文。", "asset": f"assets/{i}.png",
                       "focus": {"x": 0.1, "y": 0.1, "w": 0.5, "h": 0.4}, "callout": "Look here"})
@@ -26,7 +27,15 @@ def project(tmp_path, n=4, shape=(900, 600)):
     return p, m
 
 
-def timings(m, secs=(12.0, 11.0, 10.0, 9.0)):
+def spread(n, total=156.0):
+    """n beat lengths that differ a little and add up to total."""
+    base = [12.0 - 0.5 * (i % 4) for i in range(n)]
+    scale = total / sum(base)
+    return tuple(round(x * scale, 3) for x in base)
+
+
+def timings(m, secs=None):
+    secs = secs or spread(len(m["beats"]))
     return {"engine": "say", "voice": None, "lang": "en", "total": sum(secs),
             "beats": [{"id": b["id"], "audio": f"audio/{b['id']}.wav", "audio_seconds": s - 0.4, "seconds": s}
                       for b, s in zip(m["beats"], secs)]}
@@ -38,21 +47,22 @@ def test_a_complete_manifest_validates(tmp_path):
     M.validate_showcase(m, p, timings(m))
 
 
-def test_default_beat_length_reaches_the_forty_second_minimum(tmp_path):
-    p, m = project(tmp_path, 4)
-    assert M.beat_seconds_list(m) == [10.0, 10.0, 10.0, 10.0]
-    p2, m2 = project(tmp_path / "x", 4)
-    m2["beats"] += copy.deepcopy(m2["beats"][:2])
-    for i, b in enumerate(m2["beats"][4:], 4):
-        b["id"] = f"extra{i}"
-    assert M.beat_seconds_list(m2) == [round(40 / 6, 2)] * 6
-    assert M.beat_seconds_list(m, timings(m)) == [12.0, 11.0, 10.0, 9.0]
+def test_default_beat_length_reaches_the_two_minute_minimum(tmp_path):
+    p, m = project(tmp_path, 12)
+    assert M.beat_seconds_list(m) == [10.0] * 12
+    p2, m2 = project(tmp_path / "x", 16)
+    assert M.beat_seconds_list(m2) == [7.5] * 16
+    p3, m3 = project(tmp_path / "y", 40)
+    assert M.beat_seconds_list(m3) == [4.0] * 40            # the floor of 4 s a beat; 40 beats may exceed the minimum
+    t = timings(m)
+    assert M.beat_seconds_list(m, t) == [b["seconds"] for b in t["beats"]]
 
 
 def test_frame_windows_are_contiguous_and_keep_the_total():
-    w = M.frame_windows([10.4, 11.3, 9.9, 8.4], 30)
-    assert w[0]["start"] == 0 and all(w[i]["start"] + w[i]["frames"] == w[i + 1]["start"] for i in range(3))
-    assert abs(sum(x["frames"] for x in w) - round(40.0 * 30)) <= 1
+    secs = [10.4, 11.3, 9.9, 8.4] * 3
+    w = M.frame_windows(secs, 30)
+    assert w[0]["start"] == 0 and all(w[i]["start"] + w[i]["frames"] == w[i + 1]["start"] for i in range(len(w) - 1))
+    assert abs(sum(x["frames"] for x in w) - round(sum(secs) * 30)) <= 1
     assert all(x["frames"] >= 1 for x in M.frame_windows([0.0, 0.01], 30))
 
 
@@ -65,7 +75,7 @@ def test_frame_windows_are_contiguous_and_keep_the_total():
     (lambda m: m.update(subtitle=""), "subtitle"),
     (lambda m: m["project"].update(name=""), "project.name"),
     (lambda m: m["source"].pop("label"), "source"),
-    (lambda m: m.update(beats=m["beats"][:3]), "4 to 6 beats"),
+    (lambda m: m.update(beats=m["beats"][:9]), "10 to 40 beats"),
     (lambda m: m["beats"].__setitem__(1, {**m["beats"][1], "id": "hook"}), "duplicate"),
     (lambda m: m["beats"][0].update(id="../evil"), "beat id"),
     (lambda m: m["beats"][0].update(en=""), "'hook'.*en"),
@@ -114,13 +124,13 @@ def test_timings_must_match_the_beats_and_the_length_rule(tmp_path):
     with pytest.raises(M.ManifestError, match="timings"):
         M.validate_showcase(m, p, t)
     t = timings(m)
-    t["beats"] = t["beats"][:3]
+    t["beats"] = t["beats"][:-1]
     with pytest.raises(M.ManifestError, match="timings"):
         M.validate_showcase(m, p, t)
     with pytest.raises(M.ManifestError, match="minimum"):
-        M.validate_showcase(m, p, timings(m, (3.0, 3.0, 3.0, 3.0)))
+        M.validate_showcase(m, p, timings(m, (9.0,) * 12))
     with pytest.raises(M.ManifestError, match="maximum"):
-        M.validate_showcase(m, p, timings(m, (60.0, 60.0, 60.0, 60.0)))
+        M.validate_showcase(m, p, timings(m, (26.0,) * 12))
 
 
 def test_a_voice_without_timings_asks_to_narrate_first(tmp_path):
@@ -138,29 +148,28 @@ def brief(n_assets=3):
 
 
 def test_scaffold_cycles_assets_and_leaves_the_text_to_fill_in(tmp_path):
-    m = M.scaffold_manifest(brief(3), "acme-demo", 5)
-    assert m["type"] == "showcase" and m["project_id"] == "acme-demo" and len(m["beats"]) == 5
-    assert [b["asset"] for b in m["beats"]] == ["assets/0.png", "assets/1.png", "assets/2.png", "assets/0.png", "assets/1.png"]
+    m = M.scaffold_manifest(brief(3), "acme-demo", 12)
+    assert m["type"] == "showcase" and m["project_id"] == "acme-demo" and len(m["beats"]) == 12
+    assert [b["asset"] for b in m["beats"]] == [f"assets/{i % 3}.png" for i in range(12)]
     assert all(b["en"] == "" and b["zh"] == "" for b in m["beats"]) and m["headline"] == ""
     assert m["source"] == {"kind": "website", "url": "https://example.com/", "label": "example.com"}
     assert m["provenance"]["rights_confirmed"] is False
     with pytest.raises(M.ManifestError):
-        M.scaffold_manifest(brief(0), "acme-demo", 5)
-    assert len(M.scaffold_manifest(brief(3), "x", 9)["beats"]) == 6
+        M.scaffold_manifest(brief(0), "acme-demo", 12)
 
 
 def test_cli_scaffold_never_overwrites_and_validate_reports(tmp_path, capsys):
     p = tmp_path / "proj"
     p.mkdir()
     (p / "brief.json").write_text(json.dumps(brief(2)))
-    assert M.main(["scaffold", str(p), "--beats", "4"]) == 0
+    assert M.main(["scaffold", str(p), "--beats", "12"]) == 0
     first = (p / "video_manifest.json").read_text()
     assert M.main(["scaffold", str(p)]) == 1 and "already exists" in capsys.readouterr().err
     assert (p / "video_manifest.json").read_text() == first
     assert M.main(["validate", str(p)]) == 1 and "error:" in capsys.readouterr().err
 
 
-def narrated(m, secs=(12.0, 11.0, 10.0, 9.0), lang="en", voice=None):
+def narrated(m, secs=None, lang="en", voice=None):
     import hashlib
     t = timings(m, secs)
     t["lang"], t["voice"] = lang, voice
@@ -219,14 +228,51 @@ def test_the_manifest_voice_must_match_the_narration(tmp_path):
 def test_scaffold_label_for_a_local_folder_is_the_folder_name_not_the_path():
     b = brief(3)
     b["source"] = {"kind": "local", "url": "/Users/me/code/my-app", "host": "", "repo_path": ""}
-    m = M.scaffold_manifest(b, "x", 4)
+    m = M.scaffold_manifest(b, "x", 12)
     assert m["source"]["label"] == "my-app" and "/Users" not in json.dumps(m["source"]["label"])
 
 
 def test_scaffold_ids_always_end_with_a_call_to_action():
-    for n, ids in ((4, ["hook", "problem", "what", "cta"]), (5, ["hook", "problem", "what", "features", "cta"]),
-                   (6, ["hook", "problem", "what", "features", "proof", "cta"])):
-        assert [b["id"] for b in M.scaffold_manifest(brief(3), "x", n)["beats"]] == ids
+    for n in (10, 16, 40):
+        ids = [b["id"] for b in M.scaffold_manifest(brief(3), "x", n)["beats"]]
+        assert ids == M.beat_ids(n) and ids[0] == "hook" and ids[-1] == "cta"
+
+
+@pytest.mark.parametrize("n", range(10, 41))
+def test_beat_ids_are_a_hook_numbered_details_proof_and_a_call_to_action(n):
+    ids = M.beat_ids(n)
+    assert len(ids) == n and len(set(ids)) == n
+    assert ids[:3] == ["hook", "problem", "what"] and ids[-2:] == ["proof", "cta"]
+    assert ids[3:-2] == [f"detail-{i:02d}" for i in range(1, n - 4)]
+    assert all(M.BEAT_ID.match(i) for i in ids)
+
+
+def test_the_scaffold_defaults_to_sixteen_beats_and_clamps_to_the_allowed_range():
+    assert len(M.scaffold_manifest(brief(3), "x")["beats"]) == 16
+    assert len(M.scaffold_manifest(brief(3), "x", 3)["beats"]) == M.MIN_BEATS == 10
+    assert len(M.scaffold_manifest(brief(3), "x", 99)["beats"]) == M.MAX_BEATS == 40
+
+
+def test_the_cli_scaffold_writes_sixteen_beats_by_default(tmp_path):
+    (tmp_path / "brief.json").write_text(json.dumps(brief(2)))
+    assert M.main(["scaffold", str(tmp_path)]) == 0
+    assert len(json.loads((tmp_path / "video_manifest.json").read_text())["beats"]) == 16
+
+
+@pytest.mark.parametrize("n", [10, 40])
+def test_the_smallest_and_largest_manifests_validate(tmp_path, n):
+    p, m = project(tmp_path, n)
+    M.validate_showcase(m, p)
+    M.validate_showcase(m, p, timings(m, spread(n, 150.0 if n == 10 else 290.0)))
+
+
+@pytest.mark.parametrize("n", [9, 41])
+def test_one_beat_too_few_or_too_many_is_refused_naming_the_range(tmp_path, n):
+    p, m = project(tmp_path, 12)
+    beats = m["beats"][:n] if n < 12 else m["beats"] + [{**copy.deepcopy(m["beats"][1]), "id": f"extra-{i}"} for i in range(n - 12)]
+    m["beats"] = beats
+    with pytest.raises(M.ManifestError, match="10 to 40 beats"):
+        M.validate_showcase(m, p)
 
 
 def test_cli_scaffold_gives_non_ascii_folder_names_distinct_ids(tmp_path):
@@ -245,15 +291,35 @@ def test_odd_image_shapes_get_a_crop_warning(tmp_path):
     assert M.crop_warnings(m, p) == []
     p2, m2 = project(tmp_path / "sq", shape=(1000, 1000))
     w = M.crop_warnings(m2, p2)
-    assert len(w) == 4 and "cropped" in w[0] and "'hook'" in w[0]
+    assert len(w) == 12 and "cropped" in w[0] and "'hook'" in w[0]
 
 
 def test_the_device_scaffold_ignores_promo_page_captures():
     base = {"source": {"kind": "website", "url": "https://example.com/", "host": "example.com", "repo_path": ""}}
     brief = {**base, "assets": [{"path": "assets/promo-1@2x.png", "role": "promo-page"},
                                 {"path": "assets/capture-a-01-desktop.png"}]}
-    beats = M.scaffold_manifest(brief, "demo", 4)["beats"]
+    beats = M.scaffold_manifest(brief, "demo", 12)["beats"]
     assert {b["asset"] for b in beats} == {"assets/capture-a-01-desktop.png"}
     only_promo = {**base, "assets": [{"path": "assets/promo-1@2x.png", "role": "promo-page"}]}
     with pytest.raises(M.ManifestError, match="no assets"):
-        M.scaffold_manifest(only_promo, "demo", 4)
+        M.scaffold_manifest(only_promo, "demo", 12)
+
+
+@pytest.mark.parametrize("topic, ok", [
+    ("Services", True), ("Our services", True), ("Our services · 服务", True), ("服务", True), ("About us.", True), ("R&D", True),
+    ("Q4 results", True), ("A", True), ("", False), (" Services", False), ("Services ", False), ("-Services", False),
+    ("Services-", False), ("Our\nservices", False), ("Services 🚀", False), ("<b>Services</b>", False), ("服" * 15, False),
+    ("S" * 29, False), ("S" * 28, True), (7, False), (None, False),
+])
+def test_topic_labels_follow_the_rule_the_renderer_uses(topic, ok):
+    assert M.topic_valid(topic) is ok
+
+
+def test_a_beat_may_carry_a_valid_topic_and_a_bad_one_is_refused_naming_the_beat(tmp_path):
+    p, m = project(tmp_path, 12)
+    for b in m["beats"]:
+        b["topic"] = "Services"
+    M.validate_showcase(m, p)
+    m["beats"][3]["topic"] = "<b>x</b>"
+    with pytest.raises(M.ManifestError, match=r"beat 'detail-01'.*topic"):
+        M.validate_showcase(m, p)

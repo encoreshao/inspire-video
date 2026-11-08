@@ -5,7 +5,7 @@ Usage:
   python scripts/precheck.py <video> [--has-subtitles]
 
 Refuses a source that cannot give a clip, with a stable code and a plain sentence:
-  source_too_short  less than 40 s of material (the renderer's minimum clip length is 40 s)
+  source_too_short  less than 120 s of material (the renderer's minimum clip length is 120 s)
   source_no_audio   no audio track, and no subtitles supplied to take the words from
 
 Exit 0 when the source passes, 1 otherwise. The idea of failing early with stable codes comes from
@@ -20,7 +20,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-MIN_SOURCE_SEC = 40          # keep equal to the lower bound of the 40-150 s clip rule in render.py
+MIN_SOURCE_SEC = 120         # keep equal to the lower bound of the 120-300 s clip rule in render.py
 
 SOURCE_TOO_SHORT = "source_too_short"
 SOURCE_NO_AUDIO = "source_no_audio"

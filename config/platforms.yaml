@@ -4,7 +4,7 @@
 # `verified: false` means the limits were NOT read from the platform's own publish page (2026-11-07 research
 # found third-party guides only, often contradictory). publish.md warns for those platforms. Check the platform's
 # publish page, correct the numbers, then set `verified: true`.
-# Clip length is also limited by render.py itself (editorial 40-150 s); `duration` here is the platform's range.
+# Clip length is also limited by render.py itself (editorial 120-300 s); `duration` here is the platform's range.
 #
 # Add a platform: copy a block under `platforms`, change the id, name, lang, profile and limits.
 # Add a video format: add a block under `profiles` (and layout work in video/src/ if it is a new shape).

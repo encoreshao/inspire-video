@@ -23,8 +23,12 @@ def main() -> None:
     if "speed" in inspect.signature(cv.inference_zero_shot).parameters:
         kwargs["speed"] = job["speed"]
     for it in job["items"]:
-        chunks = [r["tts_speech"] for r in
-                  cv.inference_zero_shot(it["text"], PREFIX + job["prompt_text"], job["prompt_wav"], **kwargs)]
+        if it.get("instruct"):
+            # Instruct mode keeps the timbre of the reference clip but takes the delivery from the instruction.
+            gen = cv.inference_instruct2(it["text"], it["instruct"], job["prompt_wav"], **kwargs)
+        else:
+            gen = cv.inference_zero_shot(it["text"], PREFIX + job["prompt_text"], job["prompt_wav"], **kwargs)
+        chunks = [r["tts_speech"] for r in gen]
         if not chunks:
             sys.exit(f"CosyVoice returned no audio for: {it['text'][:40]!r}")
         torchaudio.save(it["out"], torch.cat(chunks, dim=1), cv.sample_rate, encoding="PCM_S", bits_per_sample=16)

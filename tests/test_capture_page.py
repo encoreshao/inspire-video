@@ -121,6 +121,65 @@ def test_the_command_captures_twice_with_two_indexes_and_keeps_rights_unresolved
     assert "1 heading" in out and "rights" in out and "unresolved" in out
 
 
+HOME_HTML = (b"<html><head><title>Acme</title></head><body><header><nav>"
+             b"<a href='/services'>Services</a><a href='/work'>Our work</a><a href='https://other.example/x'>Elsewhere</a>"
+             b"<a href='/about'>About</a><a href='/files/a.pdf'>Brochure</a></nav></header><h1>Acme</h1></body></html>")
+
+
+def site_fetcher():
+    def fetch(url):
+        if url.endswith("/robots.txt"):
+            raise W.CrawlError("HTTP 404")
+        return W.FetchResult(url, "text/html", HOME_HTML)
+    return fetch
+
+
+def test_nav_pages_are_the_headers_own_links_on_the_same_site_in_order():
+    got = CP.nav_pages("https://acme.test/", 10, fetch=site_fetcher(), allow_private=True)
+    assert got == [("https://acme.test/services", "Services"), ("https://acme.test/work", "Our work"),
+                   ("https://acme.test/about", "About")]
+    assert CP.nav_pages("https://acme.test/", 2, fetch=site_fetcher(), allow_private=True) == got[:2]
+    assert CP.nav_pages("https://acme.test/", 0, fetch=site_fetcher(), allow_private=True) == []
+
+
+def test_nav_captures_the_page_then_each_header_page_and_one_failure_does_not_stop_the_rest(tmp_path, monkeypatch, capsys):
+    p = project(tmp_path)
+    monkeypatch.setattr(CP, "check_url", lambda url, *a, **k: (_ for _ in ()).throw(CaptureError("blocked")) if url.endswith("/work") else None)
+    monkeypatch.setattr(CP, "nav_pages", lambda *a, **k: [("https://example.com/services", "Services"),
+                                                          ("https://example.com/work", "Our work"),
+                                                          ("https://example.com/about", "About")])
+    seen = []
+    base = fake_capture([{"id": "heading-1", "role": "heading"}])
+    monkeypatch.setattr(CP, "capture_page", lambda url, *a, **k: (seen.append(url), base(url, *a, **k))[1])
+    assert CP.main(["https://example.com/", "--project", str(p), "--nav", "5"]) == 0
+    assert seen == ["https://example.com/", "https://example.com/services", "https://example.com/about"]
+    saved = json.loads((p / "brief.json").read_text(encoding="utf-8"))
+    assert [a["path"] for a in saved["assets"]] == [f"assets/promo-{i}@2x.png" for i in (1, 2, 3)]
+    io = capsys.readouterr()
+    assert "header link: Services -> https://example.com/services" in io.out
+    assert "skipped https://example.com/work: blocked" in io.err
+
+
+def test_nav_has_limits_and_cannot_be_combined_with_an_index(tmp_path, monkeypatch, capsys):
+    p = project(tmp_path)
+    monkeypatch.setattr(CP, "check_url", lambda *a, **k: None)
+    monkeypatch.setattr(CP, "capture_page", fake_capture([]))
+    for extra, message in ((["--nav", "99"], "between 0 and"), (["--nav", "-1"], "between 0 and"),
+                           (["--nav", "3", "--index", "2"], "drop --index")):
+        assert CP.main(["https://example.com/", "--project", str(p), *extra]) == 1
+        assert message in capsys.readouterr().err
+    assert not (p / "assets" / "promo-1@2x.png").exists()
+
+
+def test_nav_with_no_header_links_warns_and_still_captures_the_page(tmp_path, monkeypatch, capsys):
+    p = project(tmp_path)
+    monkeypatch.setattr(CP, "check_url", lambda *a, **k: None)
+    monkeypatch.setattr(CP, "capture_page", fake_capture([{"id": "heading-1", "role": "heading"}]))
+    monkeypatch.setattr(CP, "nav_pages", lambda *a, **k: [])
+    assert CP.main(["https://example.com/", "--project", str(p), "--nav", "4"]) == 0
+    assert "no header navigation links" in capsys.readouterr().err
+
+
 def test_the_command_warns_when_a_page_has_no_elements(tmp_path, monkeypatch, capsys):
     p = project(tmp_path)
     monkeypatch.setattr(CP, "check_url", lambda *a, **k: None)

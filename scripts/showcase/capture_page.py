@@ -2,6 +2,10 @@
 """Capture a web page at 2x with a layout of its elements, for the promo style.
 
   python scripts/showcase/capture_page.py <url> --project output/projects/<slug> [--hide CSS]... [--allow-private]
+                                          [--nav N]
+
+--nav N also captures up to N pages that the site's header navigation links to (the same site only, public hosts,
+robots.txt respected), one capture each, so a 2 to 5 minute video can show a different page for each topic.
 
 Needs Playwright and an installed Chrome (python3 -m pip install 'playwright>=1.40'; no browser is downloaded).
 Writes <project>/assets/promo-<n>@2x.png and promo-<n>.layout.json, and registers the image in brief.json as a
@@ -231,6 +235,35 @@ def register_in_brief(project, image, url) -> dict:
     return asset
 
 
+MAX_NAV = 12
+
+
+def nav_pages(url, limit, allow_private=False, fetch=None) -> list[tuple[str, str]]:
+    """(url, label) of up to `limit` pages the page's header navigation links to, in the order the header lists them.
+
+    Same site only, and the same rules as ingest's crawl (public host, robots.txt); the page itself is not included."""
+    if limit < 1:
+        return []
+    result = W.crawl(url, fetch=fetch, allow_private=allow_private, max_pages=1)
+    if not result.pages:
+        return []
+    home = result.pages[0]
+    labels = {W._norm(link["url"]): link["text"] for link in home.nav_links if link["text"]}
+    return [(u, labels.get(W._norm(u), "")) for u in W.select_nav_links(home, limit)]
+
+
+def _report(asset, result) -> None:
+    layout = result["layout_data"]
+    roles: dict[str, int] = {}
+    for e in layout["elements"]:
+        roles[e["role"]] = roles.get(e["role"], 0) + 1
+    print(f"captured {asset['path']} ({asset['width']}x{asset['height']}, page {layout['page']['w']}x{layout['page']['h']} px) "
+          f"and {result['layout'].name}")
+    print("elements: " + (", ".join(f"{n} {role}" for role, n in sorted(roles.items())) or "none"))
+    if not layout["elements"]:
+        print("warning: no elements found; give each beat a focus rectangle instead of a target", file=sys.stderr)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Capture a page at 2x with an element layout for the promo style")
     ap.add_argument("url")
@@ -238,6 +271,8 @@ def main(argv=None) -> int:
     ap.add_argument("--hide", action="append", default=[], metavar="CSS",
                     help="CSS selector to hide before the shot (a cookie banner, a chat widget); repeatable")
     ap.add_argument("--allow-private", action="store_true", help="allow local or private addresses (your own sites only)")
+    ap.add_argument("--nav", type=int, default=0, metavar="N",
+                    help=f"also capture up to N pages the header navigation links to (at most {MAX_NAV}; same site, robots.txt respected)")
     ap.add_argument("--index", type=int, help="the number in the file name, 1 or more (default: the next free one); "
                                               "an index that already exists replaces that capture")
     a = ap.parse_args(argv)
@@ -245,6 +280,10 @@ def main(argv=None) -> int:
     try:
         if a.index is not None and a.index < 1:
             raise CaptureError("--index must be 1 or more")
+        if not 0 <= a.nav <= MAX_NAV:
+            raise CaptureError(f"--nav must be between 0 and {MAX_NAV}")
+        if a.nav and a.index is not None:
+            raise CaptureError("--nav numbers the captures itself; drop --index")
         load_brief(project)                    # fail before the browser starts, not after the files are written
         check_url(a.url, a.allow_private)
         assets = project / "assets"
@@ -255,15 +294,24 @@ def main(argv=None) -> int:
     except (CaptureError, OSError, L.LayoutError, I.IngestError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
-    layout = result["layout_data"]
-    roles: dict[str, int] = {}
-    for e in layout["elements"]:
-        roles[e["role"]] = roles.get(e["role"], 0) + 1
-    print(f"captured {asset['path']} ({asset['width']}x{asset['height']}, page {layout['page']['w']}x{layout['page']['h']} px) "
-          f"and {result['layout'].name}")
-    print("elements: " + (", ".join(f"{n} {role}" for role, n in sorted(roles.items())) or "none"))
-    if not layout["elements"]:
-        print("warning: no elements found; give each beat a focus rectangle instead of a target", file=sys.stderr)
+    _report(asset, result)
+    if a.nav:
+        host_check = (lambda host: True) if a.allow_private else W.is_public_host
+        try:
+            pages = nav_pages(a.url, a.nav, a.allow_private)
+        except (W.CrawlError, OSError) as e:
+            pages = []
+            print(f"warning: could not read the header navigation: {e}", file=sys.stderr)
+        if not pages:
+            print("warning: no header navigation links to capture; capture the pages you want one by one", file=sys.stderr)
+        for link, label in pages:
+            print(f"header link: {label or '(no text)'} -> {link}")
+            try:
+                check_url(link, a.allow_private)
+                result = capture_page(link, assets, next_index(assets), hide=a.hide, host_check=host_check, project=project)
+                _report(register_in_brief(project, result["image"], link), result)
+            except (CaptureError, OSError, L.LayoutError, I.IngestError) as e:
+                print(f"warning: skipped {link}: {e}", file=sys.stderr)       # one bad page does not stop the others
     print("rights: the capture is registered as unresolved; confirm before a public render "
           "(skills/inspire-showcase/references/rights-and-safety.md)")
     return 0

@@ -37,7 +37,8 @@ def _voice_id(voice) -> str:
     if voice is None:
         return "-"
     digest = hashlib.sha256(Path(voice.prompt_wav).read_bytes() + voice.prompt_text.encode("utf-8")).hexdigest()
-    return f"{voice.name}:{digest}"
+    style = f"{getattr(voice, 'delivery', 'instruct')}:{getattr(voice, 'style', '')}"
+    return f"{voice.name}:{digest}:{hashlib.sha256(style.encode('utf-8')).hexdigest()[:12]}"
 
 
 def _manifest_voice(project: Path):

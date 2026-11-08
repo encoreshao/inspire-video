@@ -82,3 +82,26 @@ def test_voice_name_with_trailing_newline_is_rejected(tmp_path, make_wav):
     clip = make_wav(tmp_path / "in.wav", seconds=12)
     with pytest.raises(voices.VoiceError, match="invalid voice name"):
         voices.create_voice("a\n", clip, "text", root=tmp_path / "v")
+
+
+def test_new_profile_fields_default_for_old_meta_and_load_when_present(tmp_path, make_wav):
+    import json
+    clip = make_wav(tmp_path / "in.wav", seconds=12)
+    p = voices.create_voice("me", clip, "words", root=tmp_path / "v")
+    assert p.delivery == "instruct" and p.style == ""
+    meta = tmp_path / "v" / "me" / "meta.json"
+    data = json.loads(meta.read_text())
+    meta.write_text(json.dumps({**data, "delivery": "zero_shot", "style": " Speak calmly. "}))
+    q = voices.load_voice("me", root=tmp_path / "v")
+    assert q.delivery == "zero_shot" and q.style == "Speak calmly."
+
+
+@pytest.mark.parametrize("extra", [{"delivery": "shout"}, {"style": 3}])
+def test_bad_delivery_or_style_is_a_clear_error(tmp_path, make_wav, extra):
+    import json
+    clip = make_wav(tmp_path / "in.wav", seconds=12)
+    voices.create_voice("me", clip, "words", root=tmp_path / "v")
+    meta = tmp_path / "v" / "me" / "meta.json"
+    meta.write_text(json.dumps({**json.loads(meta.read_text()), **extra}))
+    with pytest.raises(voices.VoiceError, match="delivery|style"):
+        voices.load_voice("me", root=tmp_path / "v")

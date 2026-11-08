@@ -24,7 +24,7 @@ A high score does not override a misleading or incomplete statement. Reject cand
 
 ## Rubric by content type
 
-<!-- The per-type emphasis is condensed from the outline prompts of autoclip (MIT, https://github.com/zhouxiaoka/autoclip), rewritten for one 40-150 s clip. -->
+<!-- The per-type emphasis is condensed from the outline prompts of autoclip (MIT, https://github.com/zhouxiaoka/autoclip), rewritten for one 120-300 s clip. -->
 
 Decide the dominant type of the source first, from the transcript, and say which you chose. The weights above stay the same; the type changes what to look for and what ruins a candidate. For mixed content use the type of the stretch you are cutting.
 

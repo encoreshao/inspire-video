@@ -10,7 +10,7 @@ The promo style does not use the editorial layout of `inspire-video` and the dev
 - a dark frame (the `ink` theme, the default for promo; `theme` can still be set) with a brand lockup at the top: the project name in both languages, the tagline and the address in a pill;
 - a large rounded stage, 880 x 960 px, the full safe width, where the camera moves;
 - the bilingual caption straight on the background, left-aligned, English above Chinese, with no card behind it;
-- a row of pips at the bottom, one per beat, each filling as its beat plays, in place of one progress bar;
+- a row of pips at the bottom, one per beat, each filling as its beat plays, in place of one progress bar; with more than 12 beats the pips become one continuous bar with a small gap at every topic change;
 - a cover of its own: the headline large, the hero framing in the same rounded stage, the brand and address below.
 
 The `headline` and `subtitle` fields are used for the cover only; the video body shows the brand lockup instead.
@@ -64,6 +64,12 @@ Write the storyboard in the reply before the manifest, and keep it to this shape
 
 Choose each target by what its caption talks about, so the camera lands on the thing the sentence names. Give the hook and the call to action a `statement` when the page has no element that carries them. Use `crash-zoom-punch` once, on the beat that matters most.
 
+## Transitions and topic labels
+
+The stage frame (card, border, shadow) never moves or fades; only the picture inside it changes. A topic change is when a beat's `topic` differs from the previous beat's, or, when neither beat has a `topic`, when its `asset` differs. A topic change dissolves over 18 frames (eased) while the incoming picture settles from a slight scale and rise and the outgoing one drifts the other way; a beat that stays on the same page dissolves over 8 frames with a much smaller drift. The caption is handled separately: the old text is gone by about half the dissolve and the new text fades in only when the beat's audio starts, so two captions never overlap.
+
+An optional beat field `topic` shows a small pill in the stage's top-left corner for about 1.5 s after a topic change (and on the first beat if it has one). Rules: one string, at most 28 width units (a Chinese character counts 2), letters, digits, CJK, spaces and `& / - . , '` and the middle dot, no leading or trailing space. A bilingual label is written `Our services · 服务`. A beat without `topic` has no label.
+
 ## Manifest
 
 Set `"style": "promo"`. A camera beat takes `shot` and exactly one of `target` (an element id from the layout) or `focus` (a rectangle). A statement beat takes `statement` and nothing else about a capture. `callout` is not used.
@@ -82,7 +88,7 @@ Run `python3 scripts/showcase/manifest.py validate output/projects/<slug>`; ever
 ## Pitfalls
 
 - A very large target (a full-width dashboard image) hardly pushes, because it already fills the frame. Pick a smaller element inside it, or a different shot.
-- The last 9 frames of a beat cross-fade into the next, so a still at the last frame of a beat is a blend. Judge a beat's own framing from 10 or more frames before its end.
+- The last 18 frames of a beat (8 within the same topic) dissolve into the next, so a still near the end of a beat is a blend. Judge a beat's own framing from 20 or more frames before its end.
 - The cover shows the first beat's final framing (a statement-first project gets the finished statement). A `spotlight-focus` first beat gets a plain `hero-push` cover (no dimming).
 - Text is sharp because the captures are 2x and the zoom is capped at the capture's resolution; do not capture at a smaller size to save space.
 - The video is determinism-checked: no random or time-based motion in shots.

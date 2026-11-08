@@ -19,7 +19,7 @@ Create a finished vertical MP4 inspired by the supplied visual references:
 - restrained transitions and subtle motion;
 - no imitation of the source app's status bar, navigation, engagement icons, or account UI.
 
-Default output: 1080×1920, 30 fps, H.264 MP4, 40 seconds to 2 min 30 s (40–150 s), bilingual Chinese/English.
+Default output: 1080×1920, 30 fps, H.264 MP4, 2 to 5 minutes (120–300 s), bilingual Chinese/English.
 Other platform formats (4:5 for LinkedIn and Facebook) come from `config/platforms.yaml`: render them with `--platform` or `--profile`, see `references/rendering-guide.md`.
 
 ## Operating principles
@@ -53,7 +53,7 @@ Accept one of:
 Ask only for missing information that blocks the task. Defaults:
 - language: English source, Simplified Chinese translation;
 - aspect ratio: 9:16;
-- duration: 40–150 seconds (choose the natural length of one complete thought);
+- duration: 120–300 seconds (2 to 5 minutes: choose a passage that develops one idea or a short run of connected points, and end where the thought resolves);
 - one best segment;
 - output: one folder per project, `output/final/<project-slug>/`, holding `<project-slug>.mp4`, `cover.png` and the publishing copy;
 - visual style: `references/visual-style.md`;
@@ -69,7 +69,7 @@ Ask only for missing information that blocks the task. Defaults:
 - In a sandboxed run (for example one started by the LoopX Creator page) `ffmpeg` and `ffprobe` cannot be started directly. Run them as `python scripts/media.py ffmpeg <args>` and `python scripts/media.py ffprobe <args>` instead: same arguments, but every file must be under `output/` (frames and temp files too, never `/tmp`), and it refuses network or pipe inputs, filters that read files, and code-file outputs. Outside a sandbox the plain commands work as well.
 - Confirm the Remotion project dependencies are installed.
 - For URLs, first ask the user to confirm they own the video or have permission to reuse it. Then run `python scripts/fetch.py <url> --yes-rights`. It caches each video under `output/cache/<extractor>-<id>/` and never downloads the same video twice; its last stdout line is the source path and `source_metadata.json` sits beside it (use it for attribution). Never pass `--yes-rights` without the user's confirmation. Do not bypass DRM, paywalls, login restrictions, geo-restrictions, or platform safeguards; if fetch fails (for example YouTube's "confirm you're not a bot" check), ask for a local file and import it with `python scripts/fetch.py --file <path> --yes-rights` (add `--source-url <url>` for attribution). The opt-in `--cookies-from-browser <browser>` flag uses the user's own signed-in browser session and may violate the platform's terms or flag their account: use it only when the user explicitly asks for it after being told this, never by default.
-- Before transcribing, run `python scripts/precheck.py <source> [--has-subtitles]`. It refuses a source with under 40 s of material (`source_too_short`) or no audio and no subtitles (`source_no_audio`); tell the user the printed sentence and ask for another source instead of continuing.
+- Before transcribing, run `python scripts/precheck.py <source> [--has-subtitles]`. It refuses a source with under 120 s of material (`source_too_short`) or no audio and no subtitles (`source_no_audio`); tell the user the printed sentence and ask for another source instead of continuing.
 - Skill root is `~/.inspire-video`; run all `scripts/` commands from there.
 - Create a unique project directory under `output/projects/<slug>/`.
 - Copy or reference the source; do not overwrite it.
@@ -104,7 +104,7 @@ Score candidate contiguous segments using:
 - a memorable central idea;
 - completeness of the thought;
 - audio/video quality;
-- suitability for a 40–150 second short;
+- suitability for a 120–300 second video;
 - lack of misleading edits.
 
 Prefer one coherent passage. Avoid clips that start mid-sentence, end before the thought resolves, rely on unexplained pronouns, or make a factual claim without context.

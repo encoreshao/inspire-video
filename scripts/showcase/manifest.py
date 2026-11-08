@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The showcase video manifest: validation, beat timing and a scaffold built from brief.json.
 
-  python scripts/showcase/manifest.py scaffold <project-dir> [--beats 5]   # write video_manifest.json to fill in
+  python scripts/showcase/manifest.py scaffold <project-dir> [--beats 16]   # write video_manifest.json to fill in
   python scripts/showcase/manifest.py validate <project-dir>
 """
 from __future__ import annotations
@@ -38,15 +38,22 @@ ZOOM_CAP = 3.2
 CRASH_FILL, CRASH_OVERSHOOT, CRASH_MIN_MOVE = 0.7, 0.03, 1.05
 STATEMENT_UNITS = 28                                   # the statement's width limit (a Chinese character counts as 2)
 TALL_PAGE_PX = round(1.5 * L.VIEWPORT["h"])      # "tall" for a pan: at least one and a half capture viewports
-MIN_BEATS, MAX_BEATS = 4, 6
+MIN_BEATS, MAX_BEATS = 10, 40                       # 2 to 5 minutes at roughly 7 to 12 seconds a beat
 FPS = 30
 PROJECT_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
-BEAT_IDS_BY_COUNT = {4: ("hook", "problem", "what", "cta"),
-                     5: ("hook", "problem", "what", "features", "cta"),
-                     6: ("hook", "problem", "what", "features", "proof", "cta")}
+
+
+def beat_ids(n: int) -> list[str]:
+    """Placeholder ids for a scaffold of n beats: a hook, the problem, what it is, numbered detail beats, proof, a call to action."""
+    return ["hook", "problem", "what"] + [f"detail-{i:02d}" for i in range(1, n - 4)] + ["proof", "cta"]
+
+
+
 SCREEN_ASPECT = {"browser": 846 / 450, "phone": 219 / 444}   # width / height of the device screens in the composition
 CALLOUT_UNITS = 22                                             # a Latin letter counts 1, a CJK character 2
 MAX_ZH = 45
+TOPIC_UNITS = 28                                               # the optional topic label: same width counting as a statement
+TOPIC_PUNCTUATION = " &/-.,'·"
 
 
 class ManifestError(ValueError):
@@ -187,8 +194,21 @@ def _check_focus(f, bid) -> None:
         raise ManifestError(f"beat {bid!r}: focus must be x, y in [0,1], w, h in (0,1] and stay inside the image")
 
 
+def topic_valid(topic) -> bool:
+    """The rule video/src/showcase/transitions.mjs applies to a beat's `topic` label (keep the two equal): letters, digits and
+    CJK with a little punctuation, starting with a letter or digit and ending with a letter, digit or '.', at most 28 width units."""
+    if not isinstance(topic, str) or not topic:
+        return False
+    if not topic[0].isalnum() or not (topic[-1].isalnum() or topic[-1] == "."):
+        return False
+    return all(ch.isalnum() or ch in TOPIC_PUNCTUATION for ch in topic) and width_units(topic) <= TOPIC_UNITS
+
+
 def _check_beat(b: dict, project: Path, style: str = "device") -> None:
     bid = b.get("id")
+    if "topic" in b and not topic_valid(b["topic"]):
+        raise ManifestError(f"beat {bid!r}: topic must be a short label of letters, digits and CJK (at most {TOPIC_UNITS} width units, "
+                            f"a Chinese character counts as 2), for example 'Our services' or 'Our services · 服务'")
     for key in ("en", "zh"):
         if not isinstance(b.get(key), str) or not b[key].strip():
             raise ManifestError(f"beat {bid!r}: {key} is required")
@@ -336,7 +356,7 @@ def validate_showcase(m: dict, project, timings: dict | None = None) -> None:
         raise ManifestError(str(e)) from None
 
 
-def scaffold_manifest(brief: dict, project_id: str, n_beats: int = 5) -> dict:
+def scaffold_manifest(brief: dict, project_id: str, n_beats: int = 16) -> dict:
     assets = [a["path"] for a in brief.get("assets", []) if a.get("role") != "promo-page"]
     if not assets:
         raise ManifestError("the brief has no assets: provide screenshots (or use the terminal style when it exists)")
@@ -346,7 +366,7 @@ def scaffold_manifest(brief: dict, project_id: str, n_beats: int = 5) -> dict:
         label = Path(src["url"]).name or "local repository"
     else:
         label = (src.get("repo_path") and f"{src['host']}/{src['repo_path']}") or src.get("host") or src["url"]
-    ids = BEAT_IDS_BY_COUNT[n]
+    ids = beat_ids(n)
     beats = [{"id": ids[i], "en": "", "zh": "", "asset": assets[i % len(assets)],
               "focus": {"x": 0, "y": 0, "w": 1, "h": 1}} for i in range(n)]
     return {"type": "showcase", "project_id": project_id, "style": "device",
@@ -361,7 +381,7 @@ def main(argv=None) -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     sc = sub.add_parser("scaffold")
     sc.add_argument("project_dir")
-    sc.add_argument("--beats", type=int, default=5)
+    sc.add_argument("--beats", type=int, default=16)
     va = sub.add_parser("validate")
     va.add_argument("project_dir")
     a = ap.parse_args(argv)

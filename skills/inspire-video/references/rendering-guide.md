@@ -45,7 +45,7 @@ python3 scripts/render.py output/projects/<slug> --platform linkedin --preview
 
 Without `--platform` or `--profile` the render is the default 9:16, exactly as before. The clip length is also checked against each listed platform's range. Showcase projects are 9:16 only and reject these flags.
 
-`render.py` rejects: schema violations, `rights_confirmed: false`, `review_status: rejected`, clips outside 40-150 s, cues that overlap, run out of order, hold more than one sentence, exceed 100 English characters, reference an unknown speaker, start within 0.1 s of the clip start, or end within 0.2 s of the clip end.
+`render.py` rejects: schema violations, `rights_confirmed: false`, `review_status: rejected`, clips outside 120-300 s, cues that overlap, run out of order, hold more than one sentence, exceed 100 English characters, reference an unknown speaker, start within 0.1 s of the clip start, or end within 0.2 s of the clip end.
 
 ## Cutting the clip
 

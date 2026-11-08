@@ -11,8 +11,8 @@ video:
   width: 1080
   height: 1920
   fps: 30
-  target_duration_min: 40      # seconds; render.py rejects shorter clips
-  target_duration_max: 150     # seconds (2 min 30 s)
+  target_duration_min: 120     # seconds (2 min); render.py rejects shorter clips
+  target_duration_max: 300     # seconds (5 min)
   codec: h264
   audio_codec: aac
   pixel_format: yuv420p

@@ -256,3 +256,11 @@ def test_cli_ignores_the_manifest_voice_for_engines_without_voices(tmp_path, mon
     monkeypatch.setattr(narrate, "MIN_TOTAL", LO)
     monkeypatch.setattr(narrate, "MAX_TOTAL", HI)
     assert narrate.main([str(p), "--engine", "say"]) == 0
+
+
+def test_delivery_or_style_change_invalidates_the_cached_audio(tmp_path, make_wav):
+    clip = make_wav(tmp_path / "in.wav", seconds=12)
+    v = voices.create_voice("me", clip, "words", root=tmp_path / "v")
+    other = voices.VoiceProfile(**{**v.__dict__, "style": "Speak slowly."})
+    zero = voices.VoiceProfile(**{**v.__dict__, "delivery": "zero_shot"})
+    assert len({narrate._voice_id(v), narrate._voice_id(other), narrate._voice_id(zero)}) == 3

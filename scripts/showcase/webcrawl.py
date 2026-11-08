@@ -12,7 +12,7 @@ from html.parser import HTMLParser
 from urllib.parse import urldefrag, urljoin, urlsplit
 
 USER_AGENT = "InspireVideoBot/0.1 (+local showcase tool)"
-MAX_PAGES = 6
+MAX_PAGES = 10
 MAX_BYTES = 2_000_000
 MAX_TEXT = 4000
 SKIP_EXT = (".pdf", ".zip", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".mp4", ".mov", ".dmg",

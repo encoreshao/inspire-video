@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Repair a chosen clip range so it starts and ends on transcript cue edges and fits the 40-150 s rule.
+"""Repair a chosen clip range so it starts and ends on transcript cue edges and fits the 120-300 s rule.
 
 Usage:
   python scripts/refine_segment.py <project-dir> --start <seconds> --end <seconds> [--write]
@@ -21,8 +21,8 @@ import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-MIN_SEC = 40.0               # keep equal to the clip rule in render.py
-MAX_SEC = 150.0
+MIN_SEC = 120.0              # keep equal to the clip rule in render.py
+MAX_SEC = 300.0
 SNAP_WINDOW = 3.0            # a boundary this close to a cue edge snaps to it
 GAP = 5.0                    # extension never crosses a pause longer than this
 SENTENCE_END = (".", "?", "!", "…", "。", "？", "！", '"', "”", "’", ")")
@@ -122,7 +122,7 @@ def refine(start, end, cues, min_sec=MIN_SEC, max_sec=MAX_SEC, snap_window=SNAP_
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="Snap a clip range to cue edges and enforce 40-150 s")
+    ap = argparse.ArgumentParser(description="Snap a clip range to cue edges and enforce 120-300 s")
     ap.add_argument("project")
     ap.add_argument("--start", type=float, required=True)
     ap.add_argument("--end", type=float, required=True)

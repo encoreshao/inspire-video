@@ -2,7 +2,9 @@
 """Voice profiles for narration.
 
 A profile is a folder `voices/<name>/` holding the reference clip (`prompt.wav`,
-16 kHz mono, 3-30 s), its exact transcript (`prompt.txt`) and `meta.json`.
+16 kHz mono, 3-30 s), its exact transcript (`prompt.txt`) and `meta.json`. meta.json may also carry
+`"delivery": "zero_shot"` (copy the clip's own delivery instead of the default natural-prosody instruction)
+and `"style": "..."` (a delivery instruction that replaces the default one).
 
   python scripts/showcase/voices.py add --name encore --wav clip.wav --text-file clip.txt [--lang zh]
   python scripts/showcase/voices.py list
@@ -23,6 +25,7 @@ ROOT = Path(__file__).resolve().parents[2]
 VOICES = ROOT / "voices"
 NAME_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,31}$")
 MIN_SECONDS, MAX_SECONDS = 3.0, 30.0
+DELIVERIES = ("instruct", "zero_shot")
 FIX = "convert it with: ffmpeg -i <input> -ar 16000 -ac 1 clip.wav"
 
 
@@ -39,6 +42,8 @@ class VoiceProfile:
     engine: str
     speed: float
     created: str
+    delivery: str = "instruct"     # "instruct" (natural prosody) or "zero_shot" (copy the clip's own delivery)
+    style: str = ""                # optional delivery instruction replacing the engine's default
 
 
 def _check_name(name) -> None:
@@ -101,8 +106,15 @@ def load_voice(name, root=None) -> VoiceProfile:
     wav = folder / "prompt.wav"
     if not wav.exists():
         raise VoiceError(f"voice {name!r} is missing {wav}")
+    delivery = meta.get("delivery", "instruct")
+    if delivery not in DELIVERIES:
+        raise VoiceError(f"voice {name!r}: delivery must be one of {', '.join(DELIVERIES)}, got {delivery!r}")
+    style = meta.get("style", "")
+    if not isinstance(style, str):
+        raise VoiceError(f"voice {name!r}: style must be a string")
     return VoiceProfile(name=name, prompt_wav=wav, prompt_text=text, language=meta["language"],
-                        engine=meta["engine"], speed=float(meta["speed"]), created=meta["created"])
+                        engine=meta["engine"], speed=float(meta["speed"]), created=meta["created"],
+                        delivery=delivery, style=style.strip())
 
 
 def main(argv=None) -> int:

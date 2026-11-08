@@ -89,13 +89,13 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Check a rendered showcase video")
     ap.add_argument("video")
     ap.add_argument("--preview", action="store_true", help="half-scale draft render")
-    ap.add_argument("--final", action="store_true", help="also require a 40-150 s duration")
+    ap.add_argument("--final", action="store_true", help="also require a 120-300 s duration")
     ap.add_argument("--sheet", metavar="PNG", help="also write a contact sheet of 12 frames for the independent review")
     a = ap.parse_args(argv)
     try:
         if a.sheet:
             print(f"contact sheet: {contact_sheet(a.video, a.sheet)}")
-        problems = check_video(a.video, 0.5 if a.preview else 1.0, (40, 150) if a.final else None)
+        problems = check_video(a.video, 0.5 if a.preview else 1.0, (120, 300) if a.final else None)
     except (OSError, ValueError, KeyError, RuntimeError, subprocess.CalledProcessError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 1

@@ -17,7 +17,7 @@
 
 ### 访谈视频（`/inspire-video`）
 
-- **输出：** 1080×1920 MP4（H.264 + AAC，30 fps），时长 40 秒到 2 分 30 秒，另有一张 1080×1920 的封面 PNG。面向 LinkedIn 和 Facebook 时，同一视频还会渲染一份 1080×1350（4:5）的版本并附带封面，详见“平台与视频格式”。
+- **输出：** 1080×1920 MP4（H.264 + AAC，30 fps），时长 2 到 5 分钟（120 到 300 秒），另有一张 1080×1920 的封面 PNG。面向 LinkedIn 和 Facebook 时，同一视频还会渲染一份 1080×1350（4:5）的版本并附带封面，详见“平台与视频格式”。
 - **同步双语字幕：** 一次只显示一句短句（或长句中的一个分句），先英文后中文，随说话同步出现。每条字幕最多 100 个英文字符，且绝不会把两句话放在同一条里。
 - **适配平台安全区：** 微信视频号和抖音在较高的手机上会裁掉 9:16 视频的两侧（每侧约 100 px）。所有内容都距左右边缘至少 114 px；标题固定在距顶部的某个位置（不会偏高）；最下方的内容止于底部按钮区之上（y = 1590）。4:5 版本有自己的安全区（两侧 60 px，内容止于 y = 1200 之上）。
 - **分隔线与层次：** 标题与视频之间有一条居中的线，视频之后还有同样的一条；线条中间亮、向两端渐隐，上下各留一小段间距；视频面板周围有与主题协调的柔和阴影。
@@ -34,7 +34,7 @@
 
 - **输入：** 网站（首页加导航里的页面，遵守 `robots.txt`）、GitHub 或 GitLab 仓库（含自建）、本地仓库，均可附带你自己的截图（截图优先）。
 - **设备演示：** 竖长截图放进手机外框并配模糊背景，其余放进显示网址的浏览器外框；缓慢推近重点区域，配高亮圈和可选标注，镜头之间交叉淡入淡出。
-- **脚本来自事实：** `brief.json` 保存带来源的确定性事实；智能体写 4 到 6 个镜头（一句不超过 100 个字符的英文加中文），绝不编造。
+- **脚本来自事实：** `brief.json` 保存带来源的确定性事实；智能体写 10 到 40 个镜头，并按主题分组（一句不超过 100 个字符的英文加中文），绝不编造。
 - **旁白在本机生成：** macOS `say`、Kokoro 或 CosyVoice 3，可使用你自己录音克隆的声音档案；镜头时长跟随音频。
 - **保护措施：** 渲染前校验每个字段（会溢出版面的文字会被拒绝），素材版权未确认时不能渲染成片，并检查真实输出（尺寸、首帧不黑、安全区）。
 - **与访谈视频同样的观感：** 相同的主题（`light` 到 `ink`）、信息卡、分隔线、安全区和封面。
@@ -263,7 +263,7 @@ python3 scripts/publish_meta.py output/projects/<slug> --init --platform douyin,
 
 ### `render.py` 会检查什么
 
-出现以下情况时，它会拒绝渲染：清单不符合 schema；`rights_confirmed` 为 false；`review_status` 为 `rejected`；片段时长不在 40–150 秒之内；字幕重叠、顺序错乱、一条里包含不止一句话、超过 100 个英文字符，或引用了不存在的说话人；第一条或最后一条字幕离片段开头或结尾太近。它会把片段和封面图复制到 `video/public/`（已被 git 忽略），并以 `--crf=18` 调用 Remotion。
+出现以下情况时，它会拒绝渲染：清单不符合 schema；`rights_confirmed` 为 false；`review_status` 为 `rejected`；片段时长不在 120–300 秒之内；字幕重叠、顺序错乱、一条里包含不止一句话、超过 100 个英文字符，或引用了不存在的说话人；第一条或最后一条字幕离片段开头或结尾太近。它会把片段和封面图复制到 `video/public/`（已被 git 忽略），并以 `--crf=18` 调用 Remotion。
 
 ## 展示类视频（实验性）
 
@@ -303,7 +303,7 @@ python3 scripts/render.py output/projects/demo                          # 视频
 
 ### 镜头与限制
 
-智能体写 4 到 6 个镜头（开场、问题、它做什么、主要功能、佐证、行动号召）。每个镜头有一句英文、自然的中文、要展示的图片、要推近的 `focus` 矩形和可选的 `callout` 标注。`manifest.py validate` 会拒绝会溢出固定版面的文字：
+智能体写 10 到 40 个镜头：开场、问题、若干个主题（每个主题对应网站的一个页面或项目的一个部分，每个主题两到四个镜头）、佐证和行动号召。旁白会自然地从一个主题过渡到下一个，每个镜头还可以带一个 `topic` 名称，主题切换时视频会显示一个小标签。每个镜头有一句英文、自然的中文、要展示的图片、要推近的 `focus` 矩形和可选的 `callout` 标注。`manifest.py validate` 会拒绝会溢出固定版面的文字：
 
 | 字段 | 限制 |
 | --- | --- |
@@ -313,9 +313,9 @@ python3 scripts/render.py output/projects/demo                          # 视频
 | 镜头 `en` 与 `zh` | 一句话，最多 100 个字符；最多 45 个字符 |
 | 镜头 `callout` | 最多 22 个宽度单位（一个汉字算 2） |
 
-镜头时长跟随旁白音频，但不少于 `40 / 镜头数` 秒；没有旁白时每个镜头为 `max(4, 40 / 镜头数)` 秒。整支视频必须在 40 到 150 秒之间。完整字段说明见 `skills/inspire-showcase/references/beat-writing.md`。
+镜头时长跟随旁白音频，但不少于 `120 / 镜头数` 秒；没有旁白时每个镜头为 `max(4, 120 / 镜头数)` 秒。整支视频必须在 120 到 300 秒（2 到 5 分钟）之间。完整字段说明见 `skills/inspire-showcase/references/beat-writing.md`。
 
-**Promo 风格（实验性）**：在 manifest 里设置 `"style": "promo"`，镜头会飞过真实页面的 2 倍截图并落在指定元素上（`python3 scripts/showcase/capture_page.py <url> --project output/projects/<slug>`；需要 Chrome 和 `pip install '.[promo]'`）。共五种镜头：`hero-push`、`spotlight-focus`、`crash-zoom-punch`、`pan-reveal`、`statement`，详见 `skills/inspire-showcase/references/promo-style.md`。方法改编自 [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft)（Apache-2.0，见 `NOTICE`）。
+**Promo 风格（实验性）**：在 manifest 里设置 `"style": "promo"`，镜头会飞过真实页面的 2 倍截图并落在指定元素上（`python3 scripts/showcase/capture_page.py <url> --project output/projects/<slug> --nav 8`，同时截取页眉导航所链接的页面；需要 Chrome 和 `pip install '.[promo]'`）。共五种镜头：`hero-push`、`spotlight-focus`、`crash-zoom-punch`、`pan-reveal`、`statement`，详见 `skills/inspire-showcase/references/promo-style.md`。方法改编自 [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft)（Apache-2.0，见 `NOTICE`）。
 
 中文字幕按词换行，不会把一个词拆在两行（`scripts/zh_break.py`）；给 `render.py` 或展示类渲染器传 `--no-zh-breaks` 可恢复为任意两字之间换行。
 
@@ -334,6 +334,8 @@ ffmpeg -i my-voice.m4a -ar 16000 -ac 1 clip.wav      # 在安静环境里录一�
 python3 scripts/showcase/voices.py add --name me --wav clip.wav --text-file clip.txt --lang zh   # clip.txt = 录音里说的原话
 python3 scripts/showcase/narrate.py output/projects/demo --engine cosyvoice --voice me           # 同时在清单里设置 "voice": "me"
 ```
+
+CosyVoice 默认保留你录音的音色，但语气由一条“自然讲述”的指令决定，所以即使参考录音读得平，旁白也不会平。每个镜头的音频还会被裁成固定的短静音、加上淡入淡出并统一响度，镜头之间衔接更顺滑。要调整，可在声音档案的 `meta.json` 里加 `"style": "<你自己的语气指令>"`，或加 `"delivery": "zero_shot"` 沿用录音本身的语气（录音本身就很有表现力时适用），然后重新运行 `narrate.py`。
 
 音频和 `timings.json` 会写入项目文件夹，渲染时直接使用。修改某个镜头的文字后请重新运行 `narrate.py`：渲染会拒绝过期的音频或用不同声音生成的音频。中文旁白请用 `--lang zh`（或在清单里设置 `"narration_lang": "zh"`）。声音档案保存在 `voices/`，已被 git 忽略，因为它们是个人数据。只使用你自己的声音，并在发布前确认抖音和微信对合成语音的标注规定。
 

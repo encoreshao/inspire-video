@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from zh_break import with_units, zh_units  # noqa: E402
 from showcase.assets import image_size  # noqa: E402
 from showcase.checks import check_video  # noqa: E402
+from showcase.timing import MAX_TOTAL, MIN_TOTAL  # noqa: E402
 from showcase.manifest import FPS, ManifestError, beat_seconds_list, beat_target, crop_warnings, frame_windows, validate_showcase  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -66,6 +67,8 @@ def build_props(m: dict, project: Path, timings: dict | None, staged: dict, zh_b
         entry = {"id": b["id"], "en": b["en"], "zh": b["zh"], "asset": staged[b["id"]]["asset"] or "", "iw": iw, "ih": ih,
                  "focus": b.get("focus") or {"x": 0, "y": 0, "w": 1, "h": 1}, "callout": b.get("callout"),
                  "audio": staged[b["id"]]["audio"], "startFrame": w["start"], "frames": w["frames"]}
+        if b.get("topic"):
+            entry["topic"] = b["topic"]                    # the transitions and the topic label key off it
         if promo and b.get("shot") == "statement":
             entry.update({"shot": "statement", "statement": b["statement"], "statementUnits": statement_units(b["statement"])})
         elif promo:
@@ -166,7 +169,7 @@ def main(argv=None, run=subprocess.run) -> int:
         return rc
     print(f"Rendered: {out}")
     if not a.no_check:
-        problems = check_video(out, 0.5 if a.preview else 1.0, None if a.preview else (40, 150))
+        problems = check_video(out, 0.5 if a.preview else 1.0, None if a.preview else (MIN_TOTAL, MAX_TOTAL))
         for p in problems:
             print(f"CHECK FAILED: {p}")
         if problems:

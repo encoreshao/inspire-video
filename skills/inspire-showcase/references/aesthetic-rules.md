@@ -11,7 +11,7 @@ Check the preview against every rule and write `ID ✓` or `ID ✗ (beat or time
 ## Rhythm
 
 - **R1. Let the key beat breathe.** The beat that carries the main message, and the last beat, must sit still long enough to read twice (at least 1 s after the text is fully in). Self-check: which beat do you want remembered, and does it hold?
-- **R2. Slower is safer.** First drafts run fast. Without narration a beat lasts at least `max(4, 40 / beats)` s; give the zoom time to finish before the beat ends. Self-check: watch each beat as a stranger: what was not seen?
+- **R2. Slower is safer.** First drafts run fast. Without narration a beat lasts at least `max(4, 120 / beats)` s; give the zoom time to finish before the beat ends. Self-check: watch each beat as a stranger: what was not seen?
 - **R3. One idea per beat.** One feature, one focus ring, one caption. Drop a repeated feature or call to action.
 
 ## Image and text

@@ -17,7 +17,7 @@ The agent follows each skill's `SKILL.md` (in `skills/<name>/`) to do the thinki
 
 ### Speaker videos (`/inspire-video`)
 
-- **Output:** 1080×1920 MP4 (H.264 + AAC, 30 fps), 40 seconds to 2 min 30 s, plus a 1080×1920 cover PNG. For LinkedIn and Facebook the same video is also rendered as 1080×1350 (4:5) with its own cover; see Platforms and video formats.
+- **Output:** 1080×1920 MP4 (H.264 + AAC, 30 fps), 2 to 5 minutes (120 to 300 seconds), plus a 1080×1920 cover PNG. For LinkedIn and Facebook the same video is also rendered as 1080×1350 (4:5) with its own cover; see Platforms and video formats.
 - **Synced bilingual captions:** one short sentence (or one clause of a long sentence) at a time, English first and Chinese second, appearing as it is spoken. Each cue is at most 100 English characters, and two sentences never share a cue.
 - **Platform-safe layout:** WeChat Channels and Douyin crop the sides of 9:16 video on tall phones (about 100 px per side). All content stays 114 px inside the left and right edges, the title is anchored at a fixed distance from the top (so it is never too high), and the lowest content ends above the bottom button zone (y = 1590). The 4:5 version has its own safe area (60 px sides, content ends above y = 1200).
 - **Divider lines and depth:** a centered line between the title and the video and the same line after the video, bright in the middle and fading out toward both ends, with a small margin above and below each; plus a soft theme-matched shadow around the video panel.
@@ -34,7 +34,7 @@ The agent follows each skill's `SKILL.md` (in `skills/<name>/`) to do the thinki
 
 - **Inputs:** a website (homepage plus the pages in its navigation, `robots.txt` respected), a GitHub or GitLab repository (self-hosted too), or a local repository, each with or without your own screenshots (your screenshots always win).
 - **Device walkthrough:** tall screenshots in a phone frame over a blurred backdrop, others in a browser frame showing the site's address; a slow zoom toward the important part, a highlight ring and an optional callout, with cross-fades between beats.
-- **Script from facts:** `brief.json` holds deterministic facts with their sources; the agent writes 4 to 6 beats (one English sentence of at most 100 characters plus the Chinese) and never invents claims.
+- **Script from facts:** `brief.json` holds deterministic facts with their sources; the agent writes 10 to 40 beats grouped into topics (one English sentence of at most 100 characters plus the Chinese) and never invents claims.
 - **Narration on your machine:** macOS `say`, Kokoro or CosyVoice 3, optionally in a voice profile cloned from your own recording; beat length follows the audio.
 - **Guardrails:** every field is validated before rendering (text that would overflow the layout is refused), unresolved asset rights block a final render, and the real output is checked (size, bright first frame, safe area).
 - **Two looks:** the device walkthrough shares the speaker videos' editorial layout (themes, info card, divider lines, cover); the website promo has its own dark cinematic frame and cover. Both keep the same safe area.
@@ -263,7 +263,7 @@ Notes:
 
 ### What `render.py` checks
 
-It refuses to render when: the manifest breaks the schema; `rights_confirmed` is false; `review_status` is `rejected`; the clip is outside 40–150 s; cues overlap, are out of order, hold more than one sentence, exceed 100 English characters or name an unknown speaker; or the first/last cue is too close to the clip's start/end. It stages the clip and poster into `video/public/` (git-ignored) and runs Remotion with `--crf=18`.
+It refuses to render when: the manifest breaks the schema; `rights_confirmed` is false; `review_status` is `rejected`; the clip is outside 120–300 s; cues overlap, are out of order, hold more than one sentence, exceed 100 English characters or name an unknown speaker; or the first/last cue is too close to the clip's start/end. It stages the clip and poster into `video/public/` (git-ignored) and runs Remotion with `--crf=18`.
 
 ## Showcase videos (experimental)
 
@@ -303,7 +303,7 @@ Screenshots are ordered by filename (`01-home.png`, `02-editor.png`, ...). PNG, 
 
 ### Beats and limits
 
-The agent writes 4 to 6 beats (hook, problem, what it does, key features, proof, call to action). Each has one English sentence, natural Chinese, the image to show, a `focus` rectangle to zoom to and an optional `callout` label. `manifest.py validate` refuses text that would overflow the fixed layout:
+The agent writes 10 to 40 beats: a hook, the problem, a few topics of two to four beats each (one per page of the site or part of the project), proof and a call to action. The narration bridges from one topic to the next, and each beat can carry a `topic` name that the video shows as a small label when the topic changes. Each has one English sentence, natural Chinese, the image to show, a `focus` rectangle to zoom to and an optional `callout` label. `manifest.py validate` refuses text that would overflow the fixed layout:
 
 | Field | Limit |
 | --- | --- |
@@ -313,9 +313,9 @@ The agent writes 4 to 6 beats (hook, problem, what it does, key features, proof,
 | beat `en` and `zh` | one sentence of at most 100 characters; at most 45 characters |
 | beat `callout` | at most 22 width units (a Chinese character counts as 2) |
 
-Beat length follows the narration audio but is never less than `40 / number of beats` seconds; without narration each beat lasts `max(4, 40 / beats)` seconds. The whole video must be 40 to 150 seconds. The full field list is in `skills/inspire-showcase/references/beat-writing.md`.
+Beat length follows the narration audio but is never less than `120 / number of beats` seconds; without narration each beat lasts `max(4, 120 / beats)` seconds. The whole video must be 120 to 300 seconds (2 to 5 minutes). The full field list is in `skills/inspire-showcase/references/beat-writing.md`.
 
-**Promo style (experimental).** `"style": "promo"` in the manifest makes the camera fly over a 2x capture of the real page (`python3 scripts/showcase/capture_page.py <url> --project output/projects/<slug>`; needs Chrome and `pip install '.[promo]'`) and land on named elements. Five shots: `hero-push`, `spotlight-focus`, `crash-zoom-punch`, `pan-reveal` and `statement`; see `skills/inspire-showcase/references/promo-style.md`. The method is adapted from [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft) (Apache-2.0, see `NOTICE`).
+**Promo style (experimental).** `"style": "promo"` in the manifest makes the camera fly over a 2x capture of the real page (`python3 scripts/showcase/capture_page.py <url> --project output/projects/<slug> --nav 8`, which also captures the pages the header navigation links to; needs Chrome and `pip install '.[promo]'`) and land on named elements. Five shots: `hero-push`, `spotlight-focus`, `crash-zoom-punch`, `pan-reveal` and `statement`; see `skills/inspire-showcase/references/promo-style.md`. The method is adapted from [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft) (Apache-2.0, see `NOTICE`).
 
 Before delivery the skill self-checks the preview against `skills/inspire-showcase/references/aesthetic-rules.md` and runs an independent clean-context review (`skills/inspire-showcase/references/final-review.md`; `python3 scripts/showcase/checks.py <video> --sheet sheet.png` writes the contact sheet it needs). Both files are adapted from [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft) (Apache-2.0, see `NOTICE`).
 
@@ -336,6 +336,8 @@ ffmpeg -i my-voice.m4a -ar 16000 -ac 1 clip.wav      # a clean 10-20 s recording
 python3 scripts/showcase/voices.py add --name me --wav clip.wav --text-file clip.txt --lang zh   # clip.txt = the exact words spoken
 python3 scripts/showcase/narrate.py output/projects/demo --engine cosyvoice --voice me           # also set "voice": "me" in the manifest
 ```
+
+By default CosyVoice keeps the timbre of your clip but takes its delivery from a natural-speech instruction, so a flatly read reference clip does not make flat narration. Each beat is also trimmed to a small fixed silence, faded at the edges and levelled to the same loudness, so many beats join smoothly. To change this, add to the profile's `meta.json` `"style": "<your own delivery instruction>"`, or `"delivery": "zero_shot"` to copy the delivery of the clip itself (best when the clip is already expressive); then run `narrate.py` again.
 
 The audio and `timings.json` land in the project folder and the render uses them. After changing a beat's text, run `narrate.py` again: the render refuses audio that is out of date or made with a different voice. Use `--lang zh` (or `"narration_lang": "zh"`) for Chinese narration. Voice profiles live in `voices/`, which is git-ignored because they are personal data. Use only your own voice, and check the labelling rules for synthetic voice on Douyin and WeChat before publishing.
 

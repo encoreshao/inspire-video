@@ -8,8 +8,11 @@ from imgs import png
 from showcase import manifest as M
 from showcase import render_showcase as R
 
-BEATS = [("hook", "Make videos from any website."), ("problem", "Screenshots alone do not tell the story."),
-         ("what", "It reads the site and writes the beats."), ("cta", "Try it on your own project.")]
+SENTENCES = ["Make videos from any website.", "Screenshots alone do not tell the story.",
+             "It reads the site and writes the beats.", "Try it on your own project."]
+N_BEATS = 12
+BEATS = [(bid, f"{SENTENCES[i % 4][:-1]} number {i}.") for i, bid in enumerate(M.beat_ids(N_BEATS))]
+SECONDS = (12.0, 11.0, 10.0, 9.0) * 3                    # 126 s in all, inside the 120 to 300 s range
 
 
 def project(tmp_path, with_timings=False, rights_unresolved=False, voice=None):
@@ -29,7 +32,7 @@ def project(tmp_path, with_timings=False, rights_unresolved=False, voice=None):
         m["voice"] = voice
     (p / "video_manifest.json").write_text(json.dumps(m, ensure_ascii=False))
     if with_timings:
-        secs = (12.0, 11.0, 10.0, 9.0)
+        secs = SECONDS
         (p / "audio").mkdir()
         for b in beats:
             (p / "audio" / f"{b['id']}.wav").write_bytes(b"RIFF")
@@ -83,7 +86,7 @@ def test_build_props_uses_timings_frames_and_the_staged_names(tmp_path, sandbox)
     assert (b0["startFrame"], b0["frames"]) == (0, 360) and b1["startFrame"] == 360
     assert (b0["iw"], b0["ih"]) == (1440, 900) and (b1["iw"], b1["ih"]) == (390, 844)
     assert b0["asset"] == "acme-demo-hook.png" and b0["audio"] == "acme-demo-hook.wav" and b0["callout"] == "Look here"
-    assert props["durationSeconds"] == 42.0
+    assert props["durationSeconds"] == 126.0
     cover = R.cover_props(props)
     assert cover["beat"] == props["beats"][0] and "beats" not in cover and cover["headline"] == props["headline"]
 
@@ -91,7 +94,7 @@ def test_build_props_uses_timings_frames_and_the_staged_names(tmp_path, sandbox)
 def test_without_timings_the_default_length_is_used(tmp_path, sandbox):
     p, m = project(tmp_path)
     props = R.build_props(m, p, None, R.stage(p, sandbox / "video" / "public", m, None))
-    assert props["durationSeconds"] == 40.0 and props["beats"][0]["frames"] == 300 and props["beats"][0]["audio"] is None
+    assert props["durationSeconds"] == 120.0 and props["beats"][0]["frames"] == 300 and props["beats"][0]["audio"] is None
 
 
 def test_final_render_writes_the_video_then_the_cover_and_checks_it(tmp_path, sandbox, monkeypatch):
@@ -105,7 +108,7 @@ def test_final_render_writes_the_video_then_the_cover_and_checks_it(tmp_path, sa
     kinds = [c[0][2:4] for c in run.calls]
     assert kinds == [["render", "src/index.ts"], ["still", "src/index.ts"]]
     assert run.calls[0][0][4] == "ShowcaseShort" and run.calls[1][0][4] == "ShowcaseCover"
-    assert seen["scale"] == 1.0 and seen["rng"] == (40, 150) and (p / "props.json").exists()
+    assert seen["scale"] == 1.0 and seen["rng"] == (120, 300) and (p / "props.json").exists()
     assert run.calls[0][1]["cwd"] == sandbox / "video"
 
 
@@ -230,6 +233,14 @@ def test_build_props_adds_chinese_break_units_unless_disabled(tmp_path, sandbox)
     on = R.build_props(m, p, None, staged)["beats"][0]
     assert "".join(on["zhUnits"]) == on["zh"]
     assert "zhUnits" not in R.build_props(m, p, None, staged, zh_breaks=False)["beats"][0]
+
+
+def test_a_beats_topic_reaches_the_props_and_a_beat_without_one_has_none(tmp_path, sandbox):
+    p, m = project(tmp_path)
+    m["beats"][0]["topic"] = "Our services · 服务"
+    props = R.build_props(m, p, None, R.stage(p, sandbox / "video" / "public", m, None))
+    assert props["beats"][0]["topic"] == "Our services · 服务"
+    assert all("topic" not in b for b in props["beats"][1:])
 
 
 def test_promo_props_carry_the_shot_target_page_and_scale(tmp_path, sandbox):

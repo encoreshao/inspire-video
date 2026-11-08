@@ -21,7 +21,7 @@ def test_every_command_in_the_skill_exists():
 
 
 def test_the_rules_that_keep_videos_honest_are_stated():
-    for needle in ("rights", "never invent", "one sentence", "100", "4 to 6", "focus", "--allow-unresolved-rights",
+    for needle in ("rights", "never invent", "one sentence", "100", "10 to 40", "focus", "--allow-unresolved-rights",
                    "separate from", "inspire-video"):
         assert needle.lower() in ALL.lower(), needle
 

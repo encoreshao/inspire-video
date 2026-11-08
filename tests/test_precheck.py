@@ -23,17 +23,17 @@ def codes(problems):
 
 
 def test_a_long_enough_source_with_audio_passes(tmp_path):
-    assert precheck.check_source(make(tmp_path, "ok.mp4", 45)) == []
+    assert precheck.check_source(make(tmp_path, "ok.mp4", 130)) == []
 
 
 def test_a_source_shorter_than_the_minimum_clip_is_refused(tmp_path):
-    problems = precheck.check_source(make(tmp_path, "short.mp4", 20))
+    problems = precheck.check_source(make(tmp_path, "short.mp4", 60))
     assert codes(problems) == ["source_too_short"]
-    assert "40" in problems[0].message
+    assert "120" in problems[0].message
 
 
 def test_a_source_without_audio_is_refused_unless_subtitles_are_supplied(tmp_path):
-    silent = make(tmp_path, "silent.mp4", 45, audio=False)
+    silent = make(tmp_path, "silent.mp4", 130, audio=False)
     assert codes(precheck.check_source(silent)) == ["source_no_audio"]
     assert precheck.check_source(silent, has_subtitles=True) == []
 
@@ -43,9 +43,9 @@ def test_both_problems_are_reported_together(tmp_path):
 
 
 def test_cli_exit_codes_and_output(tmp_path, capsys):
-    assert precheck.main([str(make(tmp_path, "ok.mp4", 45))]) == 0
-    assert precheck.main([str(make(tmp_path, "short.mp4", 20))]) == 1
+    assert precheck.main([str(make(tmp_path, "ok.mp4", 130))]) == 0
+    assert precheck.main([str(make(tmp_path, "short.mp4", 60))]) == 1
     assert "source_too_short" in capsys.readouterr().out
     assert precheck.main([str(tmp_path / "missing.mp4")]) == 1
     assert "not found" in capsys.readouterr().err
-    assert precheck.main([str(make(tmp_path, "silent.mp4", 45, audio=False)), "--has-subtitles"]) == 0
+    assert precheck.main([str(make(tmp_path, "silent.mp4", 130, audio=False)), "--has-subtitles"]) == 0

@@ -12,6 +12,8 @@ from pathlib import Path
 import platforms
 from zh_break import with_units
 
+MIN_CLIP_SEC, MAX_CLIP_SEC = 120.0, 300.0     # the clip rule: 2 to 5 minutes (keep equal to showcase/timing.py)
+
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -43,8 +45,8 @@ def validate(m: dict, clip_seconds: float | None) -> None:
         raise ValueError("clip ends <0.2s after the last cue: speech may be cut off; extend the tail")
     if m["subtitles"] and m["subtitles"][0]["start"] < 0.1:
         raise ValueError("first cue starts <0.1s into the clip: speech may be cut off; extend the lead-in")
-    if not 40 <= dur <= 150:
-        raise ValueError(f"clip is {dur:.1f}s; allowed range is 40-150 s")
+    if not MIN_CLIP_SEC <= dur <= MAX_CLIP_SEC:
+        raise ValueError(f"clip is {dur:.1f}s; allowed range is {MIN_CLIP_SEC:g}-{MAX_CLIP_SEC:g} s")
     if not m["provenance"]["rights_confirmed"]:
         raise ValueError("provenance.rights_confirmed is false; refusing to render")
     if m["provenance"].get("review_status", "pending") == "rejected":

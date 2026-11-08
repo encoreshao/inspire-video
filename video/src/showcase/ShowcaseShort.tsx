@@ -5,27 +5,31 @@ import {CaptionCard} from './Caption';
 import {DeviceFrame} from './DeviceFrame';
 import type {Focus} from './DeviceFrame';
 import {ShowcaseFrame} from './Frame';
+import {captionAlpha, incoming, leadsFor, transitionKind} from './transitions.mjs';
 
 export type ShowcaseBeat = {id: string; en: string; zh: string; zhUnits?: string[]; asset: string; iw: number; ih: number; focus: Focus;
   callout?: string; audio?: string | null; startFrame: number; frames: number;
   // promo style only
   shot?: string; box?: {x: number; y: number; w: number; h: number}; page?: {w: number; h: number}; imageScale?: number;
-  statement?: string; statementUnits?: string[]};
+  statement?: string; statementUnits?: string[];
+  // both styles: an optional topic label (promo shows it; a topic change is detected from it, else from `asset`)
+  topic?: string};
 export type ShowcaseProps = {headline: string; subtitle: string; category?: string; theme?: string; name: string; nameZh?: string;
   tagline?: string; taglineZh?: string; sourceLabel: string; beats: ShowcaseBeat[]; durationSeconds: number};
 
-export const XF = 9;          // cross-fade frames between beats
 const DEV_H = 488;     // device zone height = the speaker layout's video window
 
-const BeatLayer: React.FC<{beat: ShowcaseBeat; index: number; sourceLabel: string}> = ({beat, index, sourceLabel}) => {
+const BeatLayer: React.FC<{beat: ShowcaseBeat; prev?: ShowcaseBeat; next?: ShowcaseBeat; sourceLabel: string}> = ({beat, prev, next, sourceLabel}) => {
   const c = useTheme();
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
-  const lead = index > 0 ? XF : 0;
+  const lead = prev ? leadsFor([prev, beat])[1] : 0;
+  const nextLead = next ? leadsFor([beat, next])[1] : 0;
   const local = frame - lead;
   const t = Math.max(0, local) / fps, duration = beat.frames / fps;
-  const opacity = index === 0 ? 1 : interpolate(frame, [0, XF], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
-  const textAlpha = interpolate(t, [0, 0.12], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+  // The picture dissolves in eased, and the old text leaves before the new text arrives.
+  const opacity = incoming(frame, lead, transitionKind(prev, beat)).opacity;
+  const textAlpha = captionAlpha(local / fps, lead + beat.frames - frame, nextLead).opacity;
   return (
     <AbsoluteFill style={{opacity}}>
       <div style={{border: `3px solid ${c.border}`, borderRadius: 24, overflow: 'hidden', background: c.card, boxShadow: c.shadow}}>
@@ -44,16 +48,19 @@ export const ShowcaseShort: React.FC<ShowcaseProps> = ({headline, subtitle, cate
   return (
     <ShowcaseFrame headline={headline} subtitle={subtitle} category={category} theme={theme} name={name} nameZh={nameZh}
       tagline={tagline} taglineZh={taglineZh} sourceLabel={sourceLabel} zoneHeight={DEV_H + 3 + reserve}>
-      {beats.map((b, i) => (
+      {beats.map((b, i) => {
+        const lead = leadsFor(beats)[i];
+        return (
         <React.Fragment key={b.id}>
-          <Sequence from={Math.max(0, b.startFrame - (i > 0 ? XF : 0))} durationInFrames={b.frames + (i > 0 ? XF : 0)}>
-            <BeatLayer beat={b} index={i} sourceLabel={sourceLabel} />
+          <Sequence from={b.startFrame - lead} durationInFrames={b.frames + lead}>
+            <BeatLayer beat={b} prev={beats[i - 1]} next={beats[i + 1]} sourceLabel={sourceLabel} />
           </Sequence>
           {b.audio ? (
             <Sequence from={b.startFrame} durationInFrames={b.frames}><Audio src={staticFile(b.audio)} /></Sequence>
           ) : null}
         </React.Fragment>
-      ))}
+        );
+      })}
     </ShowcaseFrame>
   );
 };

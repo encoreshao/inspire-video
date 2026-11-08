@@ -13,7 +13,7 @@
         "width": {"type": "integer", "const": 1080},
         "height": {"type": "integer", "const": 1920},
         "fps": {"type": "integer", "const": 30},
-        "duration_target_seconds": {"type": "integer", "minimum": 40, "maximum": 150}
+        "duration_target_seconds": {"type": "integer", "minimum": 120, "maximum": 300}
       }
     },
     "source": {
