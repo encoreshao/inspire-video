@@ -27,7 +27,9 @@ PROMO_SHOTS = {
     "hero-push": {"minSeconds": 4, "maxPerVideo": None, "needsTallPage": False},
     "spotlight-focus": {"minSeconds": 4, "maxPerVideo": None, "needsTallPage": False},
     "crash-zoom-punch": {"minSeconds": 4, "maxPerVideo": 1, "needsTallPage": False},
+    "pan-reveal": {"minSeconds": 5, "maxPerVideo": None, "needsTallPage": True},
 }
+TALL_PAGE_PX = round(1.5 * L.VIEWPORT["h"])      # "tall" for a pan: at least one and a half capture viewports
 MIN_BEATS, MAX_BEATS = 4, 6
 FPS = 30
 PROJECT_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
@@ -206,9 +208,12 @@ def _check_promo_beat(b: dict, project: Path) -> None:
     if has_focus:
         _check_focus(b["focus"], bid)
     try:
-        beat_target(b, project)                           # the element and the layout must exist and be valid
+        _, info = beat_target(b, project)                 # the element and the layout must exist and be valid
     except L.LayoutError as e:
         raise ManifestError(f"beat {bid!r}: {e}") from None
+    if PROMO_SHOTS[shot]["needsTallPage"] and info["page"]["h"] < TALL_PAGE_PX:
+        raise ManifestError(f"beat {bid!r}: shot {shot!r} needs a tall page (at least {TALL_PAGE_PX} px) but this one is "
+                            f"{info['page']['h']} px; use hero-push or spotlight-focus instead")
 
 
 def _check_promo_sequence(beats: list, seconds: list) -> None:

@@ -35,6 +35,7 @@ test('the registry is frozen and every shot has its metadata', () => {
     'hero-push': {minSeconds: 4, maxPerVideo: null, needsTallPage: false},
     'spotlight-focus': {minSeconds: 4, maxPerVideo: null, needsTallPage: false},
     'crash-zoom-punch': {minSeconds: 4, maxPerVideo: 1, needsTallPage: false},
+    'pan-reveal': {minSeconds: 5, maxPerVideo: null, needsTallPage: true},
   });
 });
 
@@ -91,7 +92,7 @@ test('crash-zoom-punch: a wide hold, a punch of about 6 frames with a small over
   near((r.width / stage.w), 0.7, 0.01);                     // the card: the target fills 60 to 75% of the frame
 });
 
-test('zoom stays within the sharpness an interior target 8% clear of every side, and never crops an edge target', () => {
+test('the final framing keeps an interior target 8% clear of every side, and never crops an edge target', () => {
   for (const id of IDS) {
     const place = placeImage(tall, stage, run(id, TARGETS.interior, 1));
     const r = stageRect(TARGETS.interior, place);
@@ -111,11 +112,26 @@ test('the target stays in view for the whole beat whenever it fits the view', ()
     if (target.w <= v.w) assert.ok(target.x >= cam.cx - v.w / 2 - EPS && target.x + target.w <= cam.cx + v.w / 2 + EPS, `${id} x at ${p} for ${JSON.stringify(target)}`);
     if (target.h <= v.h) assert.ok(target.y >= cam.cy - v.h / 2 - EPS && target.y + target.h <= cam.cy + v.h / 2 + EPS, `${id} y at ${p} for ${JSON.stringify(target)}`);
   };
-  for (const id of IDS) for (const [page, target] of CASES) for (const p of STEPS) inView(id, page, target, p);
-  for (const id of IDS) for (const x of [0, 300, 600, 900, 1100]) for (const y of [0, 1500, 3000, 5800]) for (const [w, h] of [[100, 60], [340, 200], [480, 60]]) {
+  const staying = IDS.filter((id) => !SHOTS[id].reveals);          // a reveal shot travels to its target on purpose
+  for (const id of staying) for (const [page, target] of CASES) for (const p of STEPS) inView(id, page, target, p);
+  for (const id of staying) for (const x of [0, 300, 600, 900, 1100]) for (const y of [0, 1500, 3000, 5800]) for (const [w, h] of [[100, 60], [340, 200], [480, 60]]) {
     if (x + w > tall.w || y + h > tall.h) continue;
     for (const p of STEPS) inView(id, tall, {x, y, w, h}, p);
   }
+});
+
+test('pan-reveal travels down the page from the top and arrives with the target framed', () => {
+  const target = {x: 520, y: 4200, w: 400, h: 120};
+  const tops = STEPS.map((p) => { const c = run('pan-reveal', target, p); return c.cy - viewSize(tall, stage, c.zoom).h / 2; });
+  assert.ok(Math.abs(tops[0]) < 1e-6, 'it starts with the top of the page in view');
+  for (let i = 1; i < tops.length; i++) assert.ok(tops[i] >= tops[i - 1] - 1e-6, `the view only moves down, at step ${i}`);
+  const end = run('pan-reveal', target, 0.75);
+  assert.deepEqual(run('pan-reveal', target, 1), end);                 // the travel is done at 75%; the rest is a hold
+  const r = stageRect(target, placeImage(tall, stage, end));
+  assert.ok(r.left >= 0.08 * stage.w && r.left + r.width <= 0.92 * stage.w && r.top >= 0.08 * stage.h && r.top + r.height <= 0.92 * stage.h);
+  assert.ok(end.zoom <= 1.8 + EPS, 'a pan keeps the page readable: no deep zoom');
+  const near_top = {x: 520, y: 100, w: 400, h: 120};
+  assert.ok(Math.abs(run('pan-reveal', near_top, 0.2).cy - run('pan-reveal', near_top, 1).cy) < 400, 'a target near the top needs little travel');
 });
 
 test('zoom stays within the sharpness of the capture, even for a tiny target', () => {

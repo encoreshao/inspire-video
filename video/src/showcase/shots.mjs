@@ -69,6 +69,26 @@ function crash({target, page, stage, scale, progress, seconds}) {
   return {zoom, ...moveCenter({target, page, stage, zoom, z0, t: easeIn(q)}), dim: 0};
 }
 
+// The reveal: travel down a tall page from its top to the target, easing in and out over 75% of the beat, then rest.
+// The view's top edge only moves down; the zoom eases from the page-width framing to a readable level (never deep:
+// the point is the journey through the page, not a close-up).
+const PAN_END = 0.75;
+const PAN_MAX_ZOOM = 1.8;
+
+function pan({target, page, stage, scale, progress}) {
+  const z0 = minZoom(page, stage);
+  const cap = maxZoom(page, stage, scale);
+  const zPan = clamp(fitZoom(page, stage, target), z0, Math.max(z0, Math.min(cap, PAN_MAX_ZOOM)));   // never below the page-fitting minimum
+  const panT = easeInOut(clamp(progress, 0, 1) / PAN_END);
+  const zoom = z0 * Math.pow(zPan / z0, panT);
+  const c = targetCenter(target);
+  const endCenter = clampCenter(page, stage, zPan, c);
+  const topEnd = endCenter.cy - viewSize(page, stage, zPan).h / 2;          // the view's top edge when the pan arrives (never above the page)
+  const cy = lerp(0, topEnd, panT) + viewSize(page, stage, zoom).h / 2;
+  const cx = lerp(clampCenter(page, stage, z0, c).cx, endCenter.cx, panT);
+  return {zoom, ...clampCenter(page, stage, zoom, {cx, cy})};
+}
+
 export const SHOTS = Object.freeze({
   // Card studied: spotlight-hero-card.
   'hero-push': Object.freeze({
@@ -92,6 +112,12 @@ export const SHOTS = Object.freeze({
     id: 'crash-zoom-punch', summary: 'A wide hold, then a 6-frame punch onto the target with a small overshoot, then still.',
     minSeconds: 4, maxPerVideo: 1, needsTallPage: false, settle: 0.1,
     camera: (a) => crash(a),
+  }),
+  // No card: a plain vertical travel, written for pages taller than one screen.
+  'pan-reveal': Object.freeze({
+    id: 'pan-reveal', summary: 'Travel down a tall page from its top to the target, then rest.',
+    minSeconds: 5, maxPerVideo: null, needsTallPage: true, settle: 0.25, reveals: true,
+    camera: (a) => ({...pan(a), dim: 0}),
   }),
 });
 

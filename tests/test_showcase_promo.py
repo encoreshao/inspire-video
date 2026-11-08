@@ -7,7 +7,8 @@ from pathlib import Path
 import pytest
 
 from imgs import png
-from promo_fixtures import promo_project
+from promo_fixtures import ELEMENTS, promo_project
+from showcase import page_layout as L
 from showcase import manifest as M
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -128,3 +129,14 @@ def test_a_crash_zoom_may_be_used_once_per_video(tmp_path):
     twice = beat_with(beat_with(m, 1, shot="crash-zoom-punch"), 3, shot="crash-zoom-punch")
     with pytest.raises(M.ManifestError, match="at most 1"):
         M.validate_showcase(twice, p)
+
+
+def test_pan_reveal_needs_a_tall_page(tmp_path):
+    p, m = promo_project(tmp_path)
+    M.validate_showcase(beat_with(m, 0, shot="pan-reveal"), p)       # 1500 px is tall enough: 1.5 x the 900 px capture viewport
+    layout = L.build_layout(ELEMENTS, url="https://example.com/", page_w=1440, page_h=1200, image="assets/promo-1@2x.png")
+    (p / "assets" / "promo-1.layout.json").write_text(json.dumps(layout), encoding="utf-8")
+    (p / "assets" / "promo-1@2x.png").write_bytes(png(2880, 2400))
+    with pytest.raises(M.ManifestError, match="tall"):
+        M.validate_showcase(beat_with(m, 0, shot="pan-reveal"), p)
+    M.validate_showcase(m, p)                                         # the other shots do not care

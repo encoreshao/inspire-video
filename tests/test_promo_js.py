@@ -12,4 +12,4 @@ def test_promo_camera_unit_tests_pass_under_node():
     r = subprocess.run(["node", "--test", "video/src/showcase/promo.test.mjs"], cwd=ROOT,
                        capture_output=True, text=True, timeout=60)
     assert r.returncode == 0, r.stdout + r.stderr
-    assert "# pass 17" in r.stdout and "# fail 0" in r.stdout
+    assert "# pass 18" in r.stdout and "# fail 0" in r.stdout
