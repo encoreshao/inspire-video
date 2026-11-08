@@ -197,3 +197,35 @@ def test_the_index_must_be_at_least_one(tmp_path, monkeypatch, capsys, index):
     monkeypatch.setattr(CP, "capture_page", never_capture)
     assert CP.main(["https://example.com/", "--project", str(p), "--index", index]) == 1
     assert "index" in capsys.readouterr().err
+
+
+def test_a_host_that_does_not_resolve_is_reported_as_a_typo_not_as_private():
+    with pytest.raises(CaptureError, match="could not be resolved"):
+        CP.check_url("http://no-such-host.invalid/", fetch=fetcher(None))
+
+
+def test_a_missing_chrome_says_to_install_chrome(tmp_path, monkeypatch):
+    import types
+
+    class PWError(Exception):
+        pass
+
+    class Chromium:
+        def launch(self, **kwargs):
+            raise PWError("BrowserType.launch: Chromium distribution 'chrome' is not found at /Applications/Google Chrome.app")
+
+    class PW:
+        chromium = Chromium()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+    fake = types.ModuleType("playwright.sync_api")
+    fake.Error, fake.TimeoutError, fake.sync_playwright = PWError, type("Timeout", (PWError,), {}), lambda: PW()
+    monkeypatch.setitem(sys.modules, "playwright", types.ModuleType("playwright"))
+    monkeypatch.setitem(sys.modules, "playwright.sync_api", fake)
+    with pytest.raises(CaptureError, match="Install Google Chrome"):
+        CP.capture_page("http://example.com/", tmp_path, 1)

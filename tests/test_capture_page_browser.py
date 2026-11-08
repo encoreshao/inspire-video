@@ -35,6 +35,10 @@ PAGES = {
     "/": HOME,
     "/tall": "<html><body style='margin:0'><h1>Tall</h1><div style='height:7000px'></div></body></html>",
     "/blank": "<html><body style='margin:0;height:1200px'></body></html>",
+    "/links": ("<html><body style='margin:0'><h1>Links</h1>"
+               "<a href='/get' style='display:inline-block;background:#06c;color:#fff;padding:12px 24px;border-radius:99px;margin:20px'>Get the app</a>"
+               "<a href='/about' style='margin:20px'>About us</a></body></html>"),
+    "/wide": "<html><body style='margin:0'><h1>Wide</h1><div style='width:5000px;height:200px;background:#eee'></div></body></html>",
 }
 
 
@@ -161,3 +165,21 @@ def test_a_redirect_after_the_first_check_is_caught_before_the_screenshot(site, 
         assert not list((tmp_path / "out").glob("*")) and hits == []
     finally:
         PAGES.pop("/late", None)
+
+
+def test_a_link_styled_as_a_button_is_found_as_a_button_and_a_plain_link_is_not(site, tmp_path):
+    roles = {e["text"]: e["role"] for e in CP.capture_page(site + "/links", tmp_path, 1)["layout_data"]["elements"]}
+    assert roles.get("Get the app") == "button" and "About us" not in roles
+
+
+def test_a_page_wider_than_twice_the_viewport_is_cut(site, tmp_path):
+    r = CP.capture_page(site + "/wide", tmp_path, 1)
+    assert r["layout_data"]["page"]["w"] == L.MAX_PAGE_W == 2 * L.VIEWPORT["w"]
+    assert image_size(r["image"])[0] == L.MAX_PAGE_W * 2
+    L.validate_layout(r["layout_data"])
+
+
+def test_one_invalid_hide_selector_is_an_error_and_writes_nothing(site, tmp_path):
+    with pytest.raises(CaptureError, match="not valid CSS"):
+        CP.capture_page(site + "/", tmp_path / "out", 1, hide=(".banner", "div:foo("))
+    assert not list((tmp_path / "out").glob("*"))

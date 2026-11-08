@@ -10,9 +10,11 @@ capture whose rights are unresolved.
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import json
 import os
 import re
+import socket
 import sys
 import urllib.robotparser
 from pathlib import Path
@@ -93,7 +95,11 @@ def capture_page(url, out_dir, index: int, hide=(), host_check=None, project=Non
 
     try:
         with sync_playwright() as p:
-            browser = p.chromium.launch(channel="chrome")
+            try:
+                browser = p.chromium.launch(channel="chrome")
+            except PlaywrightError as e:
+                raise CaptureError(f"could not start Chrome ({str(e).splitlines()[0]}). Install Google Chrome: this tool drives "
+                                   "the installed Chrome and downloads no browser") from None
             try:
                 context = browser.new_context(viewport={"width": L.VIEWPORT["w"], "height": L.VIEWPORT["h"]},
                                               device_scale_factor=L.SCALE, reduced_motion="reduce")
@@ -113,12 +119,15 @@ def capture_page(url, out_dir, index: int, hide=(), host_check=None, project=Non
                 _check_final(page, host_check)
                 page.add_style_tag(content=FREEZE_CSS)
                 if hide:
+                    for selector in hide:                    # one invalid selector would silently disable them all
+                        if not page.evaluate("(sel) => { try { document.querySelectorAll(sel); return true; } catch (e) { return false; } }", selector):
+                            raise CaptureError(f"--hide selector {selector!r} is not valid CSS")
                     page.add_style_tag(content=", ".join(hide) + " { display: none !important; }")
                 page.evaluate(SCROLL_JS)
                 page.wait_for_timeout(SETTLE_MS)
                 _check_final(page, host_check)            # a script may have navigated away since the first check
                 width, height = page.evaluate("[document.documentElement.scrollWidth, document.documentElement.scrollHeight]")
-                page_w, page_h = int(width), min(int(height), L.MAX_PAGE_H)
+                page_w, page_h = min(int(width), L.MAX_PAGE_W), min(int(height), L.MAX_PAGE_H)
                 raw = page.evaluate(L.JS_COLLECT)
                 page.screenshot(path=str(image), full_page=True,
                                 clip={"x": 0, "y": 0, "width": page_w, "height": page_h})
@@ -136,6 +145,18 @@ def capture_page(url, out_dir, index: int, hide=(), host_check=None, project=Non
     return {"image": image, "layout": layout_file, "layout_data": layout}
 
 
+def _why_not_public(host: str) -> str:
+    """A host the check refuses is either private or simply mistyped; say which."""
+    try:
+        ipaddress.ip_address(host.strip("[]"))
+    except ValueError:
+        try:
+            socket.getaddrinfo(host, None)
+        except OSError:
+            return f"{host} could not be resolved: check the address for a typo"
+    return f"{host} is not a public host; pass --allow-private only for your own local sites"
+
+
 def check_url(url, allow_private=False, fetch=None, host_check=None) -> None:
     """The same rules as ingest's crawl: http(s) only, a public host, and robots.txt must allow the page."""
     parts = urlsplit(url)
@@ -146,7 +167,7 @@ def check_url(url, allow_private=False, fetch=None, host_check=None) -> None:
     else:
         check = host_check or W.is_public_host
     if not check(parts.hostname):
-        raise CaptureError(f"{parts.hostname} is not a public host; pass --allow-private only for your own local sites")
+        raise CaptureError(_why_not_public(parts.hostname))
     fetch = fetch or W.make_fetcher(check)
     robots = urllib.robotparser.RobotFileParser()
     try:

@@ -13,6 +13,7 @@ VERSION = 1
 SCALE = 2
 VIEWPORT = {"w": 1440, "h": 900}
 MAX_PAGE_H = 6000          # CSS px; the image is twice that. A taller page is cut here.
+MAX_PAGE_W = 2 * VIEWPORT["w"]      # a wider page (horizontal overflow) is cut here too
 MAX_ELEMENTS = 40
 MAX_TEXT = 80
 MIN_W, MIN_H = 24, 16      # smaller boxes are not worth a camera move
@@ -21,6 +22,7 @@ ROLES = ("heading", "button", "card", "image", "code", "nav")      # priority or
 SUFFIX = "@2x.png"
 
 # Runs in the page (Playwright page.evaluate). Returns visible elements as page-coordinate rectangles.
+# A link counts as a button when it looks like one (a filled background and padding), whatever its class names say.
 JS_COLLECT = r"""() => {
   const SELECTORS = [
     ["heading", "h1, h2, h3"],
@@ -32,18 +34,23 @@ JS_COLLECT = r"""() => {
   ];
   const seen = new Set();
   const out = [];
-  for (const [role, selector] of SELECTORS) {
-    for (const el of document.querySelectorAll(selector)) {
-      if (seen.has(el)) continue;
-      const r = el.getBoundingClientRect();
-      const s = getComputedStyle(el);
-      if (s.display === "none" || s.visibility === "hidden" || parseFloat(s.opacity) === 0) continue;
-      if (r.width <= 0 || r.height <= 0) continue;
-      seen.add(el);
-      const text = (el.innerText || el.alt || el.getAttribute("aria-label") || "").replace(/\s+/g, " ").trim().slice(0, 200);
-      out.push({role, text, x: r.left + window.scrollX, y: r.top + window.scrollY, w: r.width, h: r.height});
-    }
-  }
+  const add = (role, el) => {
+    if (seen.has(el)) return;
+    const r = el.getBoundingClientRect();
+    const s = getComputedStyle(el);
+    if (s.display === "none" || s.visibility === "hidden" || parseFloat(s.opacity) === 0) return;
+    if (r.width <= 0 || r.height <= 0) return;
+    seen.add(el);
+    const text = (el.innerText || el.alt || el.getAttribute("aria-label") || "").replace(/\s+/g, " ").trim().slice(0, 200);
+    out.push({role, text, x: r.left + window.scrollX, y: r.top + window.scrollY, w: r.width, h: r.height});
+  };
+  for (const [role, selector] of SELECTORS) for (const el of document.querySelectorAll(selector)) add(role, el);
+  const filled = (el) => {
+    const s = getComputedStyle(el);
+    return s.backgroundColor !== "rgba(0, 0, 0, 0)" && s.backgroundColor !== "transparent"
+      && parseFloat(s.paddingLeft) >= 8 && parseFloat(s.paddingTop) >= 4;
+  };
+  for (const el of document.querySelectorAll("a")) if (filled(el)) add("button", el);
   return out;
 }"""
 
