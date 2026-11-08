@@ -10,14 +10,15 @@ const SPOT_PAD = 12;          // CSS px of air around the target in the spotligh
 export type PageCamProps = {
   src: string; page: Size; scale: number; box: Box; shot: string;
   progress: number;            // 0..1 through the beat
+  seconds: number;             // the beat length (a shot with a fixed-length move needs it)
   stage: Size;                 // stage size in output px
 };
 
 // The 2x page capture under the camera of the beat's shot.
-export const PageCam: React.FC<PageCamProps> = ({src, page, scale, box, shot, progress, stage}) => {
+export const PageCam: React.FC<PageCamProps> = ({src, page, scale, box, shot, progress, seconds, stage}) => {
   const def = SHOTS[shot];
   if (!def) throw new Error(`unknown shot "${shot}"`);
-  const cam = promoCamera({shot: def, target: box, page, stage, scale, progress});
+  const cam = promoCamera({shot: def, target: box, page, stage, scale, progress, seconds});
   const place = placeImage(page, stage, cam);
   const hole = stageRect({x: box.x - SPOT_PAD, y: box.y - SPOT_PAD, w: box.w + SPOT_PAD * 2, h: box.h + SPOT_PAD * 2}, place);
   return (

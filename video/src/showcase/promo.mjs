@@ -43,7 +43,9 @@ export const stageRect = (box, place) => ({
 });
 
 // The caller passes the shot object (from shots.mjs), so this file never imports the registry.
-export const promoCamera = ({shot, target, page, stage, scale, progress}) => shot.camera({target, page, stage, scale, progress});
+// `seconds` is the beat length: a shot with a fixed-length move (the punch is 6 frames) needs it.
+export const promoCamera = ({shot, target, page, stage, scale, progress, seconds = 10}) =>
+  shot.camera({target, page, stage, scale, progress, seconds});
 
 // The stage fills the room left under the headline, above the caption card and info card. 1575 is the safe line
 // (1590) minus a margin; 777 is the measured height of everything else at a zero caption reserve (LoopX: content

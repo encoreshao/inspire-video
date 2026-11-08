@@ -26,6 +26,7 @@ STYLES = ("device", "promo")
 PROMO_SHOTS = {
     "hero-push": {"minSeconds": 4, "maxPerVideo": None, "needsTallPage": False},
     "spotlight-focus": {"minSeconds": 4, "maxPerVideo": None, "needsTallPage": False},
+    "crash-zoom-punch": {"minSeconds": 4, "maxPerVideo": 1, "needsTallPage": False},
 }
 MIN_BEATS, MAX_BEATS = 4, 6
 FPS = 30

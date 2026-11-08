@@ -21,7 +21,7 @@ const BeatLayer: React.FC<{beat: ShowcaseBeat; index: number; stageH: number}> =
     <AbsoluteFill style={{opacity}}>
       <div style={{border: `3px solid ${c.border}`, borderRadius: 24, overflow: 'hidden', background: c.card, boxShadow: c.shadow}}>
         <PageCam src={beat.asset} page={beat.page} scale={beat.imageScale ?? 1} box={beat.box} shot={beat.shot}
-          progress={Math.min(1, t / duration)} stage={{w: STAGE_W, h: stageH}} />
+          progress={Math.min(1, t / duration)} seconds={duration} stage={{w: STAGE_W, h: stageH}} />
         <CaptionCard beat={beat} textAlpha={textAlpha} />
       </div>
     </AbsoluteFill>

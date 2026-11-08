@@ -21,8 +21,8 @@ const TARGETS = {
   nearRight: {x: 900, y: 3000, w: 480, h: 60},   // the review's case: the target slid out of frame mid-push
 };
 const CASES = [...Object.values(TARGETS).map((t) => [tall, t]), [short, {x: 520, y: 100, w: 400, h: 120}]];
-const run = (id, target, progress, page = tall, scale = 2) =>
-  promoCamera({shot: SHOTS[id], target, page, stage, scale, progress});
+const run = (id, target, progress, page = tall, scale = 2, seconds = 10) =>
+  promoCamera({shot: SHOTS[id], target, page, stage, scale, progress, seconds});
 
 test('the registry is frozen and every shot has its metadata', () => {
   assert.ok(Object.isFrozen(SHOTS));
@@ -34,6 +34,7 @@ test('the registry is frozen and every shot has its metadata', () => {
   assert.deepEqual(shotMeta(), {
     'hero-push': {minSeconds: 4, maxPerVideo: null, needsTallPage: false},
     'spotlight-focus': {minSeconds: 4, maxPerVideo: null, needsTallPage: false},
+    'crash-zoom-punch': {minSeconds: 4, maxPerVideo: 1, needsTallPage: false},
   });
 });
 
@@ -46,14 +47,11 @@ test('the view never leaves the page, for every shot, target and page shape', ()
   }
 });
 
-test('zoom never decreases during a beat', () => {
+test('zoom never decreases before it reaches its peak', () => {
   for (const id of IDS) for (const [page, target] of CASES) {
-    let last = 0;
-    for (const p of STEPS) {
-      const z = run(id, target, p, page).zoom;
-      assert.ok(z >= last - EPS, `${id} at ${p}`);
-      last = z;
-    }
+    const zooms = STEPS.map((p) => run(id, target, p, page).zoom);
+    const peak = zooms.indexOf(Math.max(...zooms));
+    for (let i = 1; i <= peak; i++) assert.ok(zooms[i] >= zooms[i - 1] - EPS, `${id} at ${STEPS[i]}`);
   }
 });
 
@@ -68,7 +66,32 @@ test('the last 10% of a beat is a true still', () => {
   }
 });
 
-test('the final framing keeps an interior target 8% clear of every side, and never crops an edge target', () => {
+test('the last 10% is still for beats of any length', () => {
+  for (const id of IDS) for (const seconds of [4, 6, 30]) for (const [page, target] of CASES) {
+    const at90 = run(id, target, 0.9, page, 2, seconds);
+    for (const p of [0.9, 0.95, 1]) assert.deepEqual(run(id, target, p, page, 2, seconds), at90, `${id} ${seconds}s at ${p}`);
+  }
+});
+
+test('crash-zoom-punch: a wide hold, a punch of about 6 frames with a small overshoot, then a true still', () => {
+  const zoomAt = (t, seconds = 10, target = TARGETS.interior) => run('crash-zoom-punch', target, t / seconds, tall, 2, seconds).zoom;
+  const z0 = minZoom(tall, stage);
+  const zFinal = zoomAt(10);
+  const tHit = 4;                                           // 40% of a 10 s beat
+  assert.ok(zoomAt(tHit - 0.01) <= z0 * 1.026 + EPS, 'the wide hold only creeps by 2.5%');
+  assert.ok(zoomAt(tHit - 0.01) > z0, 'and it does creep');
+  const peak = Math.max(...STEPS.map((p) => run('crash-zoom-punch', TARGETS.interior, p).zoom));
+  assert.ok(peak <= zFinal * 1.03 + EPS && peak > zFinal, 'the overshoot is at most 3% and exists');
+  const gainBy = (t) => (zoomAt(t) - zoomAt(tHit)) / (peak - zoomAt(tHit));
+  assert.ok(gainBy(tHit + 0.2) >= 0.99, 'the punch is done after 6 frames');
+  assert.ok(gainBy(tHit + 0.1) > 0 && gainBy(tHit + 0.1) < 0.25, 'and it accelerates: well below a linear half at the midpoint (ease-in)');
+  near(zoomAt(tHit + 0.2 + 5 / 30), zFinal, 1e-6);
+  const place = placeImage(tall, stage, run('crash-zoom-punch', TARGETS.interior, 1));
+  const r = stageRect(TARGETS.interior, place);
+  near((r.width / stage.w), 0.7, 0.01);                     // the card: the target fills 60 to 75% of the frame
+});
+
+test('zoom stays within the sharpness an interior target 8% clear of every side, and never crops an edge target', () => {
   for (const id of IDS) {
     const place = placeImage(tall, stage, run(id, TARGETS.interior, 1));
     const r = stageRect(TARGETS.interior, place);

@@ -120,3 +120,11 @@ def test_the_python_shot_table_matches_the_javascript_registry():
 def test_subtitle_lines_follow_the_layout_estimate():
     assert M.subtitle_lines("A local-first AI agent app for macOS") == 1
     assert M.subtitle_lines("A local-first AI agent app that runs AI agents on a schedule") == 2
+
+
+def test_a_crash_zoom_may_be_used_once_per_video(tmp_path):
+    p, m = promo_project(tmp_path)
+    M.validate_showcase(beat_with(m, 1, shot="crash-zoom-punch"), p)
+    twice = beat_with(beat_with(m, 1, shot="crash-zoom-punch"), 3, shot="crash-zoom-punch")
+    with pytest.raises(M.ManifestError, match="at most 1"):
+        M.validate_showcase(twice, p)

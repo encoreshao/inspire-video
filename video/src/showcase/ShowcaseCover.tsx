@@ -21,7 +21,7 @@ export const ShowcaseCover: React.FC<ShowcaseCoverProps> = ({headline, subtitle,
         <div style={{marginTop: 56, border: `5px solid ${c.border}`, borderRadius: 10, overflow: 'hidden'}}>
           {beat.shot && beat.box && beat.page ? (
             <PageCam src={beat.asset} page={beat.page} scale={beat.imageScale ?? 1} box={beat.box} shot={beat.shot}
-              progress={1} stage={{w: 842, h: 630}} />
+              progress={1} seconds={beat.frames / 30} stage={{w: 842, h: 630}} />
           ) : (
             <DeviceFrame src={beat.asset} iw={beat.iw} ih={beat.ih} focus={beat.focus} progress={0} t={0} duration={1}
               urlLabel={sourceLabel} zoneW={842} zoneH={630} />
