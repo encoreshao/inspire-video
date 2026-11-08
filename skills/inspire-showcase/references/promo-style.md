@@ -86,6 +86,7 @@ Run `python3 scripts/showcase/manifest.py validate output/projects/<slug>`; ever
 - The cover shows the first beat's final framing (a statement-first project gets the finished statement). A `spotlight-focus` first beat gets a plain `hero-push` cover (no dimming).
 - Text is sharp because the captures are 2x and the zoom is capped at the capture's resolution; do not capture at a smaller size to save space.
 - The video is determinism-checked: no random or time-based motion in shots.
+- A half-scale preview can pass the safe-area check where the full-size render fails (a glyph one pixel inside the margin averages away at half size). Run `checks.py --final` on the real render before delivering.
 
 ## Not included
 

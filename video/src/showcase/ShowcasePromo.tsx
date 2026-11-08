@@ -2,7 +2,7 @@ import React from 'react';
 import {AbsoluteFill, Audio, Sequence, interpolate, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import {SERIF, ZhText, useTheme} from '../Video';
 import {PageCam} from './PageCam';
-import {PROMO_CAPTION_TOP, PROMO_STAGE_TOP, PROMO_W, PROMO_X, PromoFrame} from './PromoFrame';
+import {PROMO_CAPTION_TOP, PROMO_STAGE_TOP, PROMO_TEXT_X, PROMO_W, PROMO_X, PromoFrame} from './PromoFrame';
 import {PROMO_STAGE_H, STAGE_W} from './promo.mjs';
 import {XF} from './ShowcaseShort';
 import type {ShowcaseBeat, ShowcaseProps} from './ShowcaseShort';
@@ -41,7 +41,7 @@ const BeatLayer: React.FC<{beat: ShowcaseBeat; index: number}> = ({beat, index})
         {content}
         <div style={{position: 'absolute', inset: 0, borderRadius: RADIUS, border: `2px solid ${c.border}`, pointerEvents: 'none'}} />
       </div>
-      <div style={{position: 'absolute', left: PROMO_X, top: PROMO_CAPTION_TOP, width: PROMO_W, opacity: textAlpha, display: 'flex', flexDirection: 'column', gap: 14}}>
+      <div style={{position: 'absolute', left: PROMO_TEXT_X, top: PROMO_CAPTION_TOP, width: PROMO_W - 2 * (PROMO_TEXT_X - PROMO_X), opacity: textAlpha, display: 'flex', flexDirection: 'column', gap: 14}}>
         <div style={{fontSize: size.en, fontWeight: 700, lineHeight: 1.25, overflowWrap: 'break-word', textWrap: 'balance' as any}}>{beat.en}</div>
         <div style={{fontFamily: SERIF, fontSize: size.zh, fontWeight: 500, lineHeight: 1.35, color: c.accent, overflowWrap: 'break-word',
           textWrap: 'balance' as any}}><ZhText text={beat.zh} units={beat.zhUnits} /></div>
