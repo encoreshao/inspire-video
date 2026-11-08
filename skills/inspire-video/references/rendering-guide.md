@@ -19,6 +19,8 @@ python3 scripts/render.py output/projects/<slug> --preview    # half-scale draft
 python3 scripts/render.py output/projects/<slug> --force      # final -> output/final/<slug>/<slug>.mp4 + cover.png
 python3 scripts/render.py output/projects/<slug> --cover --force   # cover only -> output/final/<slug>/cover.png
 ```
+If the designed cover fails to render, `render.py` writes a frame grab (from the finished video, else the clip) as the cover and prints a WARNING, so delivery is never blocked. Tell the user the cover is a frame grab and re-run with `--cover --force` once the cause is fixed.
+
 
 Add `--theme light|mist|ivory|sage|ink` to override the manifest theme.
 

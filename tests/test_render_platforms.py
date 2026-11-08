@@ -166,3 +166,50 @@ def test_cover_only_mode_checks_every_cover_before_rendering_any(run):
     rc, calls, _ = run("--cover", "--platform", "douyin,linkedin", "--force")
     assert rc == 0
     assert outputs(calls) == [("still", "final/demo/cover.png"), ("still", "final/demo/cover-portrait-4x5.png")]
+
+
+def test_a_failed_cover_render_falls_back_to_a_frame_grab(run, monkeypatch, capsys):
+    calls = []
+
+    class Done:
+        def __init__(self, rc):
+            self.returncode = rc
+
+    def fake_run(cmd, cwd=None, **kw):
+        calls.append(cmd)
+        return Done(1 if cmd[:3] == ["npx", "remotion", "still"] else 0)
+
+    monkeypatch.setattr(render.subprocess, "run", fake_run)
+    rc, _, proj = run("--cover")
+    assert rc == 0
+    grab = [c for c in calls if c[0] == "ffmpeg"]
+    assert len(grab) == 1 and grab[0][-1].endswith("final/demo/cover.png") and str(proj / "clip.mp4") in grab[0]
+    assert "frame grab" in capsys.readouterr().err
+
+
+def test_the_frame_grab_uses_the_rendered_video_when_it_exists(run, monkeypatch):
+    calls = []
+
+    class Done:
+        def __init__(self, rc):
+            self.returncode = rc
+
+    def fake_run(cmd, cwd=None, **kw):
+        calls.append(cmd)
+        return Done(1 if cmd[:3] == ["npx", "remotion", "still"] else 0)
+
+    monkeypatch.setattr(render.subprocess, "run", fake_run)
+    out = run.root / "output/final/demo"
+    out.mkdir(parents=True)
+    (out / "demo.mp4").write_bytes(b"x")
+    rc, _, _ = run("--cover")
+    assert rc == 0 and str(out / "demo.mp4") in [c for c in calls if c[0] == "ffmpeg"][0]
+
+
+def test_when_the_frame_grab_also_fails_the_cover_error_is_reported(run, monkeypatch):
+    class Done:
+        returncode = 1
+
+    monkeypatch.setattr(render.subprocess, "run", lambda cmd, cwd=None, **kw: Done())
+    rc, _, _ = run("--cover")
+    assert rc == 1
