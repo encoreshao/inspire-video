@@ -102,3 +102,62 @@ def test_a_final_page_on_a_private_host_is_refused_before_anything_is_written(si
 def test_hide_selectors_that_could_break_the_style_rule_are_rejected_before_the_browser_starts(site, tmp_path, selector):
     with pytest.raises(CaptureError, match="selector"):
         CP.capture_page(site + "/", tmp_path, 1, hide=(selector,))
+
+
+@pytest.fixture
+def spy():
+    """A second local server that records every request it receives."""
+    hits = []
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            hits.append(self.path)
+            self.send_response(200)
+            self.send_header("Content-Type", "image/gif")
+            self.end_headers()
+            self.wfile.write(b"GIF89a")
+
+        def log_message(self, *args):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    yield hits, server.server_port
+    server.shutdown()
+    server.server_close()
+
+
+def test_sub_resources_on_hosts_the_check_refuses_are_never_requested(site, spy, tmp_path):
+    hits, port = spy
+    PAGES["/embeds"] = (f"<html><body style='margin:0'><h1>Embeds</h1>"
+                        f"<img src='http://localhost:{port}/hit' width='60' height='40'></body></html>")
+    try:
+        CP.capture_page(site + "/embeds", tmp_path / "blocked", 1, host_check=lambda host: host == "127.0.0.1")
+        assert hits == []                                    # the request to localhost never left the browser
+        CP.capture_page(site + "/embeds", tmp_path / "open", 1, host_check=lambda host: True)
+        assert hits == ["/hit"]                              # control: without the guard the same page requests it
+    finally:
+        PAGES.pop("/embeds", None)
+
+
+def test_a_page_that_ends_on_a_non_web_url_is_refused(site, tmp_path):
+    PAGES["/away"] = "<html><body><script>setTimeout(() => { location.href = 'about:blank'; }, 100)</script>moving</body></html>"
+    try:
+        with pytest.raises(CaptureError, match="public"):
+            CP.capture_page(site + "/away", tmp_path / "out", 1, host_check=lambda host: True)
+        assert not list((tmp_path / "out").glob("*"))
+    finally:
+        PAGES.pop("/away", None)
+
+
+def test_a_redirect_after_the_first_check_is_caught_before_the_screenshot(site, spy, tmp_path, monkeypatch):
+    hits, port = spy
+    monkeypatch.setattr(CP, "SETTLE_MS", 2500)               # the redirect fires inside the settle window
+    PAGES["/late"] = (f"<html><body><h1>Late</h1><script>setTimeout(() => {{ location.href = "
+                      f"'http://localhost:{port}/x'; }}, 1500)</script></body></html>")
+    try:
+        with pytest.raises(CaptureError, match="public"):
+            CP.capture_page(site + "/late", tmp_path / "out", 1, host_check=lambda host: host == "127.0.0.1")
+        assert not list((tmp_path / "out").glob("*")) and hits == []
+    finally:
+        PAGES.pop("/late", None)

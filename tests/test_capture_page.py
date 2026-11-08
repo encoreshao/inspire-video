@@ -148,3 +148,52 @@ def test_missing_playwright_is_a_clear_one_line_error(tmp_path, monkeypatch, cap
     assert CP.main(["https://example.com/", "--project", str(p)]) == 1
     err = capsys.readouterr().err
     assert err.startswith("error: Playwright is not installed") and "pip install" in err and err.count("\n") == 1
+
+
+def never_capture(*args, **kwargs):
+    raise AssertionError("the browser must not start when the brief cannot take the result")
+
+
+def test_the_command_checks_the_brief_before_it_captures(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(CP, "check_url", lambda *a, **k: None)
+    monkeypatch.setattr(CP, "capture_page", never_capture)
+    missing = tmp_path / "a"
+    missing.mkdir()
+    project(missing, with_brief=False)
+    assert CP.main(["https://example.com/", "--project", str(missing)]) == 1
+    assert "ingest" in capsys.readouterr().err
+    broken = tmp_path / "b"
+    broken.mkdir()
+    project(broken, with_brief=False)
+    (broken / "brief.json").write_text("{not json", encoding="utf-8")
+    assert CP.main(["https://example.com/", "--project", str(broken)]) == 1
+    assert "brief.json" in capsys.readouterr().err and (broken / "brief.json").read_text(encoding="utf-8") == "{not json"
+    keyless = tmp_path / "c"
+    keyless.mkdir()
+    project(keyless, with_brief=False)
+    (keyless / "brief.json").write_text(json.dumps({"version": 1}), encoding="utf-8")
+    assert CP.main(["https://example.com/", "--project", str(keyless)]) == 1
+    assert "brief" in capsys.readouterr().err
+
+
+def test_a_failed_brief_write_leaves_the_brief_untouched_and_no_temp_file(tmp_path, monkeypatch):
+    p = project(tmp_path)
+    before = (p / "brief.json").read_bytes()
+
+    def disk_full(src, dst):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(CP.os, "replace", disk_full)
+    with pytest.raises(OSError, match="disk full"):
+        CP.register_in_brief(p, shot(p, 1), "https://example.com/")
+    assert (p / "brief.json").read_bytes() == before
+    assert not list(p.glob("*.tmp")) and not list(p.glob("brief.json.*"))
+
+
+@pytest.mark.parametrize("index", ["0", "-1"])
+def test_the_index_must_be_at_least_one(tmp_path, monkeypatch, capsys, index):
+    p = project(tmp_path)
+    monkeypatch.setattr(CP, "check_url", lambda *a, **k: None)
+    monkeypatch.setattr(CP, "capture_page", never_capture)
+    assert CP.main(["https://example.com/", "--project", str(p), "--index", index]) == 1
+    assert "index" in capsys.readouterr().err

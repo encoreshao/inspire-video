@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 import urllib.robotparser
@@ -42,6 +43,23 @@ def _check_hide(hide) -> None:
             raise CaptureError(f"--hide selector {selector!r} must be a plain CSS selector (no braces or semicolons)")
 
 
+def _refuse(host) -> CaptureError:
+    return CaptureError(f"{host} is not a public host; pass --allow-private only for your own local sites")
+
+
+def _check_final(page, host_check) -> None:
+    """The page the browser ended up on must be a web page on an allowed host (checked again right before the shot)."""
+    if not host_check:
+        return
+    final = urlsplit(page.url)
+    if final.scheme not in ("http", "https"):
+        raise CaptureError(f"the page ended up on a non-web address ({final.scheme or 'unknown'}:), "
+                           "which is not a public web page; nothing was captured")
+    if not host_check(final.hostname or ""):
+        raise CaptureError(f"the page ended up on {final.hostname}, which is not a public host; "
+                           "pass --allow-private only for your own local sites")
+
+
 def capture_page(url, out_dir, index: int, hide=(), host_check=None, project=None) -> dict:
     _check_hide(hide)
     try:
@@ -55,27 +73,50 @@ def capture_page(url, out_dir, index: int, hide=(), host_check=None, project=Non
     out_dir.mkdir(parents=True, exist_ok=True)
     image = out_dir / f"promo-{index}{L.SUFFIX}"
     layout_file = L.layout_path_for(image)
+    blocked: list[str] = []                       # hosts the guard refused, for the error message
+    allowed: dict[str, bool] = {}
+
+    def guard(route):
+        """With a host check, the browser may only request web addresses on allowed hosts: no redirect hop,
+        sub-resource, frame or script request reaches a private address from the user's machine."""
+        target = urlsplit(route.request.url)
+        if target.scheme in ("data", "blob", "about"):
+            return route.continue_()
+        host = target.hostname or ""
+        if target.scheme in ("http", "https"):
+            if host not in allowed:
+                allowed[host] = bool(host_check(host))
+            if allowed[host]:
+                return route.continue_()
+        blocked.append(host or f"{target.scheme}:")
+        return route.abort()
+
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(channel="chrome")
             try:
                 context = browser.new_context(viewport={"width": L.VIEWPORT["w"], "height": L.VIEWPORT["h"]},
                                               device_scale_factor=L.SCALE, reduced_motion="reduce")
+                if host_check:
+                    context.route("**/*", guard)
                 page = context.new_page()
-                page.goto(url, wait_until="load", timeout=GOTO_MS)
+                try:
+                    page.goto(url, wait_until="load", timeout=GOTO_MS)
+                except PlaywrightError:
+                    if blocked:                       # the start page itself was refused by the guard
+                        raise _refuse(blocked[0]) from None
+                    raise
                 try:
                     page.wait_for_load_state("networkidle", timeout=IDLE_MS)
                 except PlaywrightTimeout:
                     pass                                    # a page that never goes idle is still captured
-                final = urlsplit(page.url)
-                if host_check and final.scheme in ("http", "https") and not host_check(final.hostname or ""):
-                    raise CaptureError(f"the page ended up on {final.hostname}, which is not a public host; "
-                                       "pass --allow-private only for your own local sites")
+                _check_final(page, host_check)
                 page.add_style_tag(content=FREEZE_CSS)
                 if hide:
                     page.add_style_tag(content=", ".join(hide) + " { display: none !important; }")
                 page.evaluate(SCROLL_JS)
                 page.wait_for_timeout(SETTLE_MS)
+                _check_final(page, host_check)            # a script may have navigated away since the first check
                 width, height = page.evaluate("[document.documentElement.scrollWidth, document.documentElement.scrollHeight]")
                 page_w, page_h = int(width), min(int(height), L.MAX_PAGE_H)
                 raw = page.evaluate(L.JS_COLLECT)
@@ -127,13 +168,37 @@ def next_index(assets_dir) -> int:
     return max(numbers, default=0) + 1
 
 
+def load_brief(project) -> dict:
+    """The project's brief.json, parsed and validated; a clear CaptureError when it cannot take a capture."""
+    brief_file = Path(project) / "brief.json"
+    if not brief_file.is_file():
+        raise CaptureError(f"{brief_file} not found: run scripts/showcase/ingest.py for this project first")
+    try:
+        brief = json.loads(brief_file.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        raise CaptureError(f"{brief_file} is not readable JSON ({e}); re-run ingest or fix the file") from None
+    try:
+        I.validate_brief(brief)
+    except (I.IngestError, KeyError, TypeError, AttributeError) as e:
+        raise CaptureError(f"{brief_file} is not a valid brief ({e}); re-run ingest or fix the file") from None
+    return brief
+
+
+def _write_json_atomic(path: Path, data: dict) -> None:
+    """Write beside the target and replace it, so an interrupted write never leaves a truncated file."""
+    tmp = path.with_name(path.name + ".tmp")
+    try:
+        tmp.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
+        os.replace(tmp, path)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
+
+
 def register_in_brief(project, image, url) -> dict:
     """Add the capture to brief.json as an unresolved-rights asset (role promo-page), replacing the same path."""
     project = Path(project)
-    brief_file = project / "brief.json"
-    if not brief_file.is_file():
-        raise CaptureError(f"{brief_file} not found: run scripts/showcase/ingest.py for this project first")
-    brief = json.loads(brief_file.read_text(encoding="utf-8"))
+    brief = load_brief(project)
     asset, why = A.try_describe(image, "capture", url, A.rights_note("capture", url))
     if asset is None:
         raise CaptureError(f"the capture is not a usable image: {why}")
@@ -141,7 +206,7 @@ def register_in_brief(project, image, url) -> dict:
     brief["assets"] = [a for a in brief["assets"] if a["path"] != asset["path"]] + [asset]
     brief["rights_unresolved"] = True
     I.validate_brief(brief)
-    brief_file.write_text(json.dumps(brief, ensure_ascii=False, indent=1), encoding="utf-8")
+    _write_json_atomic(project / "brief.json", brief)
     return asset
 
 
@@ -152,14 +217,18 @@ def main(argv=None) -> int:
     ap.add_argument("--hide", action="append", default=[], metavar="CSS",
                     help="CSS selector to hide before the shot (a cookie banner, a chat widget); repeatable")
     ap.add_argument("--allow-private", action="store_true", help="allow local or private addresses (your own sites only)")
-    ap.add_argument("--index", type=int, help="the number in the file name (default: the next free one)")
+    ap.add_argument("--index", type=int, help="the number in the file name, 1 or more (default: the next free one); "
+                                              "an index that already exists replaces that capture")
     a = ap.parse_args(argv)
     project = Path(a.project)
     try:
+        if a.index is not None and a.index < 1:
+            raise CaptureError("--index must be 1 or more")
+        load_brief(project)                    # fail before the browser starts, not after the files are written
         check_url(a.url, a.allow_private)
         assets = project / "assets"
         host_check = (lambda host: True) if a.allow_private else W.is_public_host
-        result = capture_page(a.url, assets, a.index or next_index(assets), hide=a.hide, host_check=host_check,
+        result = capture_page(a.url, assets, a.index if a.index is not None else next_index(assets), hide=a.hide, host_check=host_check,
                               project=project)
         asset = register_in_brief(project, result["image"], a.url)
     except (CaptureError, OSError, L.LayoutError, I.IngestError) as e:
