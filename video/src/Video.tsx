@@ -14,7 +14,11 @@ export type Cue = {start: number; end: number; en: string; zh: string; zhUnits?:
 // Chinese caption text that wraps only between units (words), never inside one. Without units it is plain text.
 export const ZhText: React.FC<{text: string; units?: string[]}> = ({text, units}) =>
   units && units.length > 0 && units.join('').replace(/ /g, '') === text.replace(/ /g, '')
-    ? <>{units.map((u, i) => <span key={i} style={{display: 'inline-block'}}>{u}</span>)}</>
+    ? <>{units.map((u, i) => {
+        // A trailing space inside an inline-block collapses, so it is rendered as a real space between the spans.
+        const space = u.endsWith(' ');
+        return <React.Fragment key={i}><span style={{display: 'inline-block'}}>{space ? u.slice(0, -1) : u}</span>{space ? ' ' : null}</React.Fragment>;
+      })}</>
     : <>{text}</>;
 export type Person = {id: string; name: string; name_zh?: string; title?: string; title_zh?: string; org?: string};
 

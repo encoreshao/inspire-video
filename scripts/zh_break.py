@@ -125,8 +125,12 @@ def break_units(text: str) -> list[str]:
     units: list[str] = []
     run = ""
     for token in _tokenize(text) + [""]:
-        if token and _is_cjk(token):
-            run += token
+        core = token.rstrip(" ")
+        if token and _is_cjk(core):
+            run += core                              # "行 " is the character 行 followed by a space, not a new word
+            if core != token:                        # the space ends the run; it stays on the run's last unit
+                units.extend(_segment_run(run)[:-1] + [_segment_run(run)[-1] + " "])
+                run = ""
             continue
         if run:
             units.extend(_segment_run(run))

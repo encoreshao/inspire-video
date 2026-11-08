@@ -63,3 +63,16 @@ def test_the_ported_code_and_word_list_are_credited_and_licensed():
     assert "AutoClip Team" in (root / "LICENSES" / "MIT-autoclip.txt").read_text(encoding="utf-8")
     assert "autoclip" in Z.__doc__ and "MIT" in Z.__doc__
     assert Z.LEXICON.is_file()
+
+
+def test_a_space_after_a_chinese_character_does_not_split_the_word():
+    # "运行 AI": the space follows 行 but 运行 is still one word; the space stays in the text.
+    units = Z.zh_units("按计划运行 AI 智能体的 Mac 应用")
+    assert "运行 " in units and "运" not in units and "行 " not in units
+    assert "".join(units) == "按计划运行 AI 智能体的 Mac 应用"
+    assert "交给 " in Z.zh_units("琐事交给 LoopX，你专注")
+
+
+def test_spaces_between_latin_words_and_chinese_are_kept_in_the_units():
+    units = Z.zh_units("issue 没人管，紧急邮件")
+    assert "".join(units) == "issue 没人管，紧急邮件" and units[0] == "issue "
