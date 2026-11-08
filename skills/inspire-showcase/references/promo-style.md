@@ -2,6 +2,19 @@
 
 The `promo` style shows a product by moving a camera over real captures of its page. It sits beside the `device` style: both use the same headline, bilingual caption card, narration, cover, rights flow and output checks. The method (real captures, named shots, a storyboard before the manifest, a review before delivery) comes from [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft) (Apache-2.0); see Credits for exactly what was and was not taken.
 
+## Look
+
+The promo style does not use the editorial layout of `inspire-video` and the device style. It has a frame of its own:
+
+- no headline block, panel, caption card, info card or divider in the video body;
+- a dark frame (the `ink` theme, the default for promo; `theme` can still be set) with a brand lockup at the top: the project name in both languages, the tagline and the address in a pill;
+- a large rounded stage, 880 x 960 px, the full safe width, where the camera moves;
+- the bilingual caption straight on the background, left-aligned, English above Chinese, with no card behind it;
+- a row of pips at the bottom, one per beat, each filling as its beat plays, in place of one progress bar;
+- a cover of its own: the headline large, the hero framing in the same rounded stage, the brand and address below.
+
+The `headline` and `subtitle` fields are used for the cover only; the video body shows the brand lockup instead.
+
 ## When to use it
 
 - `device`: a phone or browser frame, a highlight ring and a callout. Works with any screenshot, including the user's own.

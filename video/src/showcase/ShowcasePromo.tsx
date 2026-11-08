@@ -1,15 +1,21 @@
 import React from 'react';
 import {AbsoluteFill, Audio, Sequence, interpolate, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
-import {cardHeight, useTheme} from '../Video';
-import {CaptionCard} from './Caption';
-import {ShowcaseFrame} from './Frame';
+import {SERIF, ZhText, useTheme} from '../Video';
 import {PageCam} from './PageCam';
-import {Statement} from './Statement';
-import {STAGE_W, stageHeight} from './promo.mjs';
+import {PROMO_CAPTION_TOP, PROMO_STAGE_TOP, PROMO_W, PROMO_X, PromoFrame} from './PromoFrame';
+import {PROMO_STAGE_H, STAGE_W} from './promo.mjs';
 import {XF} from './ShowcaseShort';
 import type {ShowcaseBeat, ShowcaseProps} from './ShowcaseShort';
+import {Statement} from './Statement';
 
-const BeatLayer: React.FC<{beat: ShowcaseBeat; index: number; stageH: number}> = ({beat, index, stageH}) => {
+const RADIUS = 36;
+// Caption type shrinks as the sentence grows, so the longest allowed beat (100 English / 45 Chinese characters) still fits.
+const captionSizes = (beat: ShowcaseBeat) => ({
+  en: beat.en.length <= 60 ? 42 : beat.en.length <= 85 ? 37 : 33,
+  zh: beat.zh.length <= 22 ? 40 : 35,
+});
+
+const BeatLayer: React.FC<{beat: ShowcaseBeat; index: number}> = ({beat, index}) => {
   const c = useTheme();
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
@@ -17,7 +23,8 @@ const BeatLayer: React.FC<{beat: ShowcaseBeat; index: number; stageH: number}> =
   const t = Math.max(0, frame - lead) / fps, duration = beat.frames / fps;
   const opacity = index === 0 ? 1 : interpolate(frame, [0, XF], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
   const textAlpha = interpolate(t, [0, 0.12], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
-  const stage = {w: STAGE_W, h: stageH};
+  const stage = {w: STAGE_W, h: PROMO_STAGE_H};
+  const size = captionSizes(beat);
   let content: React.ReactNode;
   if (beat.shot === 'statement') {
     const text = beat.statement ?? '';
@@ -29,30 +36,31 @@ const BeatLayer: React.FC<{beat: ShowcaseBeat; index: number; stageH: number}> =
   }
   return (
     <AbsoluteFill style={{opacity}}>
-      <div style={{border: `3px solid ${c.border}`, borderRadius: 24, overflow: 'hidden', background: c.card, boxShadow: c.shadow}}>
+      <div style={{position: 'absolute', left: PROMO_X, top: PROMO_STAGE_TOP, width: STAGE_W, height: PROMO_STAGE_H, borderRadius: RADIUS,
+        overflow: 'hidden', boxShadow: c.shadow, background: c.card}}>
         {content}
-        <CaptionCard beat={beat} textAlpha={textAlpha} />
+        <div style={{position: 'absolute', inset: 0, borderRadius: RADIUS, border: `2px solid ${c.border}`, pointerEvents: 'none'}} />
+      </div>
+      <div style={{position: 'absolute', left: PROMO_X, top: PROMO_CAPTION_TOP, width: PROMO_W, opacity: textAlpha, display: 'flex', flexDirection: 'column', gap: 14}}>
+        <div style={{fontSize: size.en, fontWeight: 700, lineHeight: 1.25, overflowWrap: 'break-word', textWrap: 'balance' as any}}>{beat.en}</div>
+        <div style={{fontFamily: SERIF, fontSize: size.zh, fontWeight: 500, lineHeight: 1.35, color: c.accent, overflowWrap: 'break-word',
+          textWrap: 'balance' as any}}><ZhText text={beat.zh} units={beat.zhUnits} /></div>
       </div>
     </AbsoluteFill>
   );
 };
 
-export const ShowcasePromo: React.FC<ShowcaseProps> = ({headline, subtitle, category, theme, name, nameZh, tagline, taglineZh, sourceLabel, beats, subtitleLines = 1}) => {
-  const reserve = cardHeight(beats);
-  const stageH = stageHeight(reserve, subtitleLines);
-  return (
-    <ShowcaseFrame headline={headline} subtitle={subtitle} category={category} theme={theme} name={name} nameZh={nameZh}
-      tagline={tagline} taglineZh={taglineZh} sourceLabel={sourceLabel} zoneHeight={stageH + 3 + reserve}>
-      {beats.map((b, i) => (
-        <React.Fragment key={b.id}>
-          <Sequence from={Math.max(0, b.startFrame - (i > 0 ? XF : 0))} durationInFrames={b.frames + (i > 0 ? XF : 0)}>
-            <BeatLayer beat={b} index={i} stageH={stageH} />
-          </Sequence>
-          {b.audio ? (
-            <Sequence from={b.startFrame} durationInFrames={b.frames}><Audio src={staticFile(b.audio)} /></Sequence>
-          ) : null}
-        </React.Fragment>
-      ))}
-    </ShowcaseFrame>
-  );
-};
+export const ShowcasePromo: React.FC<ShowcaseProps> = ({theme, name, nameZh, tagline, sourceLabel, beats}) => (
+  <PromoFrame theme={theme} name={name} nameZh={nameZh} tagline={tagline} sourceLabel={sourceLabel} beats={beats}>
+    {beats.map((b, i) => (
+      <React.Fragment key={b.id}>
+        <Sequence from={Math.max(0, b.startFrame - (i > 0 ? XF : 0))} durationInFrames={b.frames + (i > 0 ? XF : 0)}>
+          <BeatLayer beat={b} index={i} />
+        </Sequence>
+        {b.audio ? (
+          <Sequence from={b.startFrame} durationInFrames={b.frames}><Audio src={staticFile(b.audio)} /></Sequence>
+        ) : null}
+      </React.Fragment>
+    ))}
+  </PromoFrame>
+);

@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  STAGE_W, baseScale, clampCenter, fitZoom, maxZoom, minZoom, placeImage, promoCamera, stageHeight, stageRect, viewSize,
+  PROMO_STAGE_H, STAGE_W, baseScale, clampCenter, fitZoom, maxZoom, minZoom, placeImage, promoCamera, stageRect, viewSize,
 } from './promo.mjs';
 import {SHOTS, shotMeta, statementDoneFrame, statementFontSize, statementReveal} from './shots.mjs';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) <= eps, `${a} vs ${b}`);
 const EPS = 1e-6;
-const stage = {w: STAGE_W, h: 560};
+const stage = {w: STAGE_W, h: PROMO_STAGE_H};
 const tall = {w: 1440, h: 6000};
 const short = {w: 1440, h: 500};
 const IDS = Object.keys(SHOTS).filter((id) => SHOTS[id].needsTarget);     // the shots that move a camera
@@ -221,21 +221,17 @@ test('placeImage and stageRect put an interior target at the stage centre when t
   near(place.width / tall.w, place.s, 1e-9);
 });
 
-test('the stage grows into the room the caption card leaves, between 488 and 600 px', () => {
-  assert.equal(stageHeight(217.76), 580);   // the LoopX caption reserve
-  assert.equal(stageHeight(0), 600);
-  assert.equal(stageHeight(400), 488);
-  // a two-line subtitle takes another 53 px (42 px type at a line height of 1.25) out of the room
-  assert.equal(stageHeight(217.76, 2), 527);
-  assert.equal(stageHeight(0, 2), 600);
-  assert.equal(stageHeight(400, 2), 488);
-  assert.equal(stageHeight(217.76, 1), stageHeight(217.76));
+test('the promo stage is a fixed 880 x 960 inside the safe area', () => {
+  assert.equal(STAGE_W, 880);
+  assert.equal(PROMO_STAGE_H, 960);
+  assert.ok(250 + PROMO_STAGE_H + 30 + 270 <= 1590 - 20, 'the stage, a gap and the caption zone end above the safe line');
+  assert.ok(100 + STAGE_W <= 1080 - 100, 'the stage keeps the 100 px side margins');
 });
 
 test('framing helpers: fit, limits and centre clamping', () => {
   near((TARGETS.interior.w * fitZoom(tall, stage, TARGETS.interior)) / tall.w, 0.8, 1e-9);
-  assert.equal(maxZoom(tall, stage, 2), 3.2);
-  assert.ok(maxZoom(tall, stage, 1) < 1.7);
+  near(maxZoom(tall, stage, 2), Math.min(3.2, (0.95 * 2) / baseScale(tall, stage)));
+  assert.ok(maxZoom(tall, stage, 1) < 1.6);
   const c = clampCenter(tall, stage, 2, {cx: 0, cy: 0});
   near(c.cx, viewSize(tall, stage, 2).w / 2);
   near(c.cy, viewSize(tall, stage, 2).h / 2);

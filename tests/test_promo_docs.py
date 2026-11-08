@@ -63,3 +63,13 @@ def test_the_notice_names_every_promo_shot():
     notice = (ROOT / "NOTICE").read_text(encoding="utf-8")
     for shot in M.PROMO_SHOTS:
         assert shot in notice, shot
+
+
+def test_the_promo_reference_describes_its_own_look():
+    for needle in ("## Look", "ink", "880", "pips", "left-aligned", "no headline block"):
+        assert needle in STYLE, needle
+
+
+def test_the_skills_readme_tells_the_two_styles_apart():
+    text = (ROOT / "skills" / "README.md").read_text(encoding="utf-8")
+    assert "editorial" in text and "cinematic" in text

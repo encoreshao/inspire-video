@@ -118,10 +118,6 @@ def test_the_python_shot_table_matches_the_javascript_registry():
     assert json.loads(r.stdout) == M.PROMO_SHOTS
 
 
-def test_subtitle_lines_follow_the_layout_estimate():
-    assert M.subtitle_lines("A local-first AI agent app for macOS") == 1
-    assert M.subtitle_lines("A local-first AI agent app that runs AI agents on a schedule") == 2
-
 
 def test_a_crash_zoom_may_be_used_once_per_video(tmp_path):
     p, m = promo_project(tmp_path)
@@ -192,7 +188,7 @@ def test_the_python_punch_rule_agrees_with_the_javascript_camera():
     code = ("const cases = JSON.parse(process.argv[1]);"
             "Promise.all([import('./video/src/showcase/promo.mjs'), import('./video/src/showcase/shots.mjs')]).then(([P, S]) => {"
             "console.log(JSON.stringify(cases.map(([page, box, scale]) => {"
-            "const stage = {w: 846, h: 600};"
+            "const stage = {w: 880, h: 960};"
             "const z0 = P.minZoom(page, stage);"
             "const cam = P.promoCamera({shot: S.SHOTS['crash-zoom-punch'], target: box, page, stage, scale, progress: 1, seconds: 10});"
             "return cam.zoom > z0 + 1e-9;})));});")

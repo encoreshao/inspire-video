@@ -32,8 +32,8 @@ PROMO_SHOTS = {
 }
 # The punch rule below mirrors the camera in video/src/showcase/shots.mjs (a test compares them over a grid): the stage
 # width, the zoom cap, and the punch's fill (0.7), overshoot (3%) and smallest move (5% above the page-fitting zoom).
-STAGE_W = 846
-STAGE_H_MAX = 600                                       # decided at the tallest stage, so a target that cannot move there never moves
+STAGE_W = 880
+STAGE_H = 960
 ZOOM_CAP = 3.2
 CRASH_FILL, CRASH_OVERSHOOT, CRASH_MIN_MOVE = 0.7, 0.03, 1.05
 STATEMENT_UNITS = 28                                   # the statement's width limit (a Chinese character counts as 2)
@@ -69,16 +69,11 @@ def text_px(s: str, latin: float, cjk: float) -> float:
 def crash_punch_possible(box: dict, page: dict, scale: float) -> bool:
     """Whether crash-zoom-punch would move at all for this target: a target that already fills the frame cannot be punched in on."""
     base = STAGE_W / page["w"]
-    z0 = max(1.0, STAGE_H_MAX / base / page["h"])
+    z0 = max(1.0, STAGE_H / base / page["h"])
     cap = max(z0, min(ZOOM_CAP, 0.95 * scale / base))
-    fit = min(page["w"] / max(1, box["w"]), (STAGE_H_MAX / base) / max(1, box["h"])) * CRASH_FILL
+    fit = min(page["w"] / max(1, box["w"]), (STAGE_H / base) / max(1, box["h"])) * CRASH_FILL
     z_final = min(max(fit, z0), cap / (1 + CRASH_OVERSHOOT))
     return z_final >= z0 * CRASH_MIN_MOVE
-
-
-def subtitle_lines(subtitle: str) -> int:
-    """1 or 2: how many lines the subtitle needs in the 852 px panel, by the same estimate _check_layout limits to two."""
-    return 1 if text_px(subtitle, 23.5, 42) <= 852 else 2
 
 
 def page_info(project, asset: str) -> dict:

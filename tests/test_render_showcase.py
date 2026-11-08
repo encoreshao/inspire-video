@@ -272,34 +272,17 @@ def test_the_composition_follows_the_style(tmp_path, sandbox):
     assert fake.calls[0][0][4] == "ShowcasePromo"
 
 
-def test_promo_props_tell_the_composition_how_many_subtitle_lines_there_are(tmp_path, sandbox):
+def test_promo_defaults_to_the_dark_ink_theme_and_device_stays_light(tmp_path, sandbox):
     from promo_fixtures import promo_project
-    p, m = promo_project(tmp_path)
+    p, m = promo_project(tmp_path / "p")
     staged = R.stage(p, sandbox / "video" / "public", m, None)
-    assert R.build_props(m, p, None, staged)["subtitleLines"] == 1
-    m["subtitle"] = "A local-first AI agent app that runs AI agents on a schedule"
-    assert R.build_props(m, p, None, staged)["subtitleLines"] == 2
-
-
-def test_device_props_have_no_subtitle_lines(tmp_path, sandbox):
-    p, m = project(tmp_path)
-    assert "subtitleLines" not in R.build_props(m, p, None, R.stage(p, sandbox / "video" / "public", m, None))
-
-
-def test_a_statement_beat_needs_no_capture_and_carries_its_text_in_units(tmp_path, sandbox):
-    from promo_fixtures import promo_project
-    p, m = promo_project(tmp_path)
-    keep = {k: v for k, v in m["beats"][0].items() if k not in ("asset", "target", "focus")}
-    m["beats"][0] = {**keep, "shot": "statement", "statement": "Calm work, done for you."}
-    staged = R.stage(p, sandbox / "video" / "public", m, None)
-    assert staged["hook"] == {"asset": None, "audio": None} and staged["problem"]["asset"] == "acme-promo-problem.png"
-    b0 = R.build_props(m, p, None, staged)["beats"][0]
-    assert b0["shot"] == "statement" and b0["statement"] == "Calm work, done for you." and b0["asset"] == ""
-    assert b0["statementUnits"] == ["Calm ", "work, ", "done ", "for ", "you."]
-    assert not {"box", "page", "imageScale"} & set(b0) and (b0["iw"], b0["ih"]) == (0, 0)
-    m["beats"][0]["statement"] = "琐事交给 LoopX，你专注真正的工作"
-    units = R.build_props(m, p, None, staged)["beats"][0]["statementUnits"]
-    assert "".join(units) == "琐事交给 LoopX，你专注真正的工作" and "交给 " in units
+    m.pop("theme", None)
+    assert R.build_props(m, p, None, staged)["theme"] == "ink"
+    m["theme"] = "mist"
+    assert R.build_props(m, p, None, staged)["theme"] == "mist"
+    d, dm = project(tmp_path / "d")
+    dm.pop("theme", None)
+    assert R.build_props(dm, d, None, R.stage(d, sandbox / "video" / "public", dm, None))["theme"] == "light"
 
 
 def test_a_statement_first_project_gets_a_cover_from_its_statement(tmp_path, sandbox):
@@ -310,3 +293,15 @@ def test_a_statement_first_project_gets_a_cover_from_its_statement(tmp_path, san
     props = R.build_props(m, p, None, R.stage(p, sandbox / "video" / "public", m, None))
     cover = R.cover_props(props)
     assert cover["beat"]["shot"] == "statement" and cover["beat"]["statementUnits"] == ["Calm ", "work, ", "done ", "for ", "you."]
+
+
+def test_each_style_has_its_own_default_category_label(tmp_path, sandbox):
+    from promo_fixtures import promo_project
+    p, m = promo_project(tmp_path / "p")
+    m.pop("category", None)
+    assert R.build_props(m, p, None, R.stage(p, sandbox / "video" / "public", m, None))["category"] == "PROMO / 产品宣传"
+    m["category"] = "WEBSITE"
+    assert R.build_props(m, p, None, R.stage(p, sandbox / "video" / "public", m, None))["category"] == "WEBSITE"
+    d, dm = project(tmp_path / "d")
+    dm.pop("category", None)
+    assert R.build_props(dm, d, None, R.stage(d, sandbox / "video" / "public", dm, None))["category"] == "SHOWCASE / 项目展示"

@@ -1,6 +1,6 @@
 ---
 name: inspire-video
-description: This skill should be used when the user asks to turn a podcast, interview, speech, YouTube URL or local video into a polished 9:16 bilingual Chinese-English inspirational short video, or to create, edit, batch-produce or render that style of short video as an MP4.
+description: This skill should be used when the user asks to turn a podcast, interview, speech, YouTube URL or local video of a person speaking into a polished 9:16 bilingual Chinese-English inspirational short video built around the speaker's footage, or to create, edit, batch-produce or render that style of short video as an MP4. Not for promoting a product, website or open-source project: use inspire-showcase for that.
 ---
 
 # InspireVideo — Inspirational Short Video Generator

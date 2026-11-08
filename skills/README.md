@@ -2,10 +2,10 @@
 
 Every agent skill of this repo lives in its own folder here. The shared engine (`scripts/`, `video/`, `config/`, `schemas/`) stays at the repo root, so several skills can reuse one renderer, one set of themes and one set of tools.
 
-| Skill | Use it to |
-|---|---|
-| `inspire-video` | Turn a podcast, interview or speech (URL or file) into a bilingual short video with the speaker's footage. |
-| `inspire-showcase` | Turn a website, repository or screenshots into a bilingual showcase short video with local voice narration. |
+| Skill | Use it to | Look |
+|---|---|---|
+| `inspire-video` | Turn a podcast, interview or speech (URL or file) into a bilingual short video with the speaker's footage. | Editorial: a light paper layout with a headline block, a framed video, a caption card and a speaker card. |
+| `inspire-showcase` | Turn a website, repository or screenshots into a bilingual showcase short video with local voice narration. | Two styles: `promo` (cinematic: a dark frame and a camera flying over the real page) for a live website, and `device` (editorial, like `inspire-video`) for repositories and screenshots. |
 
 ## Layout
 

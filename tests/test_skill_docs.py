@@ -52,3 +52,23 @@ def test_the_promo_capture_command_is_documented_and_its_dependency_is_optional(
         tree = ast.parse((ROOT / "scripts" / "showcase" / f"{module}.py").read_text(encoding="utf-8"))
         top_level = [n for n in tree.body if isinstance(n, (ast.Import, ast.ImportFrom))]
         assert not any("playwright" in ast.dump(n) for n in top_level), f"{module} imports playwright at load"
+
+
+def _description(skill: str) -> str:
+    text = (ROOT / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+    return re.search(r"^description: (.+)$", text, re.M).group(1)
+
+
+def test_each_skill_description_says_what_the_other_skill_is_for():
+    video, showcase = _description("inspire-video"), _description("inspire-showcase")
+    assert "inspire-showcase" in video and "inspire-video" in showcase          # a "not for" clause pointing at the other skill
+    assert "product" in video.lower() and ("talk" in showcase.lower() or "interview" in showcase.lower())
+    assert len(video) < 1024 and len(showcase) < 1024
+    assert video.startswith("This skill should be used when") and showcase.startswith("This skill should be used when")
+
+
+def test_the_showcase_skill_says_how_to_choose_between_its_two_styles():
+    assert "## Choose the style" in SKILL
+    section = SKILL.split("## Choose the style")[1].split("\n## ")[0]
+    assert "promo" in section and "device" in section and "website" in section
+    assert "editorial" in SKILL                                                  # the device style shares the speaker layout, and says so

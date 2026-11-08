@@ -7,11 +7,11 @@
 | 技能 | 命令 | 输入 | 输出 |
 | --- | --- | --- | --- |
 | `inspire-video` | `/inspire-video` | 已获授权的播客、访谈或演讲素材（本地文件或视频链接） | 带同步双语字幕的讲者短视频 |
-| `inspire-showcase` | `/inspire-showcase` | 网站、GitHub 或 GitLab 仓库、本地仓库，或你自己的截图 | 产品展示视频：设备外框、推近与高亮、双语字幕，可选用你自己克隆的声音配音 |
+| `inspire-showcase` | `/inspire-showcase` | 网站、GitHub 或 GitLab 仓库、本地仓库，或你自己的截图 | 有独立风格的展示视频：电影感的网站宣传片（镜头飞过真实页面）或带设备外框的演示，双语字幕，可选用你自己克隆的声音配音 |
 
-智能体按照每个技能的 `SKILL.md`（位于 `skills/<名称>/`）完成需要思考的部分：转写并选段，或读取网站或仓库并撰写脚本，再写出文案与翻译；版式和文字则由 [Remotion](https://www.remotion.dev/) 以确定性的方式渲染，因此屏幕上的文字始终准确。两个技能共用同一个渲染器、同一套主题和同一组工具。
+智能体按照每个技能的 `SKILL.md`（位于 `skills/<名称>/`）完成需要思考的部分：转写并选段，或读取网站或仓库并撰写脚本，再写出文案与翻译；版式和文字则由 [Remotion](https://www.remotion.dev/) 以确定性的方式渲染，因此屏幕上的文字始终准确。两个技能共用同一个渲染器和同一组工具，但外观不同：`inspire-video` 和展示类的 `device` 风格使用编辑式版式，展示类的 `promo` 风格有自己的电影感版式。
 
-> **状态：** 已在 macOS 上用一条真实视频完整跑通。`fetch.py`、`transcribe.py`、`render.py` 和 Remotion 渲染器均已实现。`src/inspire_video/` 里的模块只是占位：探测素材、选段、翻译和剪辑由智能体按 `SKILL.md` 完成。Linux 和 Windows 尚未测试。 展示类视频目前是实验性的：已用生成的测试图片和 macOS `say` 语音完整跑通；CosyVoice 3 声音克隆和 GitHub/GitLab 元数据调用只用测试替身验证过，仍需要你在自己的电脑上做第一次真实运行。
+> **状态：** 已在 macOS 上用一条真实视频完整跑通。`fetch.py`、`transcribe.py`、`render.py` 和 Remotion 渲染器均已实现。`src/inspire_video/` 里的模块只是占位：探测素材、选段、翻译和剪辑由智能体按 `SKILL.md` 完成。Linux 和 Windows 尚未测试。 展示类技能已在一个真实网站上用克隆的 CosyVoice 3 声音、两种风格完整跑通；GitHub/GitLab 元数据调用只用测试替身验证过。
 
 ## 功能
 

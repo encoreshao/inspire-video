@@ -7,6 +7,7 @@ export type CameraArgs = {target: Box; page: Size; stage: Size; scale: number; p
 export type Shot = {id: string; summary: string; minSeconds: number; maxPerVideo: number | null; needsTallPage: boolean;
   needsTarget: boolean; settle: number; reveals?: boolean; camera: ((a: CameraArgs) => Cam) | null};
 export const STAGE_W: number;
+export const PROMO_STAGE_H: number;
 export const ZOOM_CAP: number;
 export function baseScale(page: Size, stage: Size): number;
 export function viewSize(page: Size, stage: Size, zoom: number): Size;
@@ -19,4 +20,3 @@ export function lerp(a: number, b: number, t: number): number;
 export function placeImage(page: Size, stage: Size, cam: {zoom: number; cx: number; cy: number}): Place;
 export function stageRect(box: Box, place: Place): Rect;
 export function promoCamera(a: {shot: Shot} & Omit<CameraArgs, 'seconds'> & {seconds?: number}): Cam;   // the shot must have a camera
-export function stageHeight(reserve: number, subtitleLines?: number): number;
