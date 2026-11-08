@@ -8,7 +8,8 @@ The word list is derived from jieba's dictionary (MIT, LICENSES/MIT-jieba.txt).
   break_units("每周工作80小时") -> ["每周", "工作", "80小时"]
 
 The renderer wraps captions between units, so a line is never "增长八|倍" or "每周工|作80小时".
-Without the word list every Chinese character is its own unit (the old behaviour).
+Without any word list every Chinese character is its own unit (the old behaviour). `assets/lexicon/zh_custom_words.txt`
+adds terms the jieba-derived list splits (智能体, 大模型, ...).
 """
 from __future__ import annotations
 
@@ -19,6 +20,9 @@ from functools import lru_cache
 from pathlib import Path
 
 LEXICON = Path(__file__).resolve().parent.parent / "assets" / "lexicon" / "zh_words.txt.gz"
+CUSTOM_LEXICON = Path(__file__).resolve().parent.parent / "assets" / "lexicon" / "zh_custom_words.txt"
+CUSTOM_FREQ = 10_000          # high enough to win ties against sub-words; the split still prefers the fewest words
+MIN_WORD, MAX_WORD = 2, 8     # length range of a custom word; the main list holds words of 1-4 characters
 _UNITS = ("小时", "分钟", "秒钟", "毫秒", "纳米", "公里", "千克", "公斤", "个月", "倍", "个", "元", "块", "年", "天", "秒", "点")
 _NUMERAL = set("零一二两三四五六七八九十百千万亿几半")
 _MEASURE = set("倍项个位种次年天件条家段步层份批台部周月岁成点名轮代张句")
@@ -74,19 +78,42 @@ def _tokenize(text: str) -> list[str]:
     return [t for t in tokens if t.strip()]
 
 
+def _read_custom() -> list[str]:
+    """Words from the custom list: one per line, `#` comments and blank lines skipped, an optional frequency ignored."""
+    try:
+        lines = CUSTOM_LEXICON.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return []
+    words = []
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        word = line.split()[0]
+        if MIN_WORD <= len(word) <= MAX_WORD and all(_is_cjk(ch) for ch in word):
+            words.append(word)
+    return words
+
+
 @lru_cache(maxsize=1)
-def _lexicon() -> tuple[dict[str, float], float]:
+def _lexicon() -> tuple[dict[str, float], float, int]:
+    """(log-probability by word, floor for an unknown character, length of the longest word)."""
+    counts: dict[str, int] = {}
     try:
         with gzip.open(LEXICON, "rt", encoding="utf-8") as handle:
-            counts = {}
             for line in handle:
                 word, _, freq = line.rstrip("\n").partition(" ")
                 if word and freq.isdigit():
                     counts[word] = int(freq)
     except OSError:
-        return {}, 0.0
+        pass
+    for word in _read_custom():
+        counts[word] = max(counts.get(word, 0), CUSTOM_FREQ)
+    if not counts:
+        return {}, 0.0, 1
     total = float(sum(counts.values()) or 1)
-    return {w: math.log(f / total) for w, f in counts.items()}, math.log(1 / total)
+    return ({w: math.log(f / total) for w, f in counts.items()}, math.log(1 / total),
+            max(len(w) for w in counts))
 
 
 def _is_cjk(token: str) -> bool:
@@ -95,14 +122,14 @@ def _is_cjk(token: str) -> bool:
 
 def _segment_run(run: str) -> list[str]:
     """Fewest-words split of a Chinese run, ties broken by word frequency, so a known word wins over its characters."""
-    words, floor = _lexicon()
+    words, floor, longest = _lexicon()
     if not words:
         return list(run)
     n = len(run)
     best = [(0, 0.0)] + [(10 ** 6, 0.0)] * n
     back = [0] * (n + 1)
     for end in range(1, n + 1):
-        for size in range(1, min(4, end) + 1):
+        for size in range(1, min(longest, end) + 1):
             piece = run[end - size:end]
             score = words.get(piece)
             if score is None:

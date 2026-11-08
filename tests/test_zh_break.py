@@ -76,3 +76,46 @@ def test_a_space_after_a_chinese_character_does_not_split_the_word():
 def test_spaces_between_latin_words_and_chinese_are_kept_in_the_units():
     units = Z.zh_units("issue 没人管，紧急邮件")
     assert "".join(units) == "issue 没人管，紧急邮件" and units[0] == "issue "
+
+
+def test_custom_terms_stay_whole():
+    for text, term in (("这个智能体能写代码", "智能体"), ("多智能体系统在协作", "多智能体"), ("训练一个大模型", "大模型"),
+                       ("大语言模型改变了开发", "大语言模型"), ("好的提示词很重要", "提示词"), ("设计一个工作流", "工作流"),
+                       ("模型上下文协议连接工具", "模型上下文协议"), ("机器学习和深度学习", "深度学习")):
+        units = Z.zh_units(text)
+        assert any(term in u for u in units), (text, units)       # never split across units ("一个大模型" is one unit)
+        assert "".join(units) == text
+
+
+def test_the_custom_list_file_format(monkeypatch, tmp_path):
+    custom = tmp_path / "custom.txt"
+    custom.write_text("# a comment\n\n星河引擎\n云织机 5000\nabc\n单\n超过八个字的词语怎么办啊\n  智能体  \n", encoding="utf-8")
+    monkeypatch.setattr(Z, "CUSTOM_LEXICON", custom)
+    monkeypatch.setattr(Z, "LEXICON", tmp_path / "missing.gz")       # only the custom file, so its words are the whole list
+    Z._lexicon.cache_clear()
+    try:
+        words, _, longest = Z._lexicon()
+        assert "星河引擎" in words and "云织机" in words and "智能体" in words     # comments, blanks, a frequency and spaces
+        assert "abc" not in words and "单" not in words and "超过八个字的词语怎么办啊" not in words
+        assert longest == 4
+        assert "星河引擎" in Z.zh_units("我们用星河引擎做渲染")
+    finally:
+        Z._lexicon.cache_clear()
+
+
+def test_custom_terms_work_even_without_the_main_word_list(monkeypatch, tmp_path):
+    monkeypatch.setattr(Z, "LEXICON", tmp_path / "missing.gz")
+    Z._lexicon.cache_clear()
+    try:
+        assert Z.break_units("这个智能体") == ["这", "个", "智能体"]
+    finally:
+        Z._lexicon.cache_clear()
+
+
+def test_the_shipped_custom_list_is_clean():
+    from pathlib import Path
+    lines = [ln.split()[0] for ln in Z.CUSTOM_LEXICON.read_text(encoding="utf-8").splitlines()
+             if ln.strip() and not ln.lstrip().startswith("#")]
+    assert len(lines) == len(set(lines)), "duplicate entries"
+    assert all(2 <= len(w) <= 8 and all("一" <= ch <= "鿿" for ch in w) for w in lines)
+    assert "智能体" in lines

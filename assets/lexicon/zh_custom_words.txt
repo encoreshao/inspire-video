@@ -1,0 +1,45 @@
+# Terms the jieba-derived list (zh_words.txt.gz) splits, such as 智能体 -> 智能/体.
+# One word per line, 2-8 Chinese characters; blank lines and # comments are ignored; an optional number after
+# the word is accepted and ignored. A caption never wraps inside a word listed here (or in zh_words.txt.gz).
+# Add a term when a caption breaks it. tests/test_zh_break.py checks this file for duplicates and bad entries.
+
+# AI and software
+智能体
+多智能体
+大模型
+大语言模型
+提示词
+工作流
+代码库
+代码仓库
+编程助手
+向量库
+预训练
+多模态
+模型上下文协议
+算力
+端侧
+本地优先
+具身智能
+深度学习
+机器学习
+强化学习
+扩散模型
+全栈
+开箱即用
+微服务
+无服务器
+低代码
+
+# Business and growth
+创业公司
+营收
+用户增长
+留存率
+产品经理
+增长黑客
+直播带货
+短视频
+私域
+赋能
+颗粒度

@@ -85,4 +85,4 @@ cd video && npx remotion still src/index.ts InspireShort output/projects/<slug>/
 
 ## Chinese caption line breaks
 
-`render.py` (and the showcase renderer) split each Chinese caption into word units with `scripts/zh_break.py` and pass them as `zhUnits`, so a caption wraps between words (`但|我们`, not `但我|们`) and a line never starts with a closing mark. Pass `--no-zh-breaks` to wrap between any two characters as before. Without `assets/lexicon/zh_words.txt.gz` the units are single characters.
+`render.py` (and the showcase renderer) split each Chinese caption into word units with `scripts/zh_break.py` and pass them as `zhUnits`, so a caption wraps between words (`但|我们`, not `但我|们`) and a line never starts with a closing mark. Pass `--no-zh-breaks` to wrap between any two characters as before. Without `assets/lexicon/zh_words.txt.gz` the units are single characters. When a caption breaks a term the word list does not know (for example a new product or technical word), add it as one line to `assets/lexicon/zh_custom_words.txt` (2-8 Chinese characters, `#` for comments) and render again.
