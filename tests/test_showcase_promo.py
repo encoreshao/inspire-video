@@ -225,3 +225,28 @@ def test_a_shot_of_the_wrong_type_is_a_clear_error_not_a_traceback(tmp_path, sho
     p, m = promo_project(tmp_path)
     with pytest.raises(M.ManifestError, match="shot"):
         M.validate_showcase(beat_with(m, 0, shot=shot), p)
+
+
+@pytest.mark.parametrize("text, ok", [("a" * 28, True), ("a" * 29, False), ("字" * 14, True), ("字" * 15, False), ("字" * 13 + "ab", True)])
+def test_the_statement_width_limit_sits_exactly_at_28_units(tmp_path, text, ok):
+    p, m = promo_project(tmp_path)
+    m = statement_beat(m, 0, text)
+    if ok:
+        M.validate_showcase(m, p)
+    else:
+        with pytest.raises(M.ManifestError, match="wide"):
+            M.validate_showcase(m, p)
+
+
+@pytest.mark.parametrize("page_h, ok", [(1349, False), (1350, True)])
+def test_pan_reveal_needs_a_page_of_at_least_1350_px(tmp_path, page_h, ok):
+    p, m = promo_project(tmp_path)
+    layout = L.build_layout(ELEMENTS, url="https://example.com/", page_w=1440, page_h=page_h, image="assets/promo-1@2x.png")
+    (p / "assets" / "promo-1.layout.json").write_text(json.dumps(layout), encoding="utf-8")
+    (p / "assets" / "promo-1@2x.png").write_bytes(png(2880, page_h * 2))
+    m = beat_with(m, 0, shot="pan-reveal")
+    if ok:
+        M.validate_showcase(m, p)
+    else:
+        with pytest.raises(M.ManifestError, match="tall"):
+            M.validate_showcase(m, p)

@@ -300,3 +300,13 @@ def test_a_statement_beat_needs_no_capture_and_carries_its_text_in_units(tmp_pat
     m["beats"][0]["statement"] = "琐事交给 LoopX，你专注真正的工作"
     units = R.build_props(m, p, None, staged)["beats"][0]["statementUnits"]
     assert "".join(units) == "琐事交给 LoopX，你专注真正的工作" and "交给 " in units
+
+
+def test_a_statement_first_project_gets_a_cover_from_its_statement(tmp_path, sandbox):
+    from promo_fixtures import promo_project
+    p, m = promo_project(tmp_path)
+    keep = {k: v for k, v in m["beats"][0].items() if k not in ("asset", "target", "focus")}
+    m["beats"][0] = {**keep, "shot": "statement", "statement": "Calm work, done for you."}
+    props = R.build_props(m, p, None, R.stage(p, sandbox / "video" / "public", m, None))
+    cover = R.cover_props(props)
+    assert cover["beat"]["shot"] == "statement" and cover["beat"]["statementUnits"] == ["Calm ", "work, ", "done ", "for ", "you."]
