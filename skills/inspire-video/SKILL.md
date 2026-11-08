@@ -38,7 +38,7 @@ Other platform formats (4:5 for LinkedIn and Facebook) come from `config/platfor
 Load these only when the step needs them:
 - `references/visual-style.md`: the look (themes, typography, layout, safe area). Read before building or changing a layout.
 - `references/rendering-guide.md`: how the Remotion composition renders and what to check after a render.
-- `references/content-extraction.md`: transcription, segment scoring and editorial policy. Read before choosing a segment.
+- `references/content-extraction.md`: transcription, segment scoring, editorial policy and the `refine_segment.py` step that snaps the chosen range to cue edges. Read before choosing a segment.
 - `references/publishing.md`: `publish.json`, `project.json` and platform limits. Read before writing publishing copy.
 - `references/qa-checklist.md`, `references/output-contract.md`, `references/setup.md`: the full QA list, the project file list and the install procedure.
 - `schemas/manifest-schema.json`: the manifest schema that `scripts/render.py` validates against (repo root, shared by tooling).
