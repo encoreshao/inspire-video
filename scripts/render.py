@@ -14,6 +14,12 @@ from zh_break import with_units
 
 MIN_CLIP_SEC, MAX_CLIP_SEC = 120.0, 300.0     # the clip rule: 2 to 5 minutes (keep equal to showcase/timing.py)
 
+def quiet_log() -> list[str]:
+    """Remotion prints one progress line per frame (thousands for a 2 to 5 minute video), which buries the real error when
+    a tool, a log or an agent keeps only the last part of the output. Outside an interactive terminal, ask for errors only."""
+    return [] if sys.stdout.isatty() else ["--log=error"]
+
+
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -161,7 +167,7 @@ def main() -> int:
             cprops["profile"] = profile.props()
         cfile = proj / suffixed("cover_props.json", profile)
         cfile.write_text(json.dumps(cprops, ensure_ascii=False, indent=2))
-        r = subprocess.run(["npx", "remotion", "still", "src/index.ts", "InspireCover", str(out), f"--props={cfile}"],
+        r = subprocess.run(["npx", "remotion", "still", "src/index.ts", "InspireCover", str(out), f"--props={cfile}", *quiet_log()],
                            cwd=ROOT / "video")
         if r.returncode == 0:
             print(f"Rendered: {out}")
@@ -192,7 +198,7 @@ def main() -> int:
                 raise FileExistsError(f"{out} exists; use --force to overwrite")
         out.parent.mkdir(parents=True, exist_ok=True)
         cmd = ["npx", "remotion", "render", "src/index.ts", "InspireShort", str(out),
-               f"--props={pfile}", "--codec=h264", "--crf=18"]
+               f"--props={pfile}", "--codec=h264", "--crf=18", *quiet_log()]
         if a.preview:
             cmd += ["--scale=0.5"]
         print("+", " ".join(cmd))

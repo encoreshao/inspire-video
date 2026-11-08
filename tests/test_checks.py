@@ -83,3 +83,22 @@ def test_a_contact_sheet_is_written(tmp_path):
     sheet = checks.contact_sheet(video, tmp_path / "sheet.png")
     assert sheet.exists() and sheet.stat().st_size > 0
     assert checks.main([str(video), "--sheet", str(tmp_path / "cli.png")]) == 0 and (tmp_path / "cli.png").exists()
+
+
+def test_the_last_frame_check_steps_back_when_the_very_end_has_no_video_frame(monkeypatch):
+    # The audio can outlast the video by a frame, so a seek 0.04 s before the end may find no picture.
+    seen = []
+
+    def fake_stats(path, vf, at, run):
+        seen.append(at)
+        if at > -0.2:
+            raise RuntimeError(f"ffmpeg returned no frame statistics at {at:.2f} s")
+        return {"YMIN": 16.0, "YMAX": 200.0, "YAVG": 90.0}
+
+    monkeypatch.setattr(checks, "_stats", fake_stats)
+    assert checks._last_frame_stats("x.mp4", None)["YAVG"] == 90.0
+    assert seen == [-0.04, -0.1, -0.25]
+    # Nothing found anywhere: the last attempt's error surfaces, it is not swallowed.
+    monkeypatch.setattr(checks, "_stats", lambda *a: (_ for _ in ()).throw(RuntimeError("no frame statistics")))
+    with pytest.raises(RuntimeError, match="no frame statistics"):
+        checks._last_frame_stats("x.mp4", None)

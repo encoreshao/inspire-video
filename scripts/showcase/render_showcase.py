@@ -48,6 +48,13 @@ def stage(project: Path, public: Path, m: dict, timings: dict | None) -> dict:
     return out
 
 
+def quiet_log() -> list[str]:
+    """Remotion's own progress prints one line per frame (thousands for a 2 to 5 minute video), which buries the real
+    error when a tool, a log or an agent keeps only the last part of the output. When this is not an interactive
+    terminal, ask Remotion for errors only; a person at a terminal keeps the progress."""
+    return [] if sys.stdout.isatty() else ["--log=error"]
+
+
 def statement_units(text: str) -> list[str]:
     """The pieces of a statement that arrive one after another: words (Chinese: zh_break units), each keeping its space."""
     return zh_units(text) or re.findall(r"\S+\s*", text)
@@ -149,7 +156,7 @@ def main(argv=None, run=subprocess.run) -> int:
         out.parent.mkdir(parents=True, exist_ok=True)
         cfile = project / "cover_props.json"
         cfile.write_text(json.dumps(cover_props(props), ensure_ascii=False, indent=2), encoding="utf-8")
-        rc = go(["npx", "remotion", "still", "src/index.ts", "ShowcaseCover", str(out), f"--props={cfile}"])
+        rc = go(["npx", "remotion", "still", "src/index.ts", "ShowcaseCover", str(out), f"--props={cfile}", *quiet_log()])
         if rc == 0:
             print(f"Rendered: {out}")
         return rc
@@ -162,7 +169,7 @@ def main(argv=None, run=subprocess.run) -> int:
         return 1
     out.parent.mkdir(parents=True, exist_ok=True)
     cmd = ["npx", "remotion", "render", "src/index.ts", composition_for(m), str(out), f"--props={props_file}",
-           "--codec=h264", "--crf=18"] + (["--scale=0.5"] if a.preview else [])
+           "--codec=h264", "--crf=18", *quiet_log()] + (["--scale=0.5"] if a.preview else [])
     print("+", " ".join(cmd))
     rc = go(cmd)
     if rc != 0:

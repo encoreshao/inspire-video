@@ -112,6 +112,18 @@ def test_final_render_writes_the_video_then_the_cover_and_checks_it(tmp_path, sa
     assert run.calls[0][1]["cwd"] == sandbox / "video"
 
 
+@pytest.mark.parametrize("interactive, quiet", [(False, True), (True, False)])
+def test_remotion_is_told_to_print_errors_only_unless_a_person_is_watching(tmp_path, sandbox, monkeypatch, interactive, quiet):
+    # A 2 to 5 minute video prints thousands of progress lines; in a log or an agent's tool output they bury the real error.
+    p, _ = project(tmp_path, with_timings=True)
+    run = FakeRun()
+    monkeypatch.setattr(R, "check_video", lambda *a, **k: [])
+    monkeypatch.setattr(R.sys.stdout, "isatty", lambda: interactive, raising=False)
+    assert R.main([str(p)], run=run) == 0
+    render_cmd, cover_cmd = run.calls[0][0], run.calls[1][0]
+    assert ("--log=error" in render_cmd) is quiet and ("--log=error" in cover_cmd) is quiet
+
+
 def test_an_existing_final_needs_force(tmp_path, sandbox):
     p, _ = project(tmp_path, with_timings=True)
     assert R.main([str(p)], run=FakeRun()) == 0

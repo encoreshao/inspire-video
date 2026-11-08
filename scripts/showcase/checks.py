@@ -40,6 +40,21 @@ def _stats(path, vf, at, run):
     return found
 
 
+# How far before the end of the file to look for the last picture. The audio often runs a frame or so longer than the
+# video (each beat's audio is followed by a pause), so the very end of the file can hold no video frame at all; a long
+# video made that visible. Try the closest offset first, then step back.
+LAST_FRAME_OFFSETS = (-0.04, -0.1, -0.25, -0.5)
+
+
+def _last_frame_stats(path, run):
+    for at in LAST_FRAME_OFFSETS[:-1]:
+        try:
+            return _stats(path, "", at, run)
+        except RuntimeError:
+            continue
+    return _stats(path, "", LAST_FRAME_OFFSETS[-1], run)
+
+
 def check_video(path, scale: float = 1.0, duration_range=None, run=subprocess.run) -> list[str]:
     path = Path(path)
     problems: list[str] = []
@@ -51,7 +66,7 @@ def check_video(path, scale: float = 1.0, duration_range=None, run=subprocess.ru
         problems.append(f"the video is {dur:.1f} s but it must be {duration_range[0]:g} to {duration_range[1]:g} s")
     if _stats(path, "", 0, run)["YAVG"] < 20:          # pure black is 16 in video luma; the dark "ink" theme is about 37
         problems.append("the first frame is black (the video must not fade in from black)")
-    last = _stats(path, "", -0.04, run)["YAVG"]
+    last = _last_frame_stats(path, run)["YAVG"]
     before = _stats(path, "", max(0.0, dur - 1.0), run)["YAVG"]
     if last < 20 or last < 0.7 * before:     # a fade never quite reaches black on its last frame, so also compare with 1 s earlier
         problems.append("the last frame is black or faded (the video must hold its last image, not fade out)")
