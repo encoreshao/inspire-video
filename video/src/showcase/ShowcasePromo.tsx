@@ -2,7 +2,7 @@ import React from 'react';
 import {AbsoluteFill, Audio, Sequence, interpolate, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import {SERIF, ZhText, useTheme} from '../Video';
 import {PageCam} from './PageCam';
-import {PROMO_CAPTION_TOP, PROMO_STAGE_TOP, PROMO_TEXT_X, PROMO_W, PROMO_X, PromoFrame} from './PromoFrame';
+import {PROMO_CAPTION_TOP, PROMO_SHADOW, PROMO_STAGE_TOP, PROMO_TEXT_X, PROMO_W, PROMO_X, PromoFrame} from './PromoFrame';
 import {PROMO_STAGE_H, STAGE_W} from './promo.mjs';
 import {XF} from './ShowcaseShort';
 import type {ShowcaseBeat, ShowcaseProps} from './ShowcaseShort';
@@ -37,7 +37,7 @@ const BeatLayer: React.FC<{beat: ShowcaseBeat; index: number}> = ({beat, index})
   return (
     <AbsoluteFill style={{opacity}}>
       <div style={{position: 'absolute', left: PROMO_X, top: PROMO_STAGE_TOP, width: STAGE_W, height: PROMO_STAGE_H, borderRadius: RADIUS,
-        overflow: 'hidden', boxShadow: c.shadow, background: c.card}}>
+        overflow: 'hidden', boxShadow: PROMO_SHADOW, background: c.card}}>
         {content}
         <div style={{position: 'absolute', inset: 0, borderRadius: RADIUS, border: `2px solid ${c.border}`, pointerEvents: 'none'}} />
       </div>

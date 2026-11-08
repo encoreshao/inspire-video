@@ -10,7 +10,10 @@ export const PROMO_TEXT_X = 106;     // text starts a little inside it: a glyph 
 export const PROMO_STAGE_TOP = 250;
 export const PROMO_CAPTION_TOP = 1250;
 export const PROMO_W = 880;
-const PIPS_TOP = 1540;               // everything stays above y = 1590
+// A soft shadow that stays inside the side margin: the theme's own ink shadow (52 px blur, 0.6 alpha) darkens the strip
+// beside a bright page past what the safe-area check allows.
+export const PROMO_SHADOW = '0 10px 24px rgba(0,0,0,0.35)';
+const PIPS_TOP = 1540;              // everything stays above y = 1590
 
 export type PromoFrameProps = {
   theme?: string; name: string; nameZh?: string; tagline?: string; sourceLabel: string;

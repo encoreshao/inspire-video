@@ -1,7 +1,7 @@
 import React from 'react';
 import {AbsoluteFill} from 'remotion';
 import {HeadlineLines, SERIF, ThemeCtx, pickTheme} from '../Video';
-import {PROMO_TEXT_X, PROMO_W, PROMO_X} from './PromoFrame';
+import {PROMO_SHADOW, PROMO_TEXT_X, PROMO_W, PROMO_X} from './PromoFrame';
 import {PageCam} from './PageCam';
 import {Statement} from './Statement';
 import type {ShowcaseBeat} from './ShowcaseShort';
@@ -26,7 +26,7 @@ export const PromoCover: React.FC<PromoCoverProps> = ({headline, subtitle, categ
           </div>
           <div style={{fontSize: 38, lineHeight: 1.3, color: c.muted, marginTop: 22}}>{subtitle}</div>
         </div>
-        <div style={{position: 'absolute', left: PROMO_X, top: 640, width: PROMO_W, height: STAGE_H, borderRadius: 36, overflow: 'hidden', boxShadow: c.shadow}}>
+        <div style={{position: 'absolute', left: PROMO_X, top: 640, width: PROMO_W, height: STAGE_H, borderRadius: 36, overflow: 'hidden', boxShadow: PROMO_SHADOW}}>
           {beat.shot === 'statement' ? (
             <Statement text={beat.statement ?? ''} units={beat.statementUnits ?? [beat.statement ?? '']} stage={stage} frame={9999} />
           ) : beat.box && beat.page && beat.shot ? (
