@@ -22,6 +22,23 @@ Suggested weighted score:
 
 A high score does not override a misleading or incomplete statement. Reject candidates that need extensive edits to make sense.
 
+## Rubric by content type
+
+<!-- The per-type emphasis is condensed from the outline prompts of autoclip (MIT, https://github.com/zhouxiaoka/autoclip), rewritten for one 40-150 s clip. -->
+
+Decide the dominant type of the source first, from the transcript, and say which you chose. The weights above stay the same; the type changes what to look for and what ruins a candidate. For mixed content use the type of the stretch you are cutting.
+
+| Type | Look for | Reject | The clip must contain |
+|---|---|---|---|
+| Speech or talk | one core idea told with a story, image or turn of phrase; emotional lift | applause-only stretches, housekeeping, a story cut before its point | opening, development and the line that lands |
+| Interview or conversation | a clear question and its complete answer; a surprising admission | small talk, an answer that needs the question's context to make sense | the question's gist (as lead-in) through the end of the answer |
+| Opinion or commentary | a distinct position with its reason; a counterpoint handled fairly | a claim without its argument, a one-sided cut of a balanced discussion | position, reason and conclusion |
+| Experience or how-to | a concrete method, the result and a caveat | vague advice, steps cut in half | background, method and outcome |
+| Business or finance | a specific fact, case or trend with cause and consequence | forecasts stated as certainty, numbers without their source or date | the claim with its figure and its qualifier |
+| Entertainment or banter | a complete exchange with the payoff intact | a joke cut before the punchline, an in-joke that needs earlier context | setup and payoff |
+
+Two rules apply to every type: never start or end on a filler phrase, and never cut a qualifier ("might", "in my experience", "for some people") out of a claim, because that strengthens it.
+
 ## Segment boundaries
 
 - Prefer natural pauses and sentence boundaries.
