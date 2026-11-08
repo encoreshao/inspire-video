@@ -140,3 +140,36 @@ def test_pan_reveal_needs_a_tall_page(tmp_path):
     with pytest.raises(M.ManifestError, match="tall"):
         M.validate_showcase(beat_with(m, 0, shot="pan-reveal"), p)
     M.validate_showcase(m, p)                                         # the other shots do not care
+
+
+def statement_beat(m, index, text="Calm work, done for you."):
+    m = beat_without(m, index, "asset", "target", "focus")
+    return beat_with(m, index, shot="statement", statement=text)
+
+
+def test_a_statement_beat_shows_text_and_needs_no_capture(tmp_path):
+    p, m = promo_project(tmp_path)
+    M.validate_showcase(statement_beat(m, 0), p)
+    M.validate_showcase(statement_beat(statement_beat(m, 0), 3, "你专注真正的工作"), p)    # a Chinese statement is fine too
+
+
+@pytest.mark.parametrize("make, message", [
+    (lambda m: beat_without(statement_beat(m, 0), 0, "statement"), "statement"),
+    (lambda m: statement_beat(m, 0, "x" * 29), "wide"),
+    (lambda m: beat_with(statement_beat(m, 0), 0, target="heading-1"), "no capture"),
+    (lambda m: beat_with(statement_beat(m, 0), 0, asset="assets/promo-1@2x.png"), "no capture"),
+    (lambda m: beat_with(m, 0, statement="Only a statement beat has one."), "only"),
+])
+def test_statement_beats_are_validated(tmp_path, make, message):
+    p, m = promo_project(tmp_path)
+    with pytest.raises(M.ManifestError, match=message):
+        M.validate_showcase(make(m), p)
+
+
+def test_a_statement_is_limited_by_the_shot_table(tmp_path, monkeypatch):
+    p, m = promo_project(tmp_path)
+    twice = statement_beat(statement_beat(m, 0), 2)
+    M.validate_showcase(twice, p)                                    # two are allowed
+    monkeypatch.setattr(M, "PROMO_SHOTS", {**M.PROMO_SHOTS, "statement": {**M.PROMO_SHOTS["statement"], "maxPerVideo": 1}})
+    with pytest.raises(M.ManifestError, match="at most 1"):
+        M.validate_showcase(twice, p)

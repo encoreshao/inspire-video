@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -17,7 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from zh_break import with_units  # noqa: E402
+from zh_break import with_units, zh_units  # noqa: E402
 from showcase.assets import image_size  # noqa: E402
 from showcase.checks import check_video  # noqa: E402
 from showcase.manifest import FPS, ManifestError, beat_seconds_list, beat_target, crop_warnings, frame_windows, subtitle_lines, validate_showcase  # noqa: E402
@@ -30,9 +31,11 @@ def stage(project: Path, public: Path, m: dict, timings: dict | None) -> dict:
     public.mkdir(parents=True, exist_ok=True)
     pid, out = m["project_id"], {}
     for b in m["beats"]:
-        src = project / b["asset"]
-        asset = f"{pid}-{b['id']}{src.suffix.lower()}"
-        shutil.copy2(src, public / asset)
+        asset = None                                       # a statement beat has no capture
+        if b.get("asset"):
+            src = project / b["asset"]
+            asset = f"{pid}-{b['id']}{src.suffix.lower()}"
+            shutil.copy2(src, public / asset)
         audio = None
         if timings:
             wav = project / "audio" / f"{b['id']}.wav"
@@ -42,6 +45,11 @@ def stage(project: Path, public: Path, m: dict, timings: dict | None) -> dict:
             shutil.copy2(wav, public / audio)
         out[b["id"]] = {"asset": asset, "audio": audio}
     return out
+
+
+def statement_units(text: str) -> list[str]:
+    """The pieces of a statement that arrive one after another: words (Chinese: zh_break units), each keeping its space."""
+    return zh_units(text) or re.findall(r"\S+\s*", text)
 
 
 def composition_for(m: dict) -> str:
@@ -54,11 +62,13 @@ def build_props(m: dict, project: Path, timings: dict | None, staged: dict, zh_b
     promo = m.get("style", "device") == "promo"
     beats = []
     for b, w in zip(m["beats"], windows):
-        iw, ih = image_size(project / b["asset"])
-        entry = {"id": b["id"], "en": b["en"], "zh": b["zh"], "asset": staged[b["id"]]["asset"], "iw": iw, "ih": ih,
+        iw, ih = image_size(project / b["asset"]) if b.get("asset") else (0, 0)
+        entry = {"id": b["id"], "en": b["en"], "zh": b["zh"], "asset": staged[b["id"]]["asset"] or "", "iw": iw, "ih": ih,
                  "focus": b.get("focus") or {"x": 0, "y": 0, "w": 1, "h": 1}, "callout": b.get("callout"),
                  "audio": staged[b["id"]]["audio"], "startFrame": w["start"], "frames": w["frames"]}
-        if promo:
+        if promo and b.get("shot") == "statement":
+            entry.update({"shot": "statement", "statement": b["statement"], "statementUnits": statement_units(b["statement"])})
+        elif promo:
             box, info = beat_target(b, project)
             entry.update({"shot": b.get("shot", "hero-push"), "box": box, "page": info["page"], "imageScale": info["scale"]})
         beats.append(entry)

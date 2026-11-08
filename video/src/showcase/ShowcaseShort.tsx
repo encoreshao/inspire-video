@@ -9,7 +9,8 @@ import {ShowcaseFrame} from './Frame';
 export type ShowcaseBeat = {id: string; en: string; zh: string; zhUnits?: string[]; asset: string; iw: number; ih: number; focus: Focus;
   callout?: string; audio?: string | null; startFrame: number; frames: number;
   // promo style only
-  shot?: string; box?: {x: number; y: number; w: number; h: number}; page?: {w: number; h: number}; imageScale?: number};
+  shot?: string; box?: {x: number; y: number; w: number; h: number}; page?: {w: number; h: number}; imageScale?: number;
+  statement?: string; statementUnits?: string[]};
 export type ShowcaseProps = {headline: string; subtitle: string; category?: string; theme?: string; name: string; nameZh?: string;
   tagline?: string; taglineZh?: string; sourceLabel: string; beats: ShowcaseBeat[]; durationSeconds: number;
   subtitleLines?: number};     // promo style only: 1 or 2, so the stage leaves room for a wrapped subtitle

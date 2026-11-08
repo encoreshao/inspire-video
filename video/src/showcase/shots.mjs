@@ -93,13 +93,13 @@ export const SHOTS = Object.freeze({
   // Card studied: spotlight-hero-card.
   'hero-push': Object.freeze({
     id: 'hero-push', summary: 'Slow push from the page-width framing onto the target, then a hold.',
-    minSeconds: 4, maxPerVideo: null, needsTallPage: false, settle: 0.1,
+    minSeconds: 4, maxPerVideo: null, needsTallPage: false, needsTarget: true, settle: 0.1,
     camera: (a) => ({...push(a, fitZoom(a.page, a.stage, a.target)), dim: 0}),
   }),
   // Card studied: spotlight-hero-card.
   'spotlight-focus': Object.freeze({
     id: 'spotlight-focus', summary: 'A gentler push while everything outside the target dims to 55%.',
-    minSeconds: 4, maxPerVideo: null, needsTallPage: false, settle: 0.1,
+    minSeconds: 4, maxPerVideo: null, needsTallPage: false, needsTarget: true, settle: 0.1,
     camera: (a) => {
       const z0 = minZoom(a.page, a.stage);
       const fit = fitZoom(a.page, a.stage, a.target);
@@ -110,17 +110,35 @@ export const SHOTS = Object.freeze({
   // Card studied: crash-zoom-punch.
   'crash-zoom-punch': Object.freeze({
     id: 'crash-zoom-punch', summary: 'A wide hold, then a 6-frame punch onto the target with a small overshoot, then still.',
-    minSeconds: 4, maxPerVideo: 1, needsTallPage: false, settle: 0.1,
+    minSeconds: 4, maxPerVideo: 1, needsTallPage: false, needsTarget: true, settle: 0.1,
     camera: (a) => crash(a),
   }),
   // No card: a plain vertical travel, written for pages taller than one screen.
   'pan-reveal': Object.freeze({
     id: 'pan-reveal', summary: 'Travel down a tall page from its top to the target, then rest.',
-    minSeconds: 5, maxPerVideo: null, needsTallPage: true, settle: 0.25, reveals: true,
+    minSeconds: 5, maxPerVideo: null, needsTallPage: true, needsTarget: true, settle: 0.25, reveals: true,
     camera: (a) => ({...pan(a), dim: 0}),
+  }),
+  // Card studied: one of the `opening` cards, for the staggered word entrance. No capture and no camera: large text
+  // on the theme background, for the hook and the call to action.
+  'statement': Object.freeze({
+    id: 'statement', summary: 'The statement text large on the theme background, words arriving 4 frames apart, then a hold.',
+    minSeconds: 4, maxPerVideo: 2, needsTallPage: false, needsTarget: false, settle: 0, camera: null,
   }),
 });
 
+// The statement's entrance, as pure functions of frames so node can test them.
+export const STATEMENT_STAGGER = 4;      // frames between one word and the next
+export const STATEMENT_ENTER = 8;        // frames each word takes to arrive
+export function statementReveal(index, frame) {
+  const t = clamp((frame - index * STATEMENT_STAGGER) / STATEMENT_ENTER, 0, 1);
+  const e = 1 - Math.pow(1 - t, 3);
+  return {opacity: e, dy: (1 - e) * 20};
+}
+export const statementDoneFrame = (count) => (count - 1) * STATEMENT_STAGGER + STATEMENT_ENTER;
+// Type size in px for a statement of `widthUnits` (a Chinese character counts 2): bigger when there is less to say.
+export const statementFontSize = (widthUnits) => (widthUnits <= 14 ? 76 : widthUnits <= 20 ? 64 : 54);
+
 // Plain data for the Python validator (scripts/showcase/manifest.py keeps a copy; a test compares the two).
 export const shotMeta = () => Object.fromEntries(Object.values(SHOTS).map((s) =>
-  [s.id, {minSeconds: s.minSeconds, maxPerVideo: s.maxPerVideo, needsTallPage: s.needsTallPage}]));
+  [s.id, {minSeconds: s.minSeconds, maxPerVideo: s.maxPerVideo, needsTallPage: s.needsTallPage, needsTarget: s.needsTarget}]));

@@ -5,7 +5,7 @@ export type Place = {s: number; left: number; top: number; width: number; height
 export type Rect = {left: number; top: number; width: number; height: number};
 export type CameraArgs = {target: Box; page: Size; stage: Size; scale: number; progress: number; seconds: number};
 export type Shot = {id: string; summary: string; minSeconds: number; maxPerVideo: number | null; needsTallPage: boolean;
-  settle: number; camera: (a: CameraArgs) => Cam};
+  needsTarget: boolean; settle: number; reveals?: boolean; camera: ((a: CameraArgs) => Cam) | null};
 export const STAGE_W: number;
 export const ZOOM_CAP: number;
 export function baseScale(page: Size, stage: Size): number;
@@ -18,5 +18,5 @@ export function targetCenter(box: Box): {cx: number; cy: number};
 export function lerp(a: number, b: number, t: number): number;
 export function placeImage(page: Size, stage: Size, cam: {zoom: number; cx: number; cy: number}): Place;
 export function stageRect(box: Box, place: Place): Rect;
-export function promoCamera(a: {shot: Shot} & Omit<CameraArgs, 'seconds'> & {seconds?: number}): Cam;
+export function promoCamera(a: {shot: Shot} & Omit<CameraArgs, 'seconds'> & {seconds?: number}): Cam;   // the shot must have a camera
 export function stageHeight(reserve: number, subtitleLines?: number): number;

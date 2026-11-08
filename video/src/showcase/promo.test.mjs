@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import {
   STAGE_W, baseScale, clampCenter, fitZoom, maxZoom, minZoom, placeImage, promoCamera, stageHeight, stageRect, viewSize,
 } from './promo.mjs';
-import {SHOTS, shotMeta} from './shots.mjs';
+import {SHOTS, shotMeta, statementDoneFrame, statementFontSize, statementReveal} from './shots.mjs';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) <= eps, `${a} vs ${b}`);
 const EPS = 1e-6;
 const stage = {w: STAGE_W, h: 560};
 const tall = {w: 1440, h: 6000};
 const short = {w: 1440, h: 500};
-const IDS = Object.keys(SHOTS);
+const IDS = Object.keys(SHOTS).filter((id) => SHOTS[id].needsTarget);     // the shots that move a camera
 const STEPS = Array.from({length: 61}, (_, i) => i / 60);
 const TARGETS = {
   interior: {x: 520, y: 1000, w: 400, h: 120},
@@ -28,14 +28,17 @@ test('the registry is frozen and every shot has its metadata', () => {
   assert.ok(Object.isFrozen(SHOTS));
   for (const s of Object.values(SHOTS)) {
     assert.ok(Object.isFrozen(s));
-    assert.equal(typeof s.camera, 'function');
-    assert.ok(s.minSeconds > 0 && s.settle > 0);
+    if (s.needsTarget) assert.equal(typeof s.camera, 'function');
+    else assert.equal(s.camera, null);
+    assert.ok(s.minSeconds > 0);
+    if (s.needsTarget) assert.ok(s.settle > 0);          // only a shot with a camera has a rest at the end
   }
   assert.deepEqual(shotMeta(), {
-    'hero-push': {minSeconds: 4, maxPerVideo: null, needsTallPage: false},
-    'spotlight-focus': {minSeconds: 4, maxPerVideo: null, needsTallPage: false},
-    'crash-zoom-punch': {minSeconds: 4, maxPerVideo: 1, needsTallPage: false},
-    'pan-reveal': {minSeconds: 5, maxPerVideo: null, needsTallPage: true},
+    'hero-push': {minSeconds: 4, maxPerVideo: null, needsTallPage: false, needsTarget: true},
+    'spotlight-focus': {minSeconds: 4, maxPerVideo: null, needsTallPage: false, needsTarget: true},
+    'crash-zoom-punch': {minSeconds: 4, maxPerVideo: 1, needsTallPage: false, needsTarget: true},
+    'pan-reveal': {minSeconds: 5, maxPerVideo: null, needsTallPage: true, needsTarget: true},
+    'statement': {minSeconds: 4, maxPerVideo: 2, needsTallPage: false, needsTarget: false},
   });
 });
 
@@ -132,6 +135,27 @@ test('pan-reveal travels down the page from the top and arrives with the target 
   assert.ok(end.zoom <= 1.8 + EPS, 'a pan keeps the page readable: no deep zoom');
   const near_top = {x: 520, y: 100, w: 400, h: 120};
   assert.ok(Math.abs(run('pan-reveal', near_top, 0.2).cy - run('pan-reveal', near_top, 1).cy) < 400, 'a target near the top needs little travel');
+});
+
+test('statement words arrive 4 frames apart and then stay put', () => {
+  assert.deepEqual(statementReveal(0, 0), {opacity: 0, dy: 20});
+  assert.equal(statementReveal(2, 7).opacity, 0);                       // word 2 starts at frame 8
+  assert.ok(statementReveal(2, 12).opacity > 0 && statementReveal(2, 12).opacity < 1);
+  for (let i = 0; i < 14; i++) {
+    let last = 0;
+    for (let f = 0; f <= 120; f++) {
+      const r = statementReveal(i, f);
+      assert.ok(r.opacity >= last - EPS && r.opacity <= 1 && r.dy >= 0 && r.dy <= 20, `word ${i} at ${f}`);
+      last = r.opacity;
+    }
+    assert.deepEqual(statementReveal(i, 4 * i + 8), {opacity: 1, dy: 0});
+  }
+  assert.equal(statementDoneFrame(14), 60);
+  assert.ok(statementDoneFrame(14) + 36 <= 4 * 30, 'the longest statement still holds 1.2 s inside the shortest beat');
+});
+
+test('statement type shrinks as the text grows', () => {
+  assert.ok(statementFontSize(10) > statementFontSize(18) && statementFontSize(18) > statementFontSize(28));
 });
 
 test('zoom stays within the sharpness of the capture, even for a tiny target', () => {

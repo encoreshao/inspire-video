@@ -284,3 +284,19 @@ def test_promo_props_tell_the_composition_how_many_subtitle_lines_there_are(tmp_
 def test_device_props_have_no_subtitle_lines(tmp_path, sandbox):
     p, m = project(tmp_path)
     assert "subtitleLines" not in R.build_props(m, p, None, R.stage(p, sandbox / "video" / "public", m, None))
+
+
+def test_a_statement_beat_needs_no_capture_and_carries_its_text_in_units(tmp_path, sandbox):
+    from promo_fixtures import promo_project
+    p, m = promo_project(tmp_path)
+    keep = {k: v for k, v in m["beats"][0].items() if k not in ("asset", "target", "focus")}
+    m["beats"][0] = {**keep, "shot": "statement", "statement": "Calm work, done for you."}
+    staged = R.stage(p, sandbox / "video" / "public", m, None)
+    assert staged["hook"] == {"asset": None, "audio": None} and staged["problem"]["asset"] == "acme-promo-problem.png"
+    b0 = R.build_props(m, p, None, staged)["beats"][0]
+    assert b0["shot"] == "statement" and b0["statement"] == "Calm work, done for you." and b0["asset"] == ""
+    assert b0["statementUnits"] == ["Calm ", "work, ", "done ", "for ", "you."]
+    assert not {"box", "page", "imageScale"} & set(b0) and (b0["iw"], b0["ih"]) == (0, 0)
+    m["beats"][0]["statement"] = "琐事交给 LoopX，你专注真正的工作"
+    units = R.build_props(m, p, None, staged)["beats"][0]["statementUnits"]
+    assert "".join(units) == "琐事交给 LoopX，你专注真正的工作" and "交给 " in units

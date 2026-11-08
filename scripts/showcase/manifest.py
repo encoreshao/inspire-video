@@ -24,11 +24,13 @@ THEMES = ("light", "mist", "ivory", "ink", "sage")
 STYLES = ("device", "promo")
 # The promo shots. Keep equal to shotMeta() in video/src/showcase/shots.mjs (tests/test_showcase_promo.py compares them).
 PROMO_SHOTS = {
-    "hero-push": {"minSeconds": 4, "maxPerVideo": None, "needsTallPage": False},
-    "spotlight-focus": {"minSeconds": 4, "maxPerVideo": None, "needsTallPage": False},
-    "crash-zoom-punch": {"minSeconds": 4, "maxPerVideo": 1, "needsTallPage": False},
-    "pan-reveal": {"minSeconds": 5, "maxPerVideo": None, "needsTallPage": True},
+    "hero-push": {"minSeconds": 4, "maxPerVideo": None, "needsTallPage": False, "needsTarget": True},
+    "spotlight-focus": {"minSeconds": 4, "maxPerVideo": None, "needsTallPage": False, "needsTarget": True},
+    "crash-zoom-punch": {"minSeconds": 4, "maxPerVideo": 1, "needsTallPage": False, "needsTarget": True},
+    "pan-reveal": {"minSeconds": 5, "maxPerVideo": None, "needsTallPage": True, "needsTarget": True},
+    "statement": {"minSeconds": 4, "maxPerVideo": 2, "needsTallPage": False, "needsTarget": False},
 }
+STATEMENT_UNITS = 28                                   # the statement's width limit (a Chinese character counts as 2)
 TALL_PAGE_PX = round(1.5 * L.VIEWPORT["h"])      # "tall" for a pan: at least one and a half capture viewports
 MIN_BEATS, MAX_BEATS = 4, 6
 FPS = 30
@@ -175,6 +177,9 @@ def _check_beat(b: dict, project: Path, style: str = "device") -> None:
     if style == "promo":
         if b.get("callout") is not None:
             raise ManifestError(f"beat {bid!r}: callout is not used in the promo style (spotlight-focus replaces the ring)")
+        if PROMO_SHOTS.get(b.get("shot", "hero-push"), {}).get("needsTarget") is False:
+            _check_promo_beat(b, project)                  # a statement shows no capture, so there is no asset to check
+            return
     else:
         callout = b.get("callout")
         if callout is not None and (not isinstance(callout, str) or width_units(callout) > CALLOUT_UNITS):
@@ -201,6 +206,19 @@ def _check_promo_beat(b: dict, project: Path) -> None:
     if shot not in PROMO_SHOTS:
         raise ManifestError(f"beat {bid!r}: unknown shot {shot!r}; use one of {', '.join(PROMO_SHOTS)}")
     has_target, has_focus = b.get("target") is not None, b.get("focus") is not None
+    if not PROMO_SHOTS[shot]["needsTarget"]:
+        for key in ("asset", "target", "focus"):
+            if b.get(key) is not None:
+                raise ManifestError(f"beat {bid!r}: a {shot} beat shows no capture; remove {key}")
+        text = b.get("statement")
+        if not isinstance(text, str) or not text.strip():
+            raise ManifestError(f"beat {bid!r}: a {shot} beat needs its statement text")
+        if width_units(text) > STATEMENT_UNITS:
+            raise ManifestError(f"beat {bid!r}: the statement is too wide ({width_units(text)} width units, at most "
+                                f"{STATEMENT_UNITS}: about 14 Chinese characters or 28 letters)")
+        return
+    if b.get("statement") is not None:
+        raise ManifestError(f"beat {bid!r}: statement is only for the statement shot")
     if has_target == has_focus:
         raise ManifestError(f"beat {bid!r}: give exactly one of target (an element id) and focus (a rectangle)")
     if has_target and (not isinstance(b["target"], str) or not b["target"].strip()):

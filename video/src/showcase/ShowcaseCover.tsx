@@ -3,6 +3,7 @@ import {AbsoluteFill} from 'remotion';
 import {HeadlineLines, InfoCard, SAFE_X, SERIF, SpeakerBlock, ThemeCtx, pickTheme} from '../Video';
 import {DeviceFrame} from './DeviceFrame';
 import {PageCam} from './PageCam';
+import {Statement} from './Statement';
 import type {ShowcaseBeat} from './ShowcaseShort';
 
 export type ShowcaseCoverProps = {headline: string; subtitle: string; category?: string; theme?: string; name: string; nameZh?: string;
@@ -19,8 +20,11 @@ export const ShowcaseCover: React.FC<ShowcaseCoverProps> = ({headline, subtitle,
         </div>
         <div style={{fontSize: 38, lineHeight: 1.3, color: c.muted, marginTop: 24}}>{subtitle}</div>
         <div style={{marginTop: 56, border: `5px solid ${c.border}`, borderRadius: 10, overflow: 'hidden'}}>
-          {beat.shot && beat.box && beat.page ? (
-            <PageCam src={beat.asset} page={beat.page} scale={beat.imageScale ?? 1} box={beat.box} shot={beat.shot}
+          {beat.shot === 'statement' ? (
+            <Statement text={beat.statement ?? ''} units={beat.statementUnits ?? [beat.statement ?? '']} stage={{w: 842, h: 630}} frame={9999} />
+          ) : beat.shot && beat.box && beat.page ? (
+            <PageCam src={beat.asset} page={beat.page} scale={beat.imageScale ?? 1} box={beat.box}
+              shot={beat.shot === 'spotlight-focus' ? 'hero-push' : beat.shot}
               progress={1} seconds={beat.frames / 30} stage={{w: 842, h: 630}} />
           ) : (
             <DeviceFrame src={beat.asset} iw={beat.iw} ih={beat.ih} focus={beat.focus} progress={0} t={0} duration={1}

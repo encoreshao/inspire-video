@@ -4,6 +4,7 @@ import {cardHeight, useTheme} from '../Video';
 import {CaptionCard} from './Caption';
 import {ShowcaseFrame} from './Frame';
 import {PageCam} from './PageCam';
+import {Statement} from './Statement';
 import {STAGE_W, stageHeight} from './promo.mjs';
 import {XF} from './ShowcaseShort';
 import type {ShowcaseBeat, ShowcaseProps} from './ShowcaseShort';
@@ -16,12 +17,20 @@ const BeatLayer: React.FC<{beat: ShowcaseBeat; index: number; stageH: number}> =
   const t = Math.max(0, frame - lead) / fps, duration = beat.frames / fps;
   const opacity = index === 0 ? 1 : interpolate(frame, [0, XF], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
   const textAlpha = interpolate(t, [0, 0.12], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
-  if (!beat.shot || !beat.box || !beat.page) throw new Error(`beat "${beat.id}" has no shot, box or page: render it with render_showcase.py`);
+  const stage = {w: STAGE_W, h: stageH};
+  let content: React.ReactNode;
+  if (beat.shot === 'statement') {
+    const text = beat.statement ?? '';
+    content = <Statement text={text} units={beat.statementUnits ?? [text]} stage={stage} frame={Math.max(0, frame - lead)} />;
+  } else {
+    if (!beat.shot || !beat.box || !beat.page) throw new Error(`beat "${beat.id}" has no shot, box or page: render it with render_showcase.py`);
+    content = <PageCam src={beat.asset} page={beat.page} scale={beat.imageScale ?? 1} box={beat.box} shot={beat.shot}
+      progress={Math.min(1, t / duration)} seconds={duration} stage={stage} />;
+  }
   return (
     <AbsoluteFill style={{opacity}}>
       <div style={{border: `3px solid ${c.border}`, borderRadius: 24, overflow: 'hidden', background: c.card, boxShadow: c.shadow}}>
-        <PageCam src={beat.asset} page={beat.page} scale={beat.imageScale ?? 1} box={beat.box} shot={beat.shot}
-          progress={Math.min(1, t / duration)} seconds={duration} stage={{w: STAGE_W, h: stageH}} />
+        {content}
         <CaptionCard beat={beat} textAlpha={textAlpha} />
       </div>
     </AbsoluteFill>

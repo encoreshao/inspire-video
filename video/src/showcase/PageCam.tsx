@@ -17,7 +17,7 @@ export type PageCamProps = {
 // The 2x page capture under the camera of the beat's shot.
 export const PageCam: React.FC<PageCamProps> = ({src, page, scale, box, shot, progress, seconds, stage}) => {
   const def = SHOTS[shot];
-  if (!def) throw new Error(`unknown shot "${shot}"`);
+  if (!def || !def.needsTarget) throw new Error(`"${shot}" is not a camera shot`);
   const cam = promoCamera({shot: def, target: box, page, stage, scale, progress, seconds});
   const place = placeImage(page, stage, cam);
   const hole = stageRect({x: box.x - SPOT_PAD, y: box.y - SPOT_PAD, w: box.w + SPOT_PAD * 2, h: box.h + SPOT_PAD * 2}, place);
