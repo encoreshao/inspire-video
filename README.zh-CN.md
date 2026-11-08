@@ -352,7 +352,7 @@ python3 scripts/showcase/narrate.py output/projects/demo --engine cosyvoice --vo
 - **快速预览版式改动：** `cd video && npx remotion still src/index.ts InspireShort out.png --props=../output/projects/<slug>/props.json --frame=750 --scale=0.5`。`npm run preview` 会打开 Remotion Studio。
 - `config/default.yaml` 只是记录默认值，代码不会读取它。`config/platforms.yaml` 由 `publish_meta.py` 和 `render.py` 读取。
 - `skills/inspire-video/references/visual-style.md` 和 `skills/inspire-video/references/rendering-guide.md` 描述了智能体遵循的设计规则。
-- **展示类视频版面：** `video/src/showcase/`（`ShowcaseShort.tsx`、`DeviceFrame.tsx`，以及负责镜头与高亮圈计算的 `geometry.mjs`），复用 `video/src/Video.tsx` 的主题和组件。
+- **展示类视频版面：** `video/src/showcase/`（设备风格：`ShowcaseShort.tsx`、`DeviceFrame.tsx`、`geometry.mjs`；宣传风格：`ShowcasePromo.tsx`、`PromoFrame.tsx`、`PromoCover.tsx`、`PageCam.tsx`、`promo.mjs`、`shots.mjs`）。设备风格复用 `video/src/Video.tsx` 的版面，宣传风格只取其主题、字体和文字工具。
 
 ## 常见问题
 
@@ -386,7 +386,7 @@ python3 scripts/showcase/narrate.py output/projects/demo --engine cosyvoice --vo
 - 暂不支持识别说话人的智能裁切，也不支持自动识别说话人身份。
 - 字体使用系统字体，不随项目打包。
 - 仅在 macOS 上测试过。
-- 展示类视频：目前只有设备（手机或浏览器）这一种风格，形状与设备相差很大的截图会被裁切。输出检查无法发现被截断的文字。Kokoro 和 CosyVoice 是针对 Apple Silicon 开发的，CosyVoice 克隆和 `gh`/`glab` 元数据调用目前只用测试替身验证过。
+- 展示类视频：产品宣传风格需要 Chrome、Playwright 和一个在线网站；设备风格会裁切形状与设备相差很大的截图。输出检查无法发现被截断的文字。Kokoro 和 CosyVoice 是针对 Apple Silicon 开发的，CosyVoice 克隆和 `gh`/`glab` 元数据调用目前只用测试替身验证过。
 
 ## 版权
 

@@ -50,6 +50,6 @@ Use it for a site or product page when the user wants a camera flying over the r
 ## Notes
 
 - `references/aesthetic-rules.md` and `references/final-review.md` are adapted from video-shotcraft (Apache-2.0); see `NOTICE`.
-- The `device` style is the default; an experimental `promo` style is described above. A repository without images gets `hints.suggested_style: "terminal"` in the brief; that style is not built, so ask the user for screenshots instead.
+- A live website uses `promo` (set `"style": "promo"` in the manifest; the scaffold writes `device` as its file default and no theme, so the promo gets its dark `ink` theme). Repositories and screenshot folders use `device`. If Chrome or Playwright is missing, say so and offer `device`. A repository without images gets `hints.suggested_style: "terminal"` in the brief; that style is not built, so ask the user for screenshots instead.
 - CosyVoice 3 is optional and installed outside the repo with `bash scripts/showcase/setup_cosyvoice.sh` (about 9 GB).
 - Promo captures register in `brief.json` with unresolved rights, like any captured asset, so the rights confirmation applies before a public render.

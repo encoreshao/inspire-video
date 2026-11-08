@@ -4,7 +4,7 @@ import {SERIF, ThemeCtx, pickTheme} from '../Video';
 
 // The promo style's own look: a dark cinematic frame with a brand lockup at the top, a large stage, captions straight
 // on the background and a row of beat pips at the bottom. It shares only theme tokens and fonts with the editorial
-// (speaker and device) layout, never its headline block, panel, caption card or info card.
+// (speaker and device) layout, and text helpers, never its panel, caption card or info card.
 export const PROMO_X = 100;          // the safe side margin: the stage and the pips start here
 export const PROMO_TEXT_X = 106;     // text starts a little inside it: a glyph can overshoot its box by a pixel, and the check is strict
 export const PROMO_STAGE_TOP = 250;

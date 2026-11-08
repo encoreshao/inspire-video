@@ -246,3 +246,12 @@ def test_pan_reveal_needs_a_page_of_at_least_1350_px(tmp_path, page_h, ok):
     else:
         with pytest.raises(M.ManifestError, match="tall"):
             M.validate_showcase(m, p)
+
+
+def test_a_promo_headline_must_fit_the_larger_cover_type(tmp_path):
+    p, m = promo_project(tmp_path)
+    m["headline"] = "任何网站都能轻松变成精彩短视频哦呀啊"        # 18 characters: two lines of nine
+    M.validate_showcase(m, p)
+    m["headline"] = "任何网站都能轻松变成精彩短视频哦呀啊啊"       # 19: a ten-character line passes the 880 px box
+    with pytest.raises(M.ManifestError, match="headline"):
+        M.validate_showcase(m, p)

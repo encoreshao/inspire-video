@@ -1,6 +1,6 @@
 # Promo style
 
-The `promo` style shows a product by moving a camera over real captures of its page. It sits beside the `device` style: both use the same headline, bilingual caption card, narration, cover, rights flow and output checks. The method (real captures, named shots, a storyboard before the manifest, a review before delivery) comes from [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft) (Apache-2.0); see Credits for exactly what was and was not taken.
+The `promo` style shows a product by moving a camera over real captures of its page. It sits beside the `device` style: they share the manifest, bilingual captions, narration, rights flow and output checks, but not the layout: the promo has its own frame and cover (see Look). The method (real captures, named shots, a storyboard before the manifest, a review before delivery) comes from [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft) (Apache-2.0); see Credits for exactly what was and was not taken.
 
 ## Look
 

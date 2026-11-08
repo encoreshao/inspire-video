@@ -305,3 +305,15 @@ def test_each_style_has_its_own_default_category_label(tmp_path, sandbox):
     d, dm = project(tmp_path / "d")
     dm.pop("category", None)
     assert R.build_props(dm, d, None, R.stage(d, sandbox / "video" / "public", dm, None))["category"] == "SHOWCASE / 项目展示"
+
+
+def test_a_scaffold_turned_promo_gets_the_dark_theme(tmp_path, sandbox):
+    from promo_fixtures import promo_project
+    brief = {"source": {"kind": "website", "url": "https://example.com/", "host": "example.com"},
+             "assets": [{"path": "assets/0.png", "role": "screenshot"}]}
+    scaffold = M.scaffold_manifest(brief, "acme-promo")
+    assert "theme" not in scaffold, "a scaffold that names a theme would stop a promo getting the dark one"
+    p, m = promo_project(tmp_path / "p")
+    staged = R.stage(p, sandbox / "video" / "public", m, None)
+    m.pop("theme", None)
+    assert R.build_props(m, p, None, staged)["theme"] == "ink"

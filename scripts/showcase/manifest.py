@@ -123,6 +123,8 @@ def beat_target(b: dict, project) -> tuple[dict, dict]:
 def _check_layout(m: dict) -> None:
     """Refuse text that would not fit the fixed layout (the speaker pipeline warns about long lines; here it is an error)."""
     px = text_px(m["headline"], 24, 43)
+    if m.get("style") == "promo" and px > 774:     # the promo cover sets the headline at 92 px: nine Chinese characters a line
+        raise ManifestError(f"headline is too wide for the promo cover (about {px:.0f} px, limit 774): use 18 Chinese characters or fewer")
     if px > 852:
         raise ManifestError(f"headline is too wide for one line (about {px:.0f} px, limit 852): use about 19 Chinese characters or fewer")
     if text_px(m["subtitle"], 23.5, 42) > 1500:
@@ -347,7 +349,7 @@ def scaffold_manifest(brief: dict, project_id: str, n_beats: int = 5) -> dict:
     ids = BEAT_IDS_BY_COUNT[n]
     beats = [{"id": ids[i], "en": "", "zh": "", "asset": assets[i % len(assets)],
               "focus": {"x": 0, "y": 0, "w": 1, "h": 1}} for i in range(n)]
-    return {"type": "showcase", "project_id": project_id, "style": "device", "theme": "light",
+    return {"type": "showcase", "project_id": project_id, "style": "device",
             "headline": "", "subtitle": "", "project": {"name": "", "tagline": ""},
             "source": {"kind": src["kind"], "url": src["url"], "label": label},
             "beats": beats, "provenance": {"rights_confirmed": False, "source_reference": src["url"],

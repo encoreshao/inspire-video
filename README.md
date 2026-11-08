@@ -37,7 +37,7 @@ The agent follows each skill's `SKILL.md` (in `skills/<name>/`) to do the thinki
 - **Script from facts:** `brief.json` holds deterministic facts with their sources; the agent writes 4 to 6 beats (one English sentence of at most 100 characters plus the Chinese) and never invents claims.
 - **Narration on your machine:** macOS `say`, Kokoro or CosyVoice 3, optionally in a voice profile cloned from your own recording; beat length follows the audio.
 - **Guardrails:** every field is validated before rendering (text that would overflow the layout is refused), unresolved asset rights block a final render, and the real output is checked (size, bright first frame, safe area).
-- **Same look as speaker videos:** the same themes (`light` to `ink`), info card, divider lines, safe area and cover.
+- **Two looks:** the device walkthrough shares the speaker videos' editorial layout (themes, info card, divider lines, cover); the website promo has its own dark cinematic frame and cover. Both keep the same safe area.
 
 ## Requirements
 
@@ -354,7 +354,7 @@ Screenshots you supply count as yours. Images captured from a page or taken from
 - **Preview a layout change quickly:** `cd video && npx remotion still src/index.ts InspireShort out.png --props=../output/projects/<slug>/props.json --frame=750 --scale=0.5`. `npm run preview` opens Remotion Studio.
 - `config/default.yaml` documents the defaults but is not read by the code. `config/platforms.yaml` is read by `publish_meta.py` and `render.py`.
 - `skills/inspire-video/references/visual-style.md` and `skills/inspire-video/references/rendering-guide.md` describe the design rules the agent follows.
-- **Showcase layout:** `video/src/showcase/` (`ShowcaseShort.tsx`, `DeviceFrame.tsx`, and `geometry.mjs` for the camera and ring maths). It reuses the themes and helpers of `video/src/Video.tsx`.
+- **Showcase layout:** `video/src/showcase/` (device style: `ShowcaseShort.tsx`, `DeviceFrame.tsx`, `geometry.mjs`; promo style: `ShowcasePromo.tsx`, `PromoFrame.tsx`, `PromoCover.tsx`, `PageCam.tsx`, `promo.mjs`, `shots.mjs`). The device style reuses the editorial layout of `video/src/Video.tsx`; the promo takes only its themes, fonts and text helpers.
 
 ## Troubleshooting
 
@@ -388,7 +388,7 @@ Screenshots you supply count as yours. Images captured from a page or taken from
 - No speaker-aware cropping or automatic speaker identification yet.
 - Fonts are system fonts, not bundled.
 - Tested on macOS only.
-- Showcase videos: only the device (phone or browser) style exists, and screenshots far from the device shape are cropped to fit. The output checks cannot see clipped text. Kokoro and CosyVoice were developed for Apple Silicon, and CosyVoice cloning and the `gh`/`glab` metadata calls have so far been exercised with test doubles only.
+- Showcase videos: the promo style needs Chrome and Playwright and a live website; the device style crops screenshots far from the device shape are cropped to fit. The output checks cannot see clipped text. Kokoro and CosyVoice were developed for Apple Silicon, and CosyVoice cloning and the `gh`/`glab` metadata calls have so far been exercised with test doubles only.
 
 ## Rights
 
