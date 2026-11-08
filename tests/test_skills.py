@@ -169,3 +169,11 @@ def test_uninstall_removes_only_links_into_this_clone(tmp_path):
     r = subprocess.run(["bash", "scripts/uninstall.sh"], cwd=ROOT, env=env, capture_output=True, text=True, timeout=60)
     assert r.returncode == 0
     assert [p.name for p in sorted(skills.iterdir())] == ["plain-folder", "someone-elses"]
+
+
+def test_the_content_extraction_reference_has_a_rubric_for_each_content_type_and_credits_its_source():
+    text = (ROOT / "skills" / "inspire-video" / "references" / "content-extraction.md").read_text(encoding="utf-8")
+    for row in ("Speech or talk", "Interview or conversation", "Opinion or commentary", "Experience or how-to",
+                "Business or finance", "Entertainment or banter"):
+        assert f"| {row} |" in text, row
+    assert "autoclip" in text
