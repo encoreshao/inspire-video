@@ -176,8 +176,6 @@ export const InspireShort: React.FC<Props> = ({
   const frame = useCurrentFrame();
   const {durationInFrames, fps} = useVideoConfig();
   const t = frame / fps;
-  const opacity = interpolate(frame, [durationInFrames - 10, durationInFrames], [1, 0],
-    {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
 
   // Density: 1 for the default 9:16 layout, smaller for the compact (4:5) layout.
   const s = scaleOf(profile);
@@ -204,7 +202,7 @@ export const InspireShort: React.FC<Props> = ({
   return (
     <ThemeCtx.Provider value={c}>
     <AbsoluteFill style={{
-      opacity, backgroundColor: c.paper, color: c.ink,
+      backgroundColor: c.paper, color: c.ink,
       padding: `${profile.titleTop}px ${profile.safeX}px 0`, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', fontFamily: 'Arial, sans-serif', boxSizing: 'border-box',
     }}>
       <div style={{flexShrink: 0, display: 'flex', flexDirection: 'column'}}>
@@ -258,7 +256,7 @@ export const InspireShort: React.FC<Props> = ({
           )}
           <div style={{borderTop: `2px solid ${c.cardBorder}`, marginTop: 12 * s, paddingTop: 10 * s, color: c.muted,
             fontSize: 22 * s, lineHeight: 1.3}}>
-            {source}{excerptLabel ? ` · ${excerptLabel}` : ''}
+            {source}
           </div>
         </InfoCard>
         <div style={{marginTop: 24 * s, height: 6, flexShrink: 0, borderRadius: 3, background: c.track}}>

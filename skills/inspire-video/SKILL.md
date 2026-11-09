@@ -15,7 +15,7 @@ Create a finished vertical MP4 inspired by the supplied visual references:
 - a large, highly readable caption card immediately BELOW the central video that shows one sentence at a time, synced to the speech: English original first, Chinese translation second (cues come from the manifest `subtitles`, timed from the transcript; ONE sentence (or one clause of a long sentence) per cue, kept short (<=100 English characters) so little text shows at once; never two sentences together; `render.py` rejects multi-sentence cues);
 - no karaoke captions or large subtitles over the footage by default;
 - when several people appear, list each person's name (and title/company) in the bottom block via `copy.speakers` and tag cues with `speaker` ids so the current speaker is highlighted; names must come from the source (description, on-screen captions, the user), never guessed from a voice or face, otherwise omit or mark unknown;
-- a bottom block with the speaker's name in English and Chinese, job title and company (only if supported by the source), talk title, show/source, year, excerpt range and a progress bar;
+- a bottom block with the speaker's name in English and Chinese, job title and company (only if supported by the source), talk title, show/source, year (no excerpt time range) and a progress bar; the video has no fade-out, so the last frame stays on the last image;
 - restrained transitions and subtle motion;
 - no imitation of the source app's status bar, navigation, engagement icons, or account UI.
 

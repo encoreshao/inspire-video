@@ -21,7 +21,7 @@ A calm, editorial bilingual quote video. The footage is the visual anchor; the c
    - One sentence (or one clause of a long sentence) per cue, synced to speech, at most 100 English characters. English first, Chinese second, centered.
    - English up to 34 px semibold, Chinese +2 px regular; the size is reduced per cue so text never overflows. Padding about 12 px top and bottom.
    - The space for the tallest cue is reserved so nothing else moves between captions.
-5. **Bottom block**: speaker name in English and Chinese (accent color), job title and company, talk title in italics, source / year / excerpt range under a hairline, and a thin progress bar. With several people, `copy.speakers` are listed side by side and the current speaker (cue `speaker` id) is highlighted.
+5. **Bottom block**: speaker name in English and Chinese (accent color), job title and company, talk title in italics, source / year (never an excerpt time range) under a hairline, and a thin progress bar. With several people, `copy.speakers` are listed side by side and the current speaker (cue `speaker` id) is highlighted.
 
 ## Typography
 
