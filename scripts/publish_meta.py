@@ -56,6 +56,18 @@ def normalize(p: dict) -> dict:
     return out
 
 
+def bad_title_chars(title: str, allowed: str) -> list[str]:
+    """Characters in `title` that are neither letters, digits, CJK nor one of the `allowed` marks."""
+    return list(dict.fromkeys(c for c in title if not (c.isalnum() or c in allowed)))
+
+
+def clean_title(title: str, allowed: str) -> str:
+    """A title with every comma-like mark turned into a space and every other disallowed mark dropped."""
+    out = "".join(" " if c in ",，、;；" else c for c in title)
+    out = "".join(c for c in out if c.isalnum() or c in allowed)
+    return " ".join(out.split())
+
+
 def validate(p: dict, reg: platforms.Registry) -> list[str]:
     errs = []
     listed = p.get("platforms") or {}
@@ -77,6 +89,9 @@ def validate(p: dict, reg: platforms.Registry) -> list[str]:
         title = blk.get("title", "")
         if not pf.title_min <= len(title) <= pf.title_max:
             errs.append(f"{pid}: {pf.title_field} is {len(title)} chars; allowed {pf.title_min}-{pf.title_max}")
+        if pf.title_punct is not None and (bad := bad_title_chars(title, pf.title_punct)):
+            errs.append(f"{pid}: {pf.title_field} has symbols the platform rejects: {' '.join(bad)} "
+                        "(allowed: 《》 quotes : + ? % ℃; use a space for a comma)")
         desc, tags = blk.get("description", ""), blk.get("hashtags", [])
         if not desc:
             errs.append(f"{pid}: description is empty")
@@ -116,6 +131,7 @@ def write_project_json(out_dir: Path, m: dict, p: dict, reg: platforms.Registry)
         "created_at": prev.get("created_at") or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "video": f"{slug}.mp4",
         "cover": "cover.png" if cover.exists() else None,
+        **({"cover_3x4": "cover-3x4.png"} if (out_dir / "cover-3x4.png").exists() else {}),
         "publish": publish,
     }
     if any(pid != platforms.DEFAULT_PROFILE for pid in rendered):   # additive keys, only when another format is in play
@@ -155,7 +171,9 @@ def init(proj: Path, ids: list[str]) -> None:
         if pf.lang == "en":
             drafts[pid] = {"title": (cp.get("subtitle_en") or "")[:pf.title_max], "description": cp.get("quote_en", ""), "hashtags": []}
         else:
-            drafts[pid] = {"title": (cp.get("headline_zh") or "")[:pf.title_max], "description": cp.get("quote_zh", ""), "hashtags": []}
+            head = cp.get("headline_zh") or ""
+            head = clean_title(head, pf.title_punct) if pf.title_punct is not None else head
+            drafts[pid] = {"title": head[:pf.title_max], "description": cp.get("quote_zh", ""), "hashtags": []}
     data = {"platforms": drafts, "credit": credit}
     if any(reg.platform(pid).lang == "en" for pid in ids):
         data["credit_en"] = credit_en

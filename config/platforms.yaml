@@ -50,7 +50,9 @@ platforms:
     file_stem: wechat            # publish_wechat.txt, project.json publish.wechat
     duration: {min: 3, max: 600}
     title_field: short_title     # 短标题
-    title: {min: 6, max: 16}
+    # WeChat rejects other symbols: only book-title marks, quotes, colon, plus, question mark, percent and the degree
+    # sign are allowed; a comma must be a space.
+    title: {min: 6, max: 16, punct: " 《》“”‘’\"':：+＋?？%％℃"}
     description_max: 1000
     hashtags_max: 5
     verified: false

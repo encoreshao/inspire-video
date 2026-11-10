@@ -57,7 +57,16 @@ def run(tmp_path, monkeypatch):
 
 
 def outputs(calls):
-    return [(c[2], c[5].split("output/")[-1]) for c in calls]
+    return [(c[2], c[5].split("output/")[-1]) for c in calls if not c[5].endswith("cover-3x4.png")]
+
+
+def test_default_cover_also_renders_a_3x4_cover(run):
+    rc, calls, proj = run()
+    assert rc == 0
+    last = calls[-1]
+    assert last[5].endswith("final/demo/cover-3x4.png")
+    props = json.loads((proj / "cover_props-3x4.json").read_text())
+    assert (props["profile"]["width"], props["profile"]["height"]) == (1080, 1440)
 
 
 def test_without_flags_nothing_changes(run):

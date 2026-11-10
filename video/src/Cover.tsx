@@ -1,6 +1,6 @@
 import React from 'react';
 import {AbsoluteFill, Img, staticFile} from 'remotion';
-import {SERIF, HeadlineLines, SpeakerBlock, PeopleRow, InfoCard, ThemeCtx, pickTheme, Person} from './Video';
+import {SERIF, HeadlineLines, ThemeCtx, pickTheme, Person} from './Video';
 import {DEFAULT_PROFILE, panelWidth} from './layout.mjs';
 import type {Profile} from './layout.mjs';
 
@@ -13,35 +13,27 @@ export type CoverProps = {
 
 export const InspireCover: React.FC<CoverProps> = ({headline, subtitle, speaker, speakerZh, role, roleZh, source, poster, talkTitle, category, theme, people, profile = DEFAULT_PROFILE}) => {
   const c = pickTheme(theme);
-  const k = !!profile.compact;           // compact (4:5): smaller type, the poster takes the remaining height
+  const k = !!profile.compact;           // compact (4:5, 3:4): smaller type
   const pad = k ? 80 : 150;
-  const headSize = k ? 64 : 84;
+  const headSize = k ? 56 : 72;
+  const name = [speaker, speakerZh].filter((x, i) => x && (i === 0 || x !== speaker)).join('  ');
+  const names = people && people.length > 1 ? people.map((p) => p.name).join(' · ') : name;
   return (
   <ThemeCtx.Provider value={c}>
   <AbsoluteFill style={{backgroundColor: c.paper, color: c.ink, padding: `${pad}px ${profile.safeX}px ${pad}px`,
-    fontFamily: 'Arial, sans-serif', boxSizing: 'border-box', ...(k ? {display: 'flex', flexDirection: 'column'} : {})}}>
+    fontFamily: 'Arial, sans-serif', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center'}}>
     <div style={{fontSize: k ? 24 : 28, letterSpacing: 2, color: c.muted, marginBottom: k ? 20 : 28}}>
       {category || 'INSPIRATION / 向上生长'}
     </div>
     <div style={{fontFamily: SERIF, fontSize: headSize, lineHeight: 1.16, fontWeight: 700, letterSpacing: 2,
       }}><HeadlineLines text={headline} size={headSize} width={k ? panelWidth(profile) : 840} /></div>
-    <div style={{fontSize: k ? 30 : 38, lineHeight: 1.3, color: c.muted, marginTop: k ? 16 : 24}}>{subtitle}</div>
-    <div style={{marginTop: k ? 32 : 56, ...(k ? {flex: 1, minHeight: 0, marginBottom: 32} : {height: 640}),
+    <div style={{fontSize: k ? 28 : 34, lineHeight: 1.3, color: c.muted, marginTop: k ? 16 : 24}}>{subtitle}</div>
+    <div style={{marginTop: k ? 32 : 48, height: k ? 560 : 640, flexShrink: 0,
       border: `5px solid ${c.border}`, borderRadius: 10, overflow: 'hidden', background: c.videoBg}}>
       {poster && <Img src={/^https?:/.test(poster) ? poster : staticFile(poster)}
         style={{width: '100%', height: '100%', objectFit: 'cover'}} />}
     </div>
-    <div style={{marginTop: 'auto'}}>
-      <InfoCard pad={k ? 24 : 32} radius={28}>
-        {people && people.length > 1
-          ? <PeopleRow people={people} scale={k ? 1.2 : 1.5} />
-          : <SpeakerBlock speaker={speaker} speakerZh={speakerZh} role={role} roleZh={roleZh} scale={k ? 1 : 1.2} />}
-        {talkTitle && <div style={{fontSize: k ? 26 : 32, fontStyle: 'italic', marginTop: 12}}>“{talkTitle}”</div>}
-        <div style={{borderTop: `3px solid ${c.cardBorder}`, marginTop: k ? 14 : 20, paddingTop: k ? 12 : 16, fontSize: k ? 22 : 28, color: c.muted}}>
-          {source}
-        </div>
-      </InfoCard>
-    </div>
+    {names && <div style={{fontSize: k ? 30 : 36, fontWeight: 700, color: c.accent, marginTop: k ? 24 : 32}}>{names}</div>}
   </AbsoluteFill>
   </ThemeCtx.Provider>
   );

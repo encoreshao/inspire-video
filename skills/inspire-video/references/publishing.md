@@ -19,7 +19,7 @@ Platform ids and their limits live in `config/platforms.yaml`: `wechat_channels`
 }
 ```
 
-List only the platforms the user wants. Hashtags are written without `#`; the script adds it. `credit` is appended to Chinese platforms (`lang: zh`), `credit_en` to English platforms (`lang: en`, currently `linkedin` and `facebook`); `credit` is required when a Chinese platform is listed and `credit_en` when an English platform is listed (a file with only English platforms needs only `credit_en`). The credit line is followed by the hashtags. The old shape (top-level `wechat_channels` with `short_title`, and `douyin`) still loads.
+WeChat Channels rejects most symbols in the short title: only 《》, quotes, colon, plus, question mark, percent and ℃ are allowed, and a comma must be a space (no ，、。！；—-… or brackets). `publish_meta.py` rejects a title with other symbols; `--init` cleans the draft title. List only the platforms the user wants. Hashtags are written without `#`; the script adds it. `credit` is appended to Chinese platforms (`lang: zh`), `credit_en` to English platforms (`lang: en`, currently `linkedin` and `facebook`); `credit` is required when a Chinese platform is listed and `credit_en` when an English platform is listed (a file with only English platforms needs only `credit_en`). The credit line is followed by the hashtags. The old shape (top-level `wechat_channels` with `short_title`, and `douyin`) still loads.
 
 ## project.json (written automatically)
 
@@ -44,7 +44,7 @@ List only the platforms the user wants. Hashtags are written without `#`; the sc
 }
 ```
 
-`publish` is keyed by each platform's `file_stem` (`wechat` for WeChat Channels, the id otherwise). `videos` and `covers` appear only when a listed platform uses a profile other than `vertical-9x16`; they list the files that exist. `cover` is `null` when `cover.png` does not exist yet; run the script again after the cover is rendered.
+`publish` is keyed by each platform's `file_stem` (`wechat` for WeChat Channels, the id otherwise). `videos` and `covers` appear only when a listed platform uses a profile other than `vertical-9x16`; they list the files that exist. `cover_3x4` appears when `cover-3x4.png` exists. `cover` is `null` when `cover.png` does not exist yet; run the script again after the cover is rendered.
 
 ## Writing rules
 

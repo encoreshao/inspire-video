@@ -21,6 +21,8 @@ def quiet_log() -> list[str]:
 
 
 ROOT = Path(__file__).resolve().parent.parent
+# Cover-only format: 3:4, the ratio WeChat Channels asks for besides the video's own cover.
+COVER_3X4 = {"id": "cover-3x4", "width": 1080, "height": 1440, "safeX": 80, "safeTop": 90, "safeBottom": 150, "titleTop": 110, "compact": True}
 
 
 def validate(m: dict, clip_seconds: float | None) -> None:
@@ -171,8 +173,19 @@ def main() -> int:
                            cwd=ROOT / "video")
         if r.returncode == 0:
             print(f"Rendered: {out}")
+            if profile.id == default_id:
+                render_cover_3x4(cprops)
             return 0
         return cover_frame_grab(profile, out, r.returncode)
+
+    def render_cover_3x4(cprops: dict) -> None:
+        """The 3:4 cover (1080x1440) some platforms ask for, with the same content as cover.png."""
+        out3 = final_dir / "cover-3x4.png"
+        cfile3 = proj / "cover_props-3x4.json"
+        cfile3.write_text(json.dumps({**cprops, "profile": COVER_3X4}, ensure_ascii=False, indent=2))
+        r3 = subprocess.run(["npx", "remotion", "still", "src/index.ts", "InspireCover", str(out3), f"--props={cfile3}", *quiet_log()],
+                            cwd=ROOT / "video")
+        print(f"Rendered: {out3}" if r3.returncode == 0 else f"WARNING: the 3:4 cover failed to render ({out3})", file=sys.stderr if r3.returncode else sys.stdout)
 
     def cover_frame_grab(profile, out, failed_code: int) -> int:
         """A failed cover must not block delivery: use a frame of the finished video (else of the clip)."""

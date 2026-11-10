@@ -55,6 +55,7 @@ class Platform:
     hashtags_max: int
     verified: bool
     file_stem: str
+    title_punct: str | None = None   # when set, a title may hold only letters, digits, CJK and these marks
 
 
 class Registry:
@@ -142,7 +143,7 @@ def load(path=None) -> Registry:
         _need(b["title"], ("max",), f"{where}.title")
         platforms[pid] = Platform(pid, b["name"], b["lang"], b["profile"], b["duration"]["min"], b["duration"]["max"],
                                   b["title_field"], b["title"].get("min", 1), b["title"]["max"], b["description_max"],
-                                  b["hashtags_max"], bool(b.get("verified", False)), b.get("file_stem", pid))
+                                  b["hashtags_max"], bool(b.get("verified", False)), b.get("file_stem", pid), b["title"].get("punct"))
     stems: dict[str, str] = {}
     for pf in platforms.values():
         if pf.file_stem in stems:

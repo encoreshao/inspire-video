@@ -232,3 +232,18 @@ def test_an_english_only_publish_json_needs_no_chinese_credit(run):
 def test_a_chinese_platform_without_credit_is_still_rejected(run):
     rc, _, err = run({"platforms": {"douyin": NEW["platforms"]["douyin"]}})
     assert rc == 1 and "credit is required" in err
+
+
+def test_wechat_title_rejects_symbols_the_platform_refuses():
+    reg = platforms.load()
+    def errs(title):
+        p = {"platforms": {"wechat_channels": {"title": title, "description": "d", "hashtags": []}}, "credit": "c"}
+        return [e for e in publish_meta.validate(p, reg) if "symbols" in e]
+    assert errs("先行动 再自信吧") == []
+    assert errs("《先行动》：再自信吗？100%") == []
+    assert errs("先行动，再自信吧") and errs("先行动、再自信吧") and errs("先行动！再自信吧")
+
+
+def test_clean_title_turns_commas_into_spaces_and_drops_other_marks():
+    allowed = platforms.load().platform("wechat_channels").title_punct
+    assert publish_meta.clean_title("不再手写代码，是常态的终结！", allowed) == "不再手写代码 是常态的终结"
