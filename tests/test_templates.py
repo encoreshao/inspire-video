@@ -131,3 +131,47 @@ def test_cli_show_validate_and_unknown_id(capsys):
     assert json.loads(capsys.readouterr().out)["id"] == T.DEFAULT_TEMPLATE
     assert T.main(["validate"]) == 0 and "valid" in capsys.readouterr().out
     assert T.main(["show", "nope"]) == 1 and "error:" in capsys.readouterr().err
+
+
+def test_a_closing_on_an_unlimited_shot_needs_a_third_unlimited_shot():
+    # With only two unlimited shots and the rest used up, the closing could not be placed for some video lengths.
+    shots = [{"id": "hero-push", "weight": 3}, {"id": "spotlight-focus", "weight": 8},
+             {"id": "crash-zoom-punch", "weight": 6, "max": 1}]
+    with pytest.raises(T.TemplateError, match="closing"):
+        T.validate_template(good(shots=shots, closing="hero-push"), "demo")
+    with pytest.raises(T.TemplateError, match="opening"):
+        T.validate_template(good(shots=shots, opening="spotlight-focus"), "demo")
+
+
+def test_every_valid_random_template_can_always_be_scaffolded():
+    import random
+    rng = random.Random(7)
+    ids = list(T.PROMO_SHOTS)
+    tried = 0
+    for _ in range(600):
+        picked = rng.sample(ids, rng.randint(3, len(ids)))
+        shots = [{"id": s, "weight": rng.randint(1, 9), **({"max": rng.randint(1, 2)} if rng.random() < 0.4 else {})} for s in picked]
+        try:
+            t = T.validate_template(good(shots=shots, opening=rng.choice([None, *picked]), closing=rng.choice([None, *picked])), "demo")
+        except T.TemplateError:
+            continue
+        tried += 1
+        for n in range(10, 41):
+            seq = T.suggest_shots(t, n)
+            assert len(seq) == n and all(a != b for a, b in zip(seq, seq[1:])), (shots, t["opening"], t["closing"], n)
+    assert tried > 20
+
+
+@pytest.mark.parametrize("text", ["id: demo\nname: D\ndescription: d\nstyle: promo\nshots: [{id: [hero-push], weight: 1}]\n",
+                                  "id: demo\nname: D\ndescription: d\nstyle: promo\nopening: [hero-push]\nshots: []\n",
+                                  "1: x\nfoo: y\n"])
+def test_a_malformed_template_file_is_an_error_that_names_the_file_not_a_traceback(tmp_path, text):
+    (tmp_path / "demo.yaml").write_text(text, encoding="utf-8")
+    with pytest.raises(T.TemplateError, match="demo.yaml"):
+        T.load_templates(tmp_path)
+
+
+def test_a_template_file_that_is_not_utf8_names_the_file(tmp_path):
+    (tmp_path / "demo.yaml").write_bytes(b"id: \xff\xfe\n")
+    with pytest.raises(T.TemplateError, match="demo.yaml"):
+        T.load_templates(tmp_path)

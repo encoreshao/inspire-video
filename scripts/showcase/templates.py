@@ -107,6 +107,12 @@ def validate_template(data, stem: str) -> dict:
     for key, sid in (("opening", opening), ("closing", closing)):
         if sid is not None and sid not in seen:
             raise TemplateError(f"{key} {sid!r} is not in the shots list")
+    unlimited_ids = {s["id"] for s in unlimited}
+    for key, sid in (("opening", opening), ("closing", closing)):
+        if sid in unlimited_ids and len(unlimited) < MIN_UNLIMITED_CAMERA + 1:
+            raise TemplateError(f"{key} {sid!r} is an unlimited camera shot: with only {len(unlimited)} of them a video of some "
+                                f"lengths could not place it without repeating a shot, so add a third unlimited camera shot "
+                                f"or use a statement or the punch for the {key}")
     if opening is not None and opening == closing:
         by_id = {s["id"]: s for s in shots}
         limit = effective_max(by_id[opening])
@@ -133,7 +139,7 @@ def load_templates(directory: Path = TEMPLATE_DIR) -> dict[str, dict]:
     for path in sorted(directory.glob("*.yaml")):
         try:
             out[path.stem] = validate_template(yaml.safe_load(path.read_text(encoding="utf-8")), path.stem)
-        except (TemplateError, yaml.YAMLError, OSError) as e:
+        except (TemplateError, yaml.YAMLError, OSError, ValueError, TypeError) as e:   # a typo must name its file, never a traceback
             raise TemplateError(f"{path.name}: {e}") from None
     return dict(sorted(out.items()))
 
@@ -171,7 +177,10 @@ def suggest_shots(template: dict, n: int) -> list[str]:
                 if sid == closing:                       # keep one use for the closing beat, and never sit next to it
                     return i != n - 2 and (limit[sid] is None or used[sid] < limit[sid] - 1)
                 return limit[sid] is None or used[sid] < limit[sid]
-            pick = max((sid for sid in credit if ok(sid)), key=lambda s: credit[s])
+            choices = [sid for sid in credit if ok(sid)]
+            if not choices:
+                raise TemplateError(f"template {template['id']!r} cannot fill {n} beats without repeating a shot back to back")
+            pick = max(choices, key=lambda s: credit[s])
             credit[pick] -= total
         seq.append(pick)
         used[pick] += 1
