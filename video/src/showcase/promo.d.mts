@@ -1,6 +1,7 @@
 export type Size = {w: number; h: number};
 export type Box = {x: number; y: number; w: number; h: number};
-export type Cam = {zoom: number; cx: number; cy: number; dim: number};
+export type Cursor = {x: number; y: number; press: number; ripple: number | null};   // page px; press 0..1; ripple 0..1 or null
+export type Cam = {zoom: number; cx: number; cy: number; dim: number; cursor?: Cursor; reticle?: number};
 export type Place = {s: number; left: number; top: number; width: number; height: number};
 export type Rect = {left: number; top: number; width: number; height: number};
 export type CameraArgs = {target: Box; page: Size; stage: Size; scale: number; progress: number; seconds: number};

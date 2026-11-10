@@ -3,5 +3,9 @@
   "spotlight-focus": {"minSeconds": 4, "maxPerVideo": null, "needsTallPage": false, "needsTarget": true},
   "crash-zoom-punch": {"minSeconds": 4, "maxPerVideo": 1, "needsTallPage": false, "needsTarget": true},
   "pan-reveal": {"minSeconds": 5, "maxPerVideo": null, "needsTallPage": true, "needsTarget": true},
-  "statement": {"minSeconds": 4, "maxPerVideo": 2, "needsTallPage": false, "needsTarget": false}
+  "statement": {"minSeconds": 4, "maxPerVideo": 2, "needsTallPage": false, "needsTarget": false},
+  "pull-back-isolate": {"minSeconds": 5, "maxPerVideo": 1, "needsTallPage": false, "needsTarget": true},
+  "crane-rise": {"minSeconds": 5, "maxPerVideo": 1, "needsTallPage": false, "needsTarget": true},
+  "cursor-tour": {"minSeconds": 5, "maxPerVideo": 3, "needsTallPage": false, "needsTarget": true},
+  "scroll-brake": {"minSeconds": 5, "maxPerVideo": 2, "needsTallPage": true, "needsTarget": true}
 }

@@ -34,13 +34,7 @@ test('the registry is frozen and every shot has its metadata', () => {
     assert.ok(s.minSeconds > 0);
     if (s.needsTarget) assert.ok(s.settle > 0);          // only a shot with a camera has a rest at the end
   }
-  assert.deepEqual(shotMeta(), {
-    'hero-push': {minSeconds: 4, maxPerVideo: null, needsTallPage: false, needsTarget: true},
-    'spotlight-focus': {minSeconds: 4, maxPerVideo: null, needsTallPage: false, needsTarget: true},
-    'crash-zoom-punch': {minSeconds: 4, maxPerVideo: 1, needsTallPage: false, needsTarget: true},
-    'pan-reveal': {minSeconds: 5, maxPerVideo: null, needsTallPage: true, needsTarget: true},
-    'statement': {minSeconds: 4, maxPerVideo: 2, needsTallPage: false, needsTarget: false},
-  });
+  assert.deepEqual(shotMeta(), META);                     // the one table both sides read
 });
 
 test('the view never leaves the page, for every shot, target and page shape', () => {
@@ -60,8 +54,10 @@ test('zoom never decreases before it reaches its peak', () => {
   }
 });
 
-test('every shot starts at the page-width framing', () => {
-  for (const id of IDS) for (const [page, target] of CASES) near(run(id, target, 0, page).zoom, minZoom(page, stage));
+// The two pull-back shots start tight on purpose (detail to whole); moves.test.mjs checks their own start and end.
+const PULLS = ['pull-back-isolate', 'crane-rise'];
+test('every other shot starts at the page-width framing', () => {
+  for (const id of IDS.filter((x) => !PULLS.includes(x))) for (const [page, target] of CASES) near(run(id, target, 0, page).zoom, minZoom(page, stage));
 });
 
 test('the last 10% of a beat is a true still', () => {

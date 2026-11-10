@@ -49,9 +49,13 @@ A user's own screenshot has no layout file; give the beat a `focus` rectangle in
 | `spotlight-focus` | A gentler push while everything outside the target dims to 55% | pointing at one block among many | none |
 | `crash-zoom-punch` | A wide hold with a slow creep, a 6-frame punch with a 3% overshoot, then still | the one moment that must land ("this one") | once per video; the target must be small enough to punch in on (the validator rejects one that would not move) |
 | `pan-reveal` | Travels down a tall page from its top to the target, then rests | showing how much page there is before landing | a tall page (at least 1350 px), at least 5 s |
+| `pull-back-isolate` | Tight on the target, then a pull back while everything around it goes dark; ends still with the target alone | a closing move: "only this one matters" | once per video; at least 5 s |
+| `crane-rise` | A close-up of the target, then one decelerating rise to the whole page while the dim around it lifts | going from the detail to the whole ("this is one part of all of it") | once per video; at least 5 s |
+| `cursor-tour` | A cursor glides to the target on a light arc, clicks (a small press and a ring that fades), and the camera arrives behind it | feature tours, where the cursor is the viewer's attention | at most 3 per video; at least 5 s |
+| `scroll-brake` | A fast travel down a tall page that brakes onto the target, a reticle locking on as it stops | landing on one block after a long page | a tall page (at least 1350 px); at most 2 per video; at least 5 s |
 | `statement` | The beat's `statement` text large on the theme background, words arriving 4 frames apart | the hook and the call to action | at most 2 per video; no capture; at most 28 width units; Chinese or English |
 
-Every shot needs at least 4 s (`pan-reveal` 5 s). Two beats in a row may not use the same shot ("back to back"): one idea per beat, so vary them.
+Every shot needs at least 4 s (the five newer camera shots, `pan-reveal` among them, 5 s). Two beats in a row may not use the same shot ("back to back"): one idea per beat, so vary them.
 
 ## Storyboard
 
@@ -104,8 +108,9 @@ Run `python3 scripts/showcase/manifest.py validate output/projects/<slug>`; ever
 A template is a whole-video recipe: the look (theme), the shot palette with weights and limits, an opening and closing shot, a transition and pacing advice. Pick one per video; the manifest names it with `"template": "<id>"`.
 
 - Recipes are `templates/<id>.yaml`; the shots they use are defined in `video/src/showcase/shots.json` (the one table read by both the renderer and the validator).
-- Shipped: `cinematic` (default), `punchy`, `calm`, `minimal`. List them with `python3 scripts/showcase/templates.py list [--json]`, inspect one with `show <id>`, and check all with `validate`.
+- Shipped: `cinematic` (default), `punchy`, `calm`, `minimal`, `tour`. List them with `python3 scripts/showcase/templates.py list [--json]`, inspect one with `show <id>`, and check all with `validate`.
 - Add a recipe by adding a file: `id` equal to the file name, `style: promo`, at least three shots of which two are unlimited camera shots (`hero-push`, `spotlight-focus`), a `weight` of 1 or more for each, and optionally `max`, `theme`, `opening`, `closing`, `pacing.beat_seconds` and `transition`. Run `templates.py validate`.
+- `python3 scripts/showcase/templates.py preview <id>` (or `--all`) renders a short sample clip of the recipe, with its own shots, theme and transition on a bundled sample page, into `templates/covers/<id>.mp4` and a cover frame `<id>.png`; `list --json` gives their paths so a picker can show them. The sample page is drawn by `templates/sample/make_sample.py`; a preview manifest has `"sample": true` and `sample_seconds`, which relax only the 10-beat and 2-minute rules.
 - The recipe suggests, the beat decides: a beat may use a shot outside the palette (validate warns), but a template `max` is an error.
 
 ## Credits
@@ -113,6 +118,10 @@ A template is a whole-video recipe: the look (theme), the shot palette with weig
 Written from scratch after reading the named cards of video-shotcraft (Apache-2.0); no code, copy, UI or colours are reused, and each shot's source comment says what it borrowed.
 
 - `hero-push` and `spotlight-focus`: `spotlight-hero-card`. Borrowed: a single hero target per beat, a card-shaped light hole instead of a circle, and a hold that is dead still (the card forbids tail drift). Not borrowed: its action arc (spotlight, rise, hover, reseat), dark theatre, light beam and outline light.
-- `crash-zoom-punch`: `crash-zoom-punch`. Borrowed: the rebound variant, with its numbers (a push of about 6 frames, the target filling about 70% of the frame, a small rebound, a wide hold before and a long hold after). Not borrowed: the screen-shake variant, the motion blur, the pre-pull-back (the camera never moves backwards, a tested rule) and the allowance of a second punch per video (this tool allows one).
+- `crash-zoom-punch`: `crash-zoom-punch`. Borrowed: the rebound variant, with its numbers (a push of about 6 frames, the target filling about 70% of the frame, a small rebound, a wide hold before and a long hold after). Not borrowed: the screen-shake variant, the motion blur, the pre-pull-back (the punch never moves backwards; only `pull-back-isolate` and `crane-rise` pull back, on purpose) and the allowance of a second punch per video (this tool allows one).
+- `pull-back-isolate`: `tension-camera-moves`, move B. Borrowed: a pull back from a close-up while the surroundings go dark from the nearest outwards, ending still with one element alone. Not borrowed: the glow, the sibling-card grid, the blur and sinking of each card, the closing sentence in screen space, and move A (the frozen orbit, which needs a 3D scene).
+- `crane-rise`: `crane-rise-reveal`. Borrowed: the opposite of a push, a close-up that holds a breath and then one decelerating rise to the whole, with the zoom and the centre on one progress, the rest of the page held down while close and lifting as it fills the frame. Not borrowed: the row-by-row light wash, the counting numbers and the status flip (they need a live interface).
+- `cursor-tour`: `cursor-flyover`. Borrowed: the cursor is the hand and the camera the eye, so the cursor goes first on a light arc, aims, clicks (a press and a ring), and the camera arrives behind it. Not borrowed: the four-station tour, the interface that answers each click and the motion blur.
+- `scroll-brake`: `scroll-brake-moves`. Borrowed: a travel that starts fast and brakes onto the target, with a reticle that locks on as it stops. Not borrowed: the changelog content, the reticle's scan and the screen shake.
 - `pan-reveal` and `statement`: no card.
 - Read and not shipped: `steep-tilt-glide` (see above).

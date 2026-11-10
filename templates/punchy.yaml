@@ -8,6 +8,7 @@ shots:
   - {id: crash-zoom-punch, weight: 2, max: 1}
   - {id: hero-push, weight: 3}
   - {id: spotlight-focus, weight: 2}
+  - {id: cursor-tour, weight: 2, max: 2}
   - {id: statement, weight: 2}
 opening: statement
 closing: statement

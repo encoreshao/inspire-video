@@ -1,0 +1,225 @@
+{
+ "version": 1,
+ "url": "https://northwind.example/",
+ "scale": 2,
+ "viewport": {
+  "w": 1440,
+  "h": 900
+ },
+ "page": {
+  "w": 1440,
+  "h": 3200
+ },
+ "image": "assets/page@2x.png",
+ "elements": [
+  {
+   "id": "nav-1",
+   "role": "nav",
+   "text": "navigation",
+   "box": {
+    "x": 0,
+    "y": 0,
+    "w": 1440,
+    "h": 90
+   }
+  },
+  {
+   "id": "button-1",
+   "role": "button",
+   "text": "Get started",
+   "box": {
+    "x": 1180,
+    "y": 22,
+    "w": 164,
+    "h": 46
+   }
+  },
+  {
+   "id": "image-1",
+   "role": "image",
+   "text": "product preview",
+   "box": {
+    "x": 900,
+    "y": 150,
+    "w": 444,
+    "h": 440
+   }
+  },
+  {
+   "id": "heading-1",
+   "role": "heading",
+   "text": "Ship launches people remember.",
+   "box": {
+    "x": 96,
+    "y": 170,
+    "w": 760,
+    "h": 190
+   }
+  },
+  {
+   "id": "button-2",
+   "role": "button",
+   "text": "Start free",
+   "box": {
+    "x": 96,
+    "y": 510,
+    "w": 220,
+    "h": 66
+   }
+  },
+  {
+   "id": "button-3",
+   "role": "button",
+   "text": "See a demo",
+   "box": {
+    "x": 340,
+    "y": 510,
+    "w": 220,
+    "h": 66
+   }
+  },
+  {
+   "id": "heading-2",
+   "role": "heading",
+   "text": "Everything a launch needs",
+   "box": {
+    "x": 96,
+    "y": 700,
+    "w": 760,
+    "h": 70
+   }
+  },
+  {
+   "id": "card-1",
+   "role": "card",
+   "text": "Plan",
+   "box": {
+    "x": 96,
+    "y": 820,
+    "w": 408,
+    "h": 300
+   }
+  },
+  {
+   "id": "card-2",
+   "role": "card",
+   "text": "Write",
+   "box": {
+    "x": 536,
+    "y": 820,
+    "w": 408,
+    "h": 300
+   }
+  },
+  {
+   "id": "card-3",
+   "role": "card",
+   "text": "Publish",
+   "box": {
+    "x": 976,
+    "y": 820,
+    "w": 408,
+    "h": 300
+   }
+  },
+  {
+   "id": "card-4",
+   "role": "card",
+   "text": "12k teams",
+   "box": {
+    "x": 96,
+    "y": 1240,
+    "w": 300,
+    "h": 190
+   }
+  },
+  {
+   "id": "card-5",
+   "role": "card",
+   "text": "3.4x faster launches",
+   "box": {
+    "x": 426,
+    "y": 1240,
+    "w": 300,
+    "h": 190
+   }
+  },
+  {
+   "id": "card-6",
+   "role": "card",
+   "text": "98% on-time",
+   "box": {
+    "x": 756,
+    "y": 1240,
+    "w": 300,
+    "h": 190
+   }
+  },
+  {
+   "id": "card-7",
+   "role": "card",
+   "text": "40+ integrations",
+   "box": {
+    "x": 1086,
+    "y": 1240,
+    "w": 300,
+    "h": 190
+   }
+  },
+  {
+   "id": "heading-3",
+   "role": "heading",
+   "text": "See how every launch is doing",
+   "box": {
+    "x": 96,
+    "y": 1560,
+    "w": 900,
+    "h": 70
+   }
+  },
+  {
+   "id": "image-2",
+   "role": "image",
+   "text": "launch analytics chart",
+   "box": {
+    "x": 96,
+    "y": 1680,
+    "w": 1248,
+    "h": 620
+   }
+  },
+  {
+   "id": "card-8",
+   "role": "card",
+   "text": "testimonial",
+   "box": {
+    "x": 96,
+    "y": 2420,
+    "w": 1248,
+    "h": 360
+   }
+  },
+  {
+   "id": "heading-4",
+   "role": "heading",
+   "text": "Make your next launch the one they remember.",
+   "box": {
+    "x": 150,
+    "y": 2910,
+    "w": 1100,
+    "h": 60
+   }
+  },
+  {
+   "id": "button-4",
+   "role": "button",
+   "text": "Start free",
+   "box": {
+    "x": 150,
+    "y": 3000,
+    "w": 220,
+    "h": 66
+   }
+  }
+ ]
+}

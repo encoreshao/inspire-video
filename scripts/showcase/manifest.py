@@ -161,6 +161,8 @@ def crop_warnings(m: dict, project) -> list[str]:
 def beat_seconds_list(m: dict, timings: dict | None = None) -> list[float]:
     if timings:
         return [float(b["seconds"]) for b in timings["beats"]]
+    if m.get("sample") is True and m.get("sample_seconds"):      # a template preview: explicit short lengths, no narration
+        return [float(x) for x in m["sample_seconds"]]
     n = len(m["beats"])
     return [round(max(4.0, MIN_TOTAL / n), 2)] * n
 
@@ -344,8 +346,13 @@ def validate_showcase(m: dict, project, timings: dict | None = None) -> None:
         raise ManifestError("source needs kind, url and label")
     _check_layout(m)
     beats = m.get("beats")
-    if not isinstance(beats, list) or not all(isinstance(b, dict) for b in beats) or not MIN_BEATS <= len(beats) <= MAX_BEATS:
+    sample = m.get("sample") is True                      # a template preview: a short clip, so only the length rules relax
+    if not isinstance(beats, list) or not all(isinstance(b, dict) for b in beats) or not (len(beats) >= 1 if sample else MIN_BEATS <= len(beats) <= MAX_BEATS):
         raise ManifestError(f"a showcase needs {MIN_BEATS} to {MAX_BEATS} beats")
+    if sample:
+        ss = m.get("sample_seconds")
+        if not (isinstance(ss, list) and len(ss) == len(beats) and all(isinstance(x, (int, float)) and not isinstance(x, bool) and 1 <= x <= 60 for x in ss)):
+            raise ManifestError("sample_seconds must list one length (1 to 60 s) for each beat")
     seen = set()
     for b in beats:
         bid = b.get("id")
@@ -374,10 +381,11 @@ def validate_showcase(m: dict, project, timings: dict | None = None) -> None:
                 raise ManifestError(f"narration for beat {b['id']!r} is out of date (its text changed): run narrate again")
     if style == "promo":
         _check_promo_sequence(beats, beat_seconds_list(m, timings), template)
-    try:
-        check_total(beat_seconds_list(m, timings), MIN_TOTAL, MAX_TOTAL)
-    except LengthError as e:
-        raise ManifestError(str(e)) from None
+    if not sample:
+        try:
+            check_total(beat_seconds_list(m, timings), MIN_TOTAL, MAX_TOTAL)
+        except LengthError as e:
+            raise ManifestError(str(e)) from None
 
 
 def scaffold_manifest(brief: dict, project_id: str, n_beats: int = 16, template: str | None = None) -> dict:
