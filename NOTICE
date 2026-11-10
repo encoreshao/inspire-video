@@ -11,7 +11,8 @@ Those files remain available under the Apache License 2.0.
 The promo shots in video/src/showcase/shots.mjs (hero-push, spotlight-focus, crash-zoom-punch, pan-reveal, statement) and in
 video/src/showcase/moves.mjs (pull-back-isolate, crane-rise, cursor-tour, scroll-brake) were written from scratch after
 reading the video-shotcraft cards spotlight-hero-card, crash-zoom-punch, tension-camera-moves, crane-rise-reveal,
-cursor-flyover and scroll-brake-moves (pan-reveal and statement follow no card); no code, copy, UI or colours were taken. Each shot's source comment and skills/inspire-showcase/references/promo-style.md say what was borrowed.
+cursor-flyover and scroll-brake-moves; the whip-pan and flash-cut transitions in video/src/showcase/transitions.mjs
+follow the card shot-transitions (pan-reveal and statement follow no card); no code, copy, UI or colours were taken. Each shot's source comment and skills/inspire-showcase/references/promo-style.md say what was borrowed.
 
 autoclip (https://github.com/zhouxiaoka/autoclip), Copyright (c) 2024 AutoClip Team, MIT License,
 full text in LICENSES/MIT-autoclip.txt. Adapted file:

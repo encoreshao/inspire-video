@@ -30,7 +30,7 @@ TEMPLATE_DIR = ROOT / "templates"
 SAMPLE_DIR = TEMPLATE_DIR / "sample"
 DEFAULT_TEMPLATE = "cinematic"
 TEMPLATE_STYLES = ("promo",)
-TRANSITIONS = ("dissolve",)
+TRANSITIONS = ("dissolve", "whip-pan", "flash-cut")      # keep equal to TRANSITIONS in video/src/showcase/transitions.mjs (a test compares them)
 TEMPLATE_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,39}$")
 KEYS = {"id", "name", "name_zh", "description", "style", "theme", "shots", "opening", "closing", "transition", "pacing"}
 MIN_SHOTS, MIN_UNLIMITED_CAMERA = 3, 2
@@ -202,17 +202,18 @@ def catalogue(directory: Path = TEMPLATE_DIR) -> list[dict]:
     return rows
 
 
-# What each shot films in a preview: the text of the element it lands on in the bundled sample page, and its caption.
+# What each shot films in a preview: the text of the element it lands on in the bundled sample page, its caption and a topic
+# label (a new topic on every beat, so the recipe's transition between topics is what the preview shows).
 SAMPLE_BEATS = {
-    "hero-push": ("Ship launches", "A slow push lands on the headline.", "缓缓推近，落在标题上。"),
-    "spotlight-focus": ("Plan", "Everything else dims, so one card is read.", "其余变暗，只读这一张卡。"),
-    "crash-zoom-punch": ("Start free", "One punch makes this moment land.", "一记冲击，让此刻落地。"),
-    "pan-reveal": ("launch analytics chart", "Travel down the page to the chart.", "沿页面一路滑到图表。"),
-    "pull-back-isolate": ("98%", "Pull back and only one thing is left.", "拉远之后，只剩这一件事。"),
-    "crane-rise": ("12k teams", "From one number to the whole page.", "从一个数字升到整页。"),
-    "cursor-tour": ("See a demo", "A cursor shows where to click.", "光标指出该点哪里。"),
-    "scroll-brake": ("Make your next launch", "A fast scroll brakes on the call to action.", "快速下滑，停在行动号召上。"),
-    "statement": ("", "A launch day, handled.", "发布日，从容应对。"),
+    "hero-push": ("Ship launches", "A slow push lands on the headline.", "缓缓推近，落在标题上。", "Headline"),
+    "spotlight-focus": ("Plan", "Everything else dims, so one card is read.", "其余变暗，只读这一张卡。", "Plan"),
+    "crash-zoom-punch": ("Start free", "One punch makes this moment land.", "一记冲击，让此刻落地。", "Start"),
+    "pan-reveal": ("launch analytics chart", "Travel down the page to the chart.", "沿页面一路滑到图表。", "Analytics"),
+    "pull-back-isolate": ("98%", "Pull back and only one thing is left.", "拉远之后，只剩这一件事。", "Numbers"),
+    "crane-rise": ("12k teams", "From one number to the whole page.", "从一个数字升到整页。", "Overview"),
+    "cursor-tour": ("See a demo", "A cursor shows where to click.", "光标指出该点哪里。", "Demo"),
+    "scroll-brake": ("Make your next launch", "A fast scroll brakes on the call to action.", "快速下滑，停在行动号召上。", "Next step"),
+    "statement": ("", "A launch day, handled.", "发布日，从容应对。", "Launch"),
 }
 
 
@@ -234,9 +235,9 @@ def build_sample_project(template: dict, dest: Path) -> Path:
     seen: Counter = Counter()
     beats, seconds = [], []
     for shot in preview_shots(template):
-        needle, en, zh = SAMPLE_BEATS[shot]
+        needle, en, zh, topic = SAMPLE_BEATS[shot]
         seen[shot] += 1
-        beat = {"id": shot if seen[shot] == 1 else f"{shot}-{seen[shot]}", "en": en, "zh": zh, "shot": shot}
+        beat = {"id": shot if seen[shot] == 1 else f"{shot}-{seen[shot]}", "en": en, "zh": zh, "shot": shot, "topic": topic}
         if PROMO_SHOTS[shot]["needsTarget"]:
             element = next((e for e in layout["elements"] if needle.lower() in e["text"].lower()), layout["elements"][0])
             beat.update(asset="assets/page@2x.png", target=element["id"])
@@ -269,14 +270,22 @@ def preview(template_id, directory: Path = TEMPLATE_DIR) -> Path:
         if rc != 0:
             raise TemplateError(f"the preview render of {t['id']!r} failed (exit {rc})")
         clip = covers / f"{t['id']}.mp4"
-        shutil.copy2(project / "preview.mp4", clip)
+        r = subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(project / "preview.mp4"), "-c:v", "libx264", "-crf", "28",
+                            "-preset", "slow", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-an", str(clip)],
+                           capture_output=True, text=True)          # small enough to keep in the repo: a clip is about 0.5 MB
+        if r.returncode != 0:
+            raise TemplateError(f"could not write the preview clip: {r.stderr.strip()[:200]}")
         m = json.loads((project / "video_manifest.json").read_text(encoding="utf-8"))
-    start = 0.0
-    for beat, secs in zip(m["beats"], m["sample_seconds"]):
-        if beat["shot"] != "statement":
-            start += 0.7 * secs                       # inside the first camera move, after it has travelled
-            break
-        start += secs
+    # The cover frame comes from the recipe's most characteristic shot: the first beat that is not one of the plain moves
+    # (several recipes share those), else the first camera beat; 80% in, when the move has travelled.
+    plain = {"hero-push", "spotlight-focus", "statement"}
+    starts, acc = [], 0.0
+    for secs in m["sample_seconds"]:
+        starts.append(acc)
+        acc += secs
+    pick = next((i for i, b in enumerate(m["beats"]) if b["shot"] not in plain),
+                next((i for i, b in enumerate(m["beats"]) if b["shot"] != "statement"), 0))
+    start = starts[pick] + 0.8 * m["sample_seconds"][pick]
     still = covers / f"{t['id']}.png"
     r = subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-ss", f"{start:.2f}", "-i", str(clip), "-frames:v", "1", str(still)],
                        capture_output=True, text=True)

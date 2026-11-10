@@ -2,6 +2,7 @@
 // can run them. Frames are 30 fps. A beat layer starts `lead` frames before its beat's audio, so the incoming picture
 // dissolves during the silence that pads the previous sentence; the beat's own camera starts at its startFrame.
 import {easeInOut} from './geometry.mjs';
+import {STAGE_W} from './promo.mjs';
 
 export const XF_TOPIC = 18;        // 0.6 s: the topic changes (another page or section)
 export const XF_SAME = 8;          // 0.27 s: the next beat stays on the same page
@@ -84,4 +85,35 @@ export function progressLayout(beats) {
   const ticks = [];
   for (let i = 1; i < beats.length; i++) if (topicChanged(beats[i - 1], beats[i])) ticks.push(beats[i].startFrame / end);
   return {mode: 'bar', ticks, end};
+}
+
+// Named transitions between two topics (a recipe picks one). They add to the plain dissolve: the picture also slides and
+// blurs (whip-pan) or swaps under a white flash (flash-cut). A move between two beats of one page stays the short
+// dissolve, so the sections of one page never whip or flash. Pure functions of frames, like everything above.
+export const TRANSITIONS = Object.freeze(['dissolve', 'whip-pan', 'flash-cut']);
+export const WHIP_FRACTION = 0.92;      // of the stage width the picture travels
+export const WHIP_BLUR = 26;            // px of horizontal-looking blur at the fastest moment (a plain blur: the picture is flat)
+export const FLASH_PEAK = 0.9;          // the white flash's strongest alpha
+const NO_IN = Object.freeze({opacity: null, dx: 0, blur: 0, flash: 0});
+const NO_OUT = Object.freeze({dx: 0, blur: 0});
+
+// Extra for the incoming picture, `frame` frames into its `lead`-frame transition. `opacity` null means "use the dissolve's".
+export function incomingFx(frame, lead, kind, name) {
+  if (kind !== 'topic' || lead <= 0) return NO_IN;
+  const x = clamp01(frame / lead);
+  if (name === 'whip-pan') {
+    const e = 1 - Math.pow(1 - x, 3);                          // decelerating arrival
+    const speed = Math.pow(1 - x, 2);                          // 1 at the start, 0 at rest
+    return {opacity: 1, dx: STAGE_W * WHIP_FRACTION * (1 - e), blur: WHIP_BLUR * speed, flash: 0};
+  }
+  if (name === 'flash-cut') return {opacity: x >= 0.5 ? 1 : 0, dx: 0, blur: 0, flash: x <= 0 || x >= 1 ? 0 : FLASH_PEAK * Math.pow(Math.sin(Math.PI * x), 2)};
+  return NO_IN;
+}
+
+// Extra for the outgoing picture, `frame` frames into the `nextLead`-frame transition that replaces it.
+export function outgoingFx(frame, nextLead, kind, name) {
+  if (kind !== 'topic' || nextLead <= 0) return NO_OUT;
+  const g = clamp01(frame / nextLead);
+  if (name === 'whip-pan') return {dx: 0 - STAGE_W * WHIP_FRACTION * g * g, blur: WHIP_BLUR * g};     // accelerating departure
+  return NO_OUT;
 }

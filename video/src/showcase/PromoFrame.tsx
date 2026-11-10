@@ -1,7 +1,7 @@
 import React from 'react';
 import {AbsoluteFill, useCurrentFrame} from 'remotion';
 import {SERIF, ThemeCtx, pickTheme} from '../Video';
-import {PROMO_STAGE_H, STAGE_W} from './promo.mjs';
+import {PROMO_STAGE_H, STAGE_W, promoShadow} from './promo.mjs';
 import {progressLayout} from './transitions.mjs';
 
 // The promo style's own look: a dark cinematic frame with a brand lockup at the top, a large stage, captions straight
@@ -12,9 +12,6 @@ export const PROMO_TEXT_X = 106;     // text starts a little inside it: a glyph 
 export const PROMO_STAGE_TOP = 250;
 export const PROMO_CAPTION_TOP = 1250;
 export const PROMO_W = 880;
-// A soft shadow that stays inside the side margin: the theme's own ink shadow (52 px blur, 0.6 alpha) darkens the strip
-// beside a bright page past what the safe-area check allows.
-export const PROMO_SHADOW = '0 10px 24px rgba(0,0,0,0.35)';
 const PIPS_TOP = 1540;              // everything stays above y = 1590
 
 export type PromoFrameProps = {
@@ -46,7 +43,7 @@ export const PromoFrame: React.FC<PromoFrameProps> = ({theme, name, nameZh, tagl
         </div>
         {/* The stage's shadow and card live here, once, so the beat layers that dissolve over each other never stack shadows. */}
         <div style={{position: 'absolute', left: PROMO_X, top: PROMO_STAGE_TOP, width: STAGE_W, height: PROMO_STAGE_H, borderRadius: 36,
-          boxShadow: PROMO_SHADOW, background: c.card}} />
+          boxShadow: promoShadow(c.paper), background: c.card}} />
         {children}
         {layout.mode === 'bar' ? (
           // A long video: one continuous bar, a small gap at every topic change.

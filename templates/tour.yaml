@@ -13,5 +13,5 @@ shots:
   - {id: statement, weight: 1}
 opening: statement
 closing: statement
-transition: dissolve
+transition: whip-pan
 pacing: {beat_seconds: [6, 9]}

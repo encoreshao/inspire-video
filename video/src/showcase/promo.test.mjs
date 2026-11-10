@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  PROMO_STAGE_H, STAGE_W, baseScale, clampCenter, fitZoom, maxZoom, minZoom, placeImage, promoCamera, stageRect, viewSize,
+  PROMO_STAGE_H, STAGE_W, baseScale, clampCenter, fitZoom, maxZoom, minZoom, placeImage, promoCamera, promoShadow, stageRect, viewSize,
 } from './promo.mjs';
 import META from './shots.json' with {type: 'json'};
 import {SHOTS, shotMeta,statementDoneFrame, statementFontSize, statementReveal} from './shots.mjs';
@@ -241,4 +241,11 @@ test('every shot in the registry has its metadata in shots.json, and the reverse
       assert.equal(SHOTS[id][key], meta[key], `${id}.${key}`);
     }
   }
+});
+
+test('the stage shadow is soft on a light theme (it must not trip the side-strip check) and stronger on a dark one', () => {
+  const alpha = (css) => Number(/rgba\(0,0,0,([\d.]+)\)/.exec(css)[1]);
+  for (const paper of ['#F4EBDD', '#EAF0EF', '#ffffff']) assert.ok(alpha(promoShadow(paper)) <= 0.12, paper);
+  assert.equal(promoShadow('#1c1612'), '0 10px 24px rgba(0,0,0,0.35)');
+  assert.ok(alpha(promoShadow('#1c1612')) > alpha(promoShadow('#F4EBDD')));
 });

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  PIPS_MAX, TOPIC_MAX_UNITS, XF_SAME, XF_TOPIC, captionAlpha, incoming, labelAlpha, leadsFor, outgoing, progressLayout,
+  PIPS_MAX, TOPIC_MAX_UNITS, TRANSITIONS, XF_SAME, XF_TOPIC, captionAlpha, incoming, incomingFx, labelAlpha, leadsFor, outgoing, outgoingFx, progressLayout,
   topicChanged, topicValid, transitionKind, transitionLead, widthUnits,
 } from './transitions.mjs';
 
@@ -90,4 +90,51 @@ test('progress: pips for short lists, one bar with a tick per topic change for l
   assert.equal(l.ticks.length, 9);
   assert.ok(l.ticks.every((x, i) => x > 0 && x < 1 && (i === 0 || x > l.ticks[i - 1])));
   assert.ok(Math.abs(l.ticks[0] - 4 / 40) < 1e-9);
+});
+
+const NONE = {opacity: null, dx: 0, blur: 0, flash: 0};
+
+test('the named transitions are dissolve, whip-pan and flash-cut', () => {
+  assert.deepEqual([...TRANSITIONS], ['dissolve', 'whip-pan', 'flash-cut']);
+});
+
+test('dissolve, an unknown name and a same-page change add nothing to the plain dissolve', () => {
+  for (const name of ['dissolve', 'nope', undefined]) {
+    assert.deepEqual(incomingFx(5, 18, 'topic', name), NONE);
+    assert.deepEqual(outgoingFx(5, 18, 'topic', name), {dx: 0, blur: 0});
+  }
+  for (const name of ['whip-pan', 'flash-cut']) {
+    assert.deepEqual(incomingFx(5, 8, 'same', name), NONE);
+    assert.deepEqual(outgoingFx(5, 8, 'same', name), {dx: 0, blur: 0});
+    assert.deepEqual(incomingFx(0, 0, 'topic', name), NONE);
+  }
+});
+
+test('whip-pan: the new picture slides in from the right, fast then settling, and ends exactly at rest', () => {
+  const at = (f) => incomingFx(f, 18, 'topic', 'whip-pan');
+  assert.ok(at(0).dx > 700 && at(0).opacity === 1 && at(0).blur > 5);
+  assert.deepEqual(at(18), {opacity: 1, dx: 0, blur: 0, flash: 0});
+  for (let f = 1; f <= 18; f++) assert.ok(at(f).dx <= at(f - 1).dx + 1e-9 && at(f).blur <= at(f - 1).blur + 1e-9, `frame ${f}`);
+  assert.ok(at(3).dx < at(0).dx * 0.7, 'it is fast at the start');
+});
+
+test('whip-pan: the old picture leaves to the left, speeding up, and blurs more as it goes', () => {
+  const at = (f) => outgoingFx(f, 18, 'topic', 'whip-pan');
+  assert.deepEqual(at(0), {dx: 0, blur: 0});
+  assert.ok(at(18).dx < -700 && at(18).blur > 5);
+  for (let f = 1; f <= 18; f++) assert.ok(at(f).dx <= at(f - 1).dx + 1e-9, `frame ${f}`);
+});
+
+test('flash-cut: the picture swaps at the middle of a white flash that is clear at both ends', () => {
+  const at = (f) => incomingFx(f, 18, 'topic', 'flash-cut');
+  assert.equal(at(0).flash, 0);
+  assert.equal(at(18).flash, 0);
+  assert.equal(at(0).opacity, 0);
+  assert.equal(at(8).opacity, 0);
+  assert.equal(at(9).opacity, 1);
+  assert.equal(at(18).opacity, 1);
+  const peak = Math.max(...Array.from({length: 19}, (_, f) => at(f).flash));
+  assert.ok(peak > 0.8 && peak <= 0.9 + 1e-9);
+  assert.ok(at(9).flash >= 0.85, 'the swap is hidden under the flash');
+  assert.deepEqual(outgoingFx(9, 18, 'topic', 'flash-cut'), {dx: 0, blur: 0});
 });

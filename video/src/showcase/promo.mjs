@@ -7,6 +7,15 @@ export const STAGE_W = 880;     // the promo stage: the full safe width (1080 mi
 export const PROMO_STAGE_H = 960;   // fixed: the promo frame has no headline block or info card to make room for
 export const ZOOM_CAP = 3.2;
 
+// The stage's soft shadow, kept inside the side margin: a stronger shadow darkens the 100 px strip beside the stage past
+// what the safe-area check allows. On a dark theme the shadow is invisible against the background, so it can be firmer;
+// on a light theme it must be faint. `paper` is the theme's background colour as #rrggbb.
+export const promoShadow = (paper) => {
+  const n = parseInt(paper.slice(1), 16);
+  const luma = 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255);
+  return luma < 90 ? '0 10px 24px rgba(0,0,0,0.35)' : '0 8px 18px rgba(0,0,0,0.1)';
+};
+
 export const baseScale = (page, stage) => stage.w / page.w;
 export const viewSize = (page, stage, zoom) => ({w: page.w / zoom, h: stage.h / (baseScale(page, stage) * zoom)});
 // A page shorter than the stage view needs a zoom above 1, or the stage would show empty space below it.

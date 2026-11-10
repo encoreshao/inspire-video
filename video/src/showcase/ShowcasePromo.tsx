@@ -6,7 +6,7 @@ import {PROMO_CAPTION_TOP, PROMO_STAGE_TOP, PROMO_TEXT_X, PROMO_W, PROMO_X, Prom
 import {PROMO_STAGE_H, STAGE_W} from './promo.mjs';
 import type {ShowcaseBeat, ShowcaseProps} from './ShowcaseShort';
 import {Statement} from './Statement';
-import {captionAlpha, incoming, labelAlpha, leadsFor, outgoing, topicChanged, transitionKind} from './transitions.mjs';
+import {captionAlpha, incoming, incomingFx, labelAlpha, leadsFor, outgoing, outgoingFx, topicChanged, transitionKind} from './transitions.mjs';
 
 const RADIUS = 36;
 // Caption type shrinks as the sentence grows, so the longest allowed beat (100 English / 45 Chinese characters) still fits.
@@ -26,7 +26,7 @@ const TopicLabel: React.FC<{text: string; alpha: number}> = ({text, alpha}) => (
 // The stage frame (card, border, shadow) is the same in every layer and never moves or fades, so a dissolve cannot show a
 // seam; only the picture inside it dissolves, drifts and settles. The caption is separate: the old text leaves before
 // the new text arrives.
-const BeatLayer: React.FC<{beat: ShowcaseBeat; prev?: ShowcaseBeat; next?: ShowcaseBeat}> = ({beat, prev, next}) => {
+const BeatLayer: React.FC<{beat: ShowcaseBeat; prev?: ShowcaseBeat; next?: ShowcaseBeat; transition?: string}> = ({beat, prev, next, transition}) => {
   const c = useTheme();
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
@@ -39,7 +39,8 @@ const BeatLayer: React.FC<{beat: ShowcaseBeat; prev?: ShowcaseBeat; next?: Showc
   const inn = incoming(frame, lead, kind);
   const outStart = lead + beat.frames - nextLead;
   const out = outgoing(frame - outStart, nextLead, nextKind);
-  const scale = inn.scale * out.scale, dy = inn.dy + out.dy;
+  const fxIn = incomingFx(frame, lead, kind, transition), fxOut = outgoingFx(frame - outStart, nextLead, nextKind, transition);
+  const scale = inn.scale * out.scale, dy = inn.dy + out.dy, dx = fxIn.dx + fxOut.dx, blur = Math.max(fxIn.blur, fxOut.blur);
   const text = captionAlpha(local / fps, lead + beat.frames - frame, nextLead);
   const label = beat.topic && (!prev || topicChanged(prev, beat)) ? labelAlpha(local / fps) : 0;
   const stage = {w: STAGE_W, h: PROMO_STAGE_H};
@@ -57,9 +58,11 @@ const BeatLayer: React.FC<{beat: ShowcaseBeat; prev?: ShowcaseBeat; next?: Showc
     <AbsoluteFill>
       <div style={{position: 'absolute', left: PROMO_X, top: PROMO_STAGE_TOP, width: STAGE_W, height: PROMO_STAGE_H, borderRadius: RADIUS,
         overflow: 'hidden'}}>
-        <div style={{position: 'absolute', inset: 0, opacity: inn.opacity, transform: `translateY(${dy}px) scale(${scale})`, transformOrigin: '50% 50%'}}>
+        <div style={{position: 'absolute', inset: 0, opacity: fxIn.opacity ?? inn.opacity, transform: `translate(${dx}px, ${dy}px) scale(${scale})`, transformOrigin: '50% 50%',
+          filter: blur > 0.2 ? `blur(${blur}px)` : undefined}}>
           {content}
         </div>
+        {fxIn.flash > 0 ? <div style={{position: 'absolute', inset: 0, background: '#fff', opacity: fxIn.flash, pointerEvents: 'none'}} /> : null}
         {label > 0 && beat.topic ? <TopicLabel text={beat.topic} alpha={label} /> : null}
         <div style={{position: 'absolute', inset: 0, borderRadius: RADIUS, border: `2px solid ${c.border}`, pointerEvents: 'none'}} />
       </div>
@@ -73,14 +76,14 @@ const BeatLayer: React.FC<{beat: ShowcaseBeat; prev?: ShowcaseBeat; next?: Showc
   );
 };
 
-export const ShowcasePromo: React.FC<ShowcaseProps> = ({theme, name, nameZh, tagline, sourceLabel, beats}) => (
+export const ShowcasePromo: React.FC<ShowcaseProps> = ({theme, name, nameZh, tagline, sourceLabel, beats, transition}) => (
   <PromoFrame theme={theme} name={name} nameZh={nameZh} tagline={tagline} sourceLabel={sourceLabel} beats={beats}>
     {beats.map((b, i) => {
       const lead = leadsFor(beats)[i];
       return (
       <React.Fragment key={b.id}>
         <Sequence from={b.startFrame - lead} durationInFrames={b.frames + lead}>
-          <BeatLayer beat={b} prev={beats[i - 1]} next={beats[i + 1]} />
+          <BeatLayer beat={b} prev={beats[i - 1]} next={beats[i + 1]} transition={transition} />
         </Sequence>
         {b.audio ? (
           <Sequence from={b.startFrame} durationInFrames={b.frames}><Audio src={staticFile(b.audio)} /></Sequence>

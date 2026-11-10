@@ -37,4 +37,4 @@ def test_every_shipped_template_scaffolds_validates_and_builds_props(tmp_path, t
     M.validate_showcase(m, p, t)
     assert M.template_warnings(m) == []
     props = R.build_props(m, p, t, {b["id"]: {"asset": "a.png" if b.get("asset") else None, "audio": None} for b in m["beats"]})
-    assert props["template"] == tid and props["transition"] == "dissolve" and len(props["beats"]) == n
+    assert props["template"] == tid and props["transition"] == T.get_template(tid)["transition"] and len(props["beats"]) == n

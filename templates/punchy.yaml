@@ -12,5 +12,5 @@ shots:
   - {id: statement, weight: 2}
 opening: statement
 closing: statement
-transition: dissolve
+transition: flash-cut
 pacing: {beat_seconds: [6, 9]}

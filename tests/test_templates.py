@@ -175,3 +175,23 @@ def test_a_template_file_that_is_not_utf8_names_the_file(tmp_path):
     (tmp_path / "demo.yaml").write_bytes(b"id: \xff\xfe\n")
     with pytest.raises(T.TemplateError, match="demo.yaml"):
         T.load_templates(tmp_path)
+
+
+def test_the_transition_names_are_the_javascript_ones():
+    import shutil
+    import subprocess
+    from pathlib import Path
+    if shutil.which("node") is None:
+        pytest.skip("node is not installed")
+    root = Path(__file__).resolve().parent.parent
+    code = "import('./video/src/showcase/transitions.mjs').then((m) => console.log(JSON.stringify(m.TRANSITIONS)))"
+    r = subprocess.run(["node", "-e", code], cwd=root, capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stderr
+    assert tuple(json.loads(r.stdout)) == T.TRANSITIONS
+
+
+def test_the_shipped_recipes_use_the_named_transitions_where_they_fit():
+    loaded = T.load_templates()
+    assert loaded["punchy"]["transition"] == "flash-cut" and loaded["tour"]["transition"] == "whip-pan"
+    assert loaded["cinematic"]["transition"] == "dissolve" and loaded["calm"]["transition"] == "dissolve"
+    assert T.validate_template(good(transition="whip-pan"), "demo")["transition"] == "whip-pan"
