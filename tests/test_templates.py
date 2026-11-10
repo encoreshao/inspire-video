@@ -1,0 +1,133 @@
+import json
+from collections import Counter
+
+import pytest
+import yaml
+
+from showcase import templates as T
+
+
+def good(**over):
+    base = {"id": "demo", "name": "Demo", "description": "A demo recipe.", "style": "promo",
+            "shots": [{"id": "hero-push", "weight": 3}, {"id": "spotlight-focus", "weight": 3},
+                      {"id": "crash-zoom-punch", "weight": 1, "max": 1}, {"id": "statement", "weight": 1}]}
+    base.update(over)
+    return base
+
+
+def test_a_good_template_is_normalised():
+    t = T.validate_template(good(theme="ink", opening="statement"), "demo")
+    assert t["id"] == "demo" and t["theme"] == "ink" and t["opening"] == "statement" and t["closing"] is None
+    assert t["transition"] == "dissolve" and t["name_zh"] is None and t["pacing"] is None
+    assert t["shots"][0] == {"id": "hero-push", "weight": 3, "max": None}
+
+
+@pytest.mark.parametrize("over,needle", [
+    ({"id": "other"}, "file name"),
+    ({"id": "Demo"}, "id"),
+    ({"style": "device"}, "style"),
+    ({"theme": "neon"}, "theme"),
+    ({"name": ""}, "name"),
+    ({"extra": 1}, "extra"),
+    ({"shots": []}, "shots"),
+    ({"shots": [{"id": "hero-push", "weight": 1}, {"id": "hero-push", "weight": 1}, {"id": "spotlight-focus", "weight": 1}]}, "twice"),
+    ({"shots": [{"id": "nope", "weight": 1}, {"id": "hero-push", "weight": 1}, {"id": "spotlight-focus", "weight": 1}]}, "nope"),
+    ({"shots": [{"id": "hero-push", "weight": 0}, {"id": "spotlight-focus", "weight": 1}, {"id": "statement", "weight": 1}]}, "weight"),
+    ({"shots": [{"id": "hero-push", "weight": 1.5}, {"id": "spotlight-focus", "weight": 1}, {"id": "statement", "weight": 1}]}, "weight"),
+    ({"shots": [{"id": "hero-push", "weight": 1}, {"id": "spotlight-focus", "weight": 1}, {"id": "statement", "weight": 1, "max": 3}]}, "max"),
+    ({"shots": [{"id": "hero-push", "weight": 1, "max": 0}, {"id": "spotlight-focus", "weight": 1}, {"id": "statement", "weight": 1}]}, "max"),
+    ({"shots": [{"id": "hero-push", "weight": 1}, {"id": "statement", "weight": 1}, {"id": "crash-zoom-punch", "weight": 1}]}, "unlimited"),
+    ({"shots": [{"id": "hero-push", "weight": 1}, {"id": "spotlight-focus", "weight": 1}]}, "three"),
+    ({"opening": "pan-reveal"}, "opening"),
+    ({"opening": "crash-zoom-punch", "closing": "crash-zoom-punch"}, "closing"),
+    ({"transition": "wipe"}, "transition"),
+    ({"pacing": {"beat_seconds": [12, 8]}}, "beat_seconds"),
+    ({"pacing": {"beat_seconds": [2, 8]}}, "beat_seconds"),
+])
+def test_a_bad_template_is_rejected_with_a_clear_message(over, needle):
+    with pytest.raises(T.TemplateError, match=needle):
+        T.validate_template(good(**over), "demo")
+
+
+def test_a_template_that_is_not_a_mapping_is_rejected():
+    with pytest.raises(T.TemplateError, match="mapping"):
+        T.validate_template(["x"], "demo")
+
+
+def write(directory, name, data):
+    (directory / f"{name}.yaml").write_text(yaml.safe_dump(data), encoding="utf-8")
+
+
+def test_load_templates_sorts_by_id_and_names_the_broken_file(tmp_path):
+    write(tmp_path, "zeta", good(id="zeta"))
+    write(tmp_path, "alpha", good(id="alpha"))
+    assert list(T.load_templates(tmp_path)) == ["alpha", "zeta"]
+    write(tmp_path, "broken", good(id="broken", style="device"))
+    with pytest.raises(T.TemplateError, match="broken.yaml"):
+        T.load_templates(tmp_path)
+
+
+def test_a_missing_or_empty_directory_is_an_empty_catalogue(tmp_path):
+    assert T.load_templates(tmp_path / "nope") == {} and T.catalogue(tmp_path) == []
+
+
+def test_yaml_that_executes_nothing_and_a_bad_file_is_a_template_error(tmp_path):
+    (tmp_path / "evil.yaml").write_text("id: !!python/object/apply:os.system ['true']\n", encoding="utf-8")
+    with pytest.raises(T.TemplateError, match="evil.yaml"):
+        T.load_templates(tmp_path)
+
+
+@pytest.mark.parametrize("bad", ["../etc/passwd", "CINEMATIC", "", None, 3, "nope"])
+def test_an_unknown_or_hostile_id_lists_the_valid_ones(tmp_path, bad):
+    write(tmp_path, "alpha", good(id="alpha"))
+    with pytest.raises(T.TemplateError, match="alpha"):
+        T.get_template(bad, tmp_path)
+
+
+@pytest.mark.parametrize("n", [10, 16, 25, 40])
+def test_suggested_shots_respect_the_limits_and_never_repeat_back_to_back(n):
+    t = T.validate_template(good(opening="statement", closing="statement"), "demo")
+    seq = T.suggest_shots(t, n)
+    assert len(seq) == n and seq[0] == "statement" and seq[-1] == "statement"
+    assert all(a != b for a, b in zip(seq, seq[1:]))
+    counts = Counter(seq)
+    assert counts["crash-zoom-punch"] <= 1 and counts["statement"] <= 2
+
+
+def test_suggestions_follow_the_weights_and_are_deterministic():
+    t = T.validate_template(good(), "demo")
+    assert T.suggest_shots(t, 20) == T.suggest_shots(t, 20)
+    counts = Counter(T.suggest_shots(t, 40))
+    assert counts["hero-push"] >= 10 and counts["spotlight-focus"] >= 10
+
+
+def test_the_shipped_templates_are_valid_and_the_default_exists():
+    loaded = T.load_templates()
+    assert T.DEFAULT_TEMPLATE in loaded and len(loaded) >= 3
+    for t in loaded.values():
+        for n in (10, 16, 40):
+            seq = T.suggest_shots(t, n)
+            assert all(a != b for a, b in zip(seq, seq[1:])) and len(seq) == n
+
+
+def test_the_catalogue_is_plain_json_data(tmp_path):
+    write(tmp_path, "alpha", good(id="alpha", name_zh="甲"))
+    (tmp_path / "covers").mkdir()
+    (tmp_path / "covers" / "alpha.png").write_bytes(b"x")
+    [row] = T.catalogue(tmp_path)
+    assert row["id"] == "alpha" and row["name_zh"] == "甲" and row["cover"] == "templates/covers/alpha.png"
+    assert [s["id"] for s in row["shots"]][:2] == ["hero-push", "spotlight-focus"]
+    json.dumps(row)
+
+
+def test_cli_list_json_prints_only_json_on_stdout(capsys):
+    assert T.main(["list", "--json"]) == 0
+    out = capsys.readouterr()
+    assert {r["id"] for r in json.loads(out.out)} >= {T.DEFAULT_TEMPLATE}
+
+
+def test_cli_show_validate_and_unknown_id(capsys):
+    assert T.main(["show", T.DEFAULT_TEMPLATE, "--json"]) == 0
+    assert json.loads(capsys.readouterr().out)["id"] == T.DEFAULT_TEMPLATE
+    assert T.main(["validate"]) == 0 and "valid" in capsys.readouterr().out
+    assert T.main(["show", "nope"]) == 1 and "error:" in capsys.readouterr().err

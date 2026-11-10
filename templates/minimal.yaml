@@ -1,0 +1,11 @@
+id: minimal
+name: Minimal
+name_zh: 极简
+description: Only the two simplest camera moves and one statement; the safest choice for any page.
+style: promo
+shots:
+  - {id: hero-push, weight: 1}
+  - {id: spotlight-focus, weight: 1}
+  - {id: statement, weight: 1, max: 1}
+closing: statement
+transition: dissolve

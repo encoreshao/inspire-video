@@ -1,0 +1,14 @@
+id: calm
+name: Calm explainer
+name_zh: 平静讲解
+description: Gentle spotlights and long pans that let each section be read; for explainers and docs.
+style: promo
+theme: mist
+shots:
+  - {id: spotlight-focus, weight: 4}
+  - {id: hero-push, weight: 2}
+  - {id: pan-reveal, weight: 3}
+  - {id: statement, weight: 1}
+opening: statement
+transition: dissolve
+pacing: {beat_seconds: [9, 13]}

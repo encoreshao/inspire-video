@@ -1,0 +1,16 @@
+id: cinematic
+name: Cinematic tour
+name_zh: 电影感巡礼
+description: Slow pushes and spotlights over the real page; calm and premium. The default.
+style: promo
+theme: ink
+shots:
+  - {id: hero-push, weight: 3}
+  - {id: spotlight-focus, weight: 3}
+  - {id: pan-reveal, weight: 2}
+  - {id: crash-zoom-punch, weight: 1, max: 1}
+  - {id: statement, weight: 1}
+opening: statement
+closing: statement
+transition: dissolve
+pacing: {beat_seconds: [7, 11]}
