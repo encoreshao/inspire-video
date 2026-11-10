@@ -48,7 +48,8 @@ const BeatLayer: React.FC<{beat: ShowcaseBeat; prev?: ShowcaseBeat; next?: Showc
   let content: React.ReactNode;
   if (beat.shot === 'statement') {
     const statement = beat.statement ?? '';
-    content = <Statement text={statement} units={beat.statementUnits ?? [statement]} stage={stage} frame={Math.max(0, local)} />;
+    content = <Statement text={statement} units={beat.statementUnits ?? [statement]} stage={stage} frame={Math.max(0, local)}
+      backdrop={beat.backdrop} facts={beat.facts} />;
   } else {
     if (!beat.shot || !beat.box || !beat.page) throw new Error(`beat "${beat.id}" has no shot, box or page: render it with render_showcase.py`);
     content = <PageCam src={beat.asset} page={beat.page} scale={beat.imageScale ?? 1} box={beat.box} shot={beat.shot}
@@ -76,8 +77,8 @@ const BeatLayer: React.FC<{beat: ShowcaseBeat; prev?: ShowcaseBeat; next?: Showc
   );
 };
 
-export const ShowcasePromo: React.FC<ShowcaseProps> = ({theme, name, nameZh, tagline, sourceLabel, beats, transition}) => (
-  <PromoFrame theme={theme} name={name} nameZh={nameZh} tagline={tagline} sourceLabel={sourceLabel} beats={beats}>
+export const ShowcasePromo: React.FC<ShowcaseProps> = ({theme, brand, name, nameZh, tagline, sourceLabel, beats, transition}) => (
+  <PromoFrame theme={theme} brand={brand} name={name} nameZh={nameZh} tagline={tagline} sourceLabel={sourceLabel} beats={beats}>
     {beats.map((b, i) => {
       const lead = leadsFor(beats)[i];
       return (

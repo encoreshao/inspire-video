@@ -93,3 +93,11 @@ def test_every_shipped_template_has_a_cover_and_a_sample_clip():
     for row in T.catalogue():
         assert row["cover"] and row["preview"], f"{row['id']}: run `python3 scripts/showcase/templates.py preview {row['id']}`"
         assert (ROOT / row["cover"]).stat().st_size > 1000 and (ROOT / row["preview"]).stat().st_size > 10000
+
+
+def test_the_references_document_title_cards_the_brand_background_and_pacing():
+    beat = (SKILL_DIR / "references" / "beat-writing.md").read_text(encoding="utf-8")
+    for needle in ("`backdrop`", "`facts`", "`brand_color`"):
+        assert needle in STYLE, needle
+    assert "80 to 100 characters" in beat and "silence" in beat
+    assert "title card" in STYLE

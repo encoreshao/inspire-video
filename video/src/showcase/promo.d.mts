@@ -11,6 +11,8 @@ export const STAGE_W: number;
 export const PROMO_STAGE_H: number;
 export const ZOOM_CAP: number;
 export function promoShadow(paper: string): string;
+export function promoGlows(): {cx: number; cy: number; rx: number; ry: number; alpha: number}[];
+export function promoBackground(paper: string, brand?: string): string;
 export function baseScale(page: Size, stage: Size): number;
 export function viewSize(page: Size, stage: Size, zoom: number): Size;
 export function minZoom(page: Size, stage: Size): number;

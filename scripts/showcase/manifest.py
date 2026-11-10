@@ -31,6 +31,7 @@ STAGE_W = 880
 STAGE_H = 960
 ZOOM_CAP = 3.2
 CRASH_FILL, CRASH_OVERSHOOT, CRASH_MIN_MOVE = 0.7, 0.03, 1.05
+FACT_UNITS, MAX_FACTS = 28, 3                          # the optional facts under a statement: how many, and how wide each may be
 STATEMENT_UNITS = 28                                   # the statement's width limit (a Chinese character counts as 2)
 TALL_PAGE_PX = round(1.5 * L.VIEWPORT["h"])      # "tall" for a pan: at least one and a half capture viewports
 MIN_BEATS, MAX_BEATS = 10, 40                       # 2 to 5 minutes at roughly 7 to 12 seconds a beat
@@ -243,6 +244,29 @@ def _check_beat(b: dict, project: Path, style: str = "device") -> None:
         _check_promo_beat(b, project)
 
 
+def _check_statement_card(b: dict, project: Path) -> None:
+    """A statement beat may show a peek of a capture (`backdrop`) and up to three short `facts` under its text."""
+    bid = b.get("id")
+    if b.get("backdrop") is not None:
+        asset = b["backdrop"]
+        if not isinstance(asset, str) or not asset or Path(asset).is_absolute():
+            raise ManifestError(f"beat {bid!r}: backdrop must be an image path relative to the project folder")
+        path = (project / asset).resolve()
+        if not path.is_relative_to(project.resolve()) or not path.is_file():
+            raise ManifestError(f"beat {bid!r}: backdrop {asset!r} is not a file inside the project folder")
+        try:
+            image_size(path)
+        except AssetError as e:
+            raise ManifestError(f"beat {bid!r}: backdrop {asset!r} is not a usable image ({e})") from None
+    facts = b.get("facts")
+    if facts is not None:
+        ok = (isinstance(facts, list) and 1 <= len(facts) <= MAX_FACTS
+              and all(isinstance(f, str) and f.strip() and width_units(f) <= FACT_UNITS for f in facts))
+        if not ok:
+            raise ManifestError(f"beat {bid!r}: facts must be 1 to {MAX_FACTS} short strings (at most {FACT_UNITS} width units each, "
+                                f"a Chinese character counts as 2)")
+
+
 def _check_promo_beat(b: dict, project: Path) -> None:
     bid = b.get("id")
     shot = b.get("shot", "hero-push")
@@ -253,6 +277,7 @@ def _check_promo_beat(b: dict, project: Path) -> None:
         for key in ("asset", "target", "focus"):
             if b.get(key) is not None:
                 raise ManifestError(f"beat {bid!r}: a {shot} beat shows no capture; remove {key}")
+        _check_statement_card(b, project)
         text = b.get("statement")
         if not isinstance(text, str) or not text.strip():
             raise ManifestError(f"beat {bid!r}: a {shot} beat needs its statement text")
@@ -262,6 +287,9 @@ def _check_promo_beat(b: dict, project: Path) -> None:
         return
     if b.get("statement") is not None:
         raise ManifestError(f"beat {bid!r}: statement is only for the statement shot")
+    for key in ("backdrop", "facts"):
+        if b.get(key) is not None:
+            raise ManifestError(f"beat {bid!r}: {key} is only for the statement shot")
     if has_target == has_focus:
         raise ManifestError(f"beat {bid!r}: give exactly one of target (an element id) and focus (a rectangle)")
     if has_target and (not isinstance(b["target"], str) or not b["target"].strip()):
@@ -311,6 +339,23 @@ def _template_for(m: dict) -> dict | None:
         raise ManifestError(str(e)) from None
 
 
+MAX_SILENCE = 2.0          # seconds a narrated beat may be held beyond its speech before it reads as a dead pause
+
+
+def pacing_warnings(m: dict, timings: dict | None) -> list[str]:
+    """Narrated beats held much longer than their speech: the voice stops and the picture waits. A sentence of 80 to 100
+    characters fills about 6 s, so lengthen the line, or add beats when the total would otherwise fall under two minutes."""
+    out = []
+    for row in (timings or {}).get("beats", []):
+        if "audio_seconds" not in row:
+            continue
+        gap = row["seconds"] - row["audio_seconds"]
+        if gap > MAX_SILENCE:
+            out.append(f"beat {row['id']!r} is held {row['seconds']:g} s for {row['audio_seconds']:g} s of speech ({gap:.1f} s of silence): "
+                       f"write a longer line (80 to 100 characters fills about 6 s) or add beats")
+    return out
+
+
 def template_warnings(m: dict) -> list[str]:
     """Beats whose shot is not in the manifest's template palette. Allowed (the writer may deviate on purpose), so a warning."""
     template = _template_for(m)
@@ -332,6 +377,8 @@ def validate_showcase(m: dict, project, timings: dict | None = None) -> None:
         raise ManifestError(f"style must be one of {STYLES}")
     if m.get("theme", "light") not in THEMES:
         raise ManifestError(f"theme must be one of {THEMES}")
+    if "brand_color" in m and not (isinstance(m["brand_color"], str) and re.fullmatch(r"#[0-9a-fA-F]{6}", m["brand_color"])):
+        raise ManifestError("brand_color must be a six-digit hex colour such as #7c3aed")
     template = _template_for(m)
     if template is not None and template["style"] != style:
         raise ManifestError(f"the template {template['id']!r} is a {template['style']} template: set \"style\": \"{template['style']}\" "
@@ -448,7 +495,7 @@ def main(argv=None) -> int:
             tfile = project / "timings.json"
             timings = json.loads(tfile.read_text(encoding="utf-8")) if tfile.exists() else None
             validate_showcase(m, project, timings)
-            for w in template_warnings(m):
+            for w in template_warnings(m) + pacing_warnings(m, timings):
                 print(f"warning: {w}", file=sys.stderr)
             print("manifest is valid")
     except (ValueError, OSError) as e:

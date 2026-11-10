@@ -45,6 +45,7 @@ Set the `topic` field on each beat to the topic's name (for example `Services`) 
 ## Narration and timing
 
 - Set `"narration_lang": "zh"` in the manifest, or pass `--lang zh` to `narrate.py`, for Chinese narration. The default is English.
+- Pace the lines to the speech: a sentence of 80 to 100 characters fills about 6 s, which is as long as the shortest camera shot needs, so the voice and the picture finish together. A beat held far longer than its speech is a dead pause: `validate` and `render` warn when a narrated beat has more than 2 s of silence. Fix it with a fuller sentence, or with more beats (20 to 24 beats of about 6 s make a natural 2 to 2.5 minutes), not with longer holds.
 - Write what the voice should say, not what the page shows: spell out prices, currency symbols, units, dates and abbreviations in the narrated language ("zero yen", "fifty thousand yen a month", "ten to forty beats"), because the voice engines read "¥50,000" or "9:16" wrongly. Keep brand names as they are.
 - After changing a beat's text, run `narrate.py` again: render refuses narration that is out of date, and refuses a manifest `voice` that differs from the voice used for the audio.
 - Beat length follows the narration audio, but every beat is held for at least `120 / number of beats` seconds so the total reaches the 120 second minimum. Without narration each beat lasts `max(4, 120 / beats)` seconds. The total must be 120 to 300 seconds. A narrated script of about 16 beats usually lands near 2 minutes; add topics, not longer sentences, to go longer.

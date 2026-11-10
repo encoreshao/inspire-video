@@ -19,4 +19,4 @@
 
 ## Safe area
 
-- Content stays at or above y = 1590 and 114 px from each side, so tall phones that crop the sides and platform buttons at the bottom do not cut it. `scripts/showcase/checks.py` verifies the real render (size, first frame, bottom margin, side margins). It cannot detect clipped text, so inspect the preview.
+- Content stays at or above y = 1590 and 100 px from each side (the checker's limit, and the promo stage is 880 px wide for that reason), so tall phones that crop the sides and platform buttons at the bottom do not cut it. `scripts/showcase/checks.py` verifies the real render (size, first frame, bottom margin, side margins). It cannot detect clipped text, so inspect the preview.

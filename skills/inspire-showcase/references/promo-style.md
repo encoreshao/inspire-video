@@ -7,13 +7,17 @@ The `promo` style shows a product by moving a camera over real captures of its p
 The promo style does not use the editorial layout of `inspire-video` and the device style. It has a frame of its own:
 
 - no headline block, panel, caption card, info card or divider in the video body;
-- a dark frame (the `ink` theme, the default for promo; `theme` can still be set) with a brand lockup at the top: the project name in both languages, the tagline and the address in a pill;
+- a dark frame (the `ink` theme, the default for promo; `theme` can still be set), tinted and lit with the site's own accent colour: the manifest's optional `brand_color` (`#rrggbb`), or, when it is absent, the dominant saturated colour of the captures (needs Pillow; a colourless site keeps the plain frame). Two soft glows of that colour sit behind the brand lockup and behind the captions and fade out before the 100 px side margins, so the safe-area check still sees flat margins. The frame has a brand lockup at the top: the project name in both languages, the tagline and the address in a pill;
 - a large rounded stage, 880 x 960 px, the full safe width, where the camera moves;
 - the bilingual caption straight on the background, left-aligned, English above Chinese, with no card behind it;
 - a row of pips at the bottom, one per beat, each filling as its beat plays, in place of one progress bar; with more than 12 beats the pips become one continuous bar with a small gap at every topic change;
 - a cover of its own: the headline large, the hero framing in the same rounded stage, the brand and address below.
 
 The `headline` and `subtitle` fields are used for the cover only; the video body shows the brand lockup instead.
+
+## Title cards: the first and last frames
+
+A `statement` beat can be a title card: its text is readable from the first frame (the first word is already in and the others follow within a few frames, so no frame is an empty card), and it may carry two optional fields. `backdrop` is the path of a capture in the project, whose top rises into view under the text so the frame shows the real product; `facts` is one to three short chips under the text (at most 28 width units each, taken from `brief.json`: a plan, a platform, a number the page states). Use them on the hook and on the call to action. Both are only for the statement shot, and the cover reuses the first beat, so a title-card hook gives the cover a product image too.
 
 ## When to use it
 

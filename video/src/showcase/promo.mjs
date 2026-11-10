@@ -10,11 +10,26 @@ export const ZOOM_CAP = 3.2;
 // The stage's soft shadow, kept inside the side margin: a stronger shadow darkens the 100 px strip beside the stage past
 // what the safe-area check allows. On a dark theme the shadow is invisible against the background, so it can be firmer;
 // on a light theme it must be faint. `paper` is the theme's background colour as #rrggbb.
-export const promoShadow = (paper) => {
-  const n = parseInt(paper.slice(1), 16);
-  const luma = 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255);
-  return luma < 90 ? '0 10px 24px rgba(0,0,0,0.35)' : '0 8px 18px rgba(0,0,0,0.1)';
-};
+const HEX = /^#[0-9a-fA-F]{6}$/;
+const rgb = (hex) => { const n = parseInt(hex.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
+const luma = (hex) => { const [r, g, b] = rgb(hex); return 0.299 * r + 0.587 * g + 0.114 * b; };
+export const promoShadow = (paper) => (luma(paper) < 90 ? '0 10px 24px rgba(0,0,0,0.35)' : '0 8px 18px rgba(0,0,0,0.1)');
+
+// The frame's background: the theme's paper colour tinted a little by the brand colour, with two soft glows of the brand
+// colour, one behind the brand lockup and one behind the captions. Each glow is an ellipse that fades to nothing before the
+// 100 px side strips and the strip below y = 1590, which the safe-area check requires to be flat.
+export const promoGlows = () => [
+  {cx: 540, cy: 150, rx: 400, ry: 300, alpha: 0.55},
+  {cx: 540, cy: 1400, rx: 400, ry: 180, alpha: 0.32},
+];
+export function promoBackground(paper, brand) {
+  if (!HEX.test(paper) || !HEX.test(brand ?? '')) return paper;
+  const dark = luma(paper) < 90;
+  const [pr, pg, pb] = rgb(paper), [br, bg, bb] = rgb(brand), k = dark ? 0.12 : 0.06;
+  const base = `rgb(${Math.round(pr + (br - pr) * k)},${Math.round(pg + (bg - pg) * k)},${Math.round(pb + (bb - pb) * k)})`;
+  const glows = promoGlows().map((g) => `radial-gradient(ellipse ${g.rx}px ${g.ry}px at ${g.cx}px ${g.cy}px, rgba(${br},${bg},${bb},${(g.alpha * (dark ? 1 : 0.45)).toFixed(3)}) 0%, rgba(${br},${bg},${bb},0) 100%)`);
+  return `${glows.join(', ')}, ${base}`;
+}
 
 export const baseScale = (page, stage) => stage.w / page.w;
 export const viewSize = (page, stage, zoom) => ({w: page.w / zoom, h: stage.h / (baseScale(page, stage) * zoom)});

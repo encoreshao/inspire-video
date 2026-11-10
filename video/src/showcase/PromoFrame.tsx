@@ -1,7 +1,7 @@
 import React from 'react';
 import {AbsoluteFill, useCurrentFrame} from 'remotion';
 import {SERIF, ThemeCtx, pickTheme} from '../Video';
-import {PROMO_STAGE_H, STAGE_W, promoShadow} from './promo.mjs';
+import {PROMO_STAGE_H, STAGE_W, promoBackground, promoShadow} from './promo.mjs';
 import {progressLayout} from './transitions.mjs';
 
 // The promo style's own look: a dark cinematic frame with a brand lockup at the top, a large stage, captions straight
@@ -15,12 +15,12 @@ export const PROMO_W = 880;
 const PIPS_TOP = 1540;              // everything stays above y = 1590
 
 export type PromoFrameProps = {
-  theme?: string; name: string; nameZh?: string; tagline?: string; sourceLabel: string;
+  theme?: string; brand?: string; name: string; nameZh?: string; tagline?: string; sourceLabel: string;
   beats: {startFrame: number; frames: number; asset?: string; topic?: string}[];
   children: React.ReactNode;
 };
 
-export const PromoFrame: React.FC<PromoFrameProps> = ({theme, name, nameZh, tagline, sourceLabel, beats, children}) => {
+export const PromoFrame: React.FC<PromoFrameProps> = ({theme, brand, name, nameZh, tagline, sourceLabel, beats, children}) => {
   const c = pickTheme(theme);
   const frame = useCurrentFrame();
   const gap = 10;
@@ -30,7 +30,7 @@ export const PromoFrame: React.FC<PromoFrameProps> = ({theme, name, nameZh, tagl
   const pipW = (PROMO_W - gap * (beats.length - 1)) / Math.max(1, beats.length);
   return (
     <ThemeCtx.Provider value={c}>
-      <AbsoluteFill style={{backgroundColor: c.paper, color: c.ink, fontFamily: 'Arial, sans-serif'}}>
+      <AbsoluteFill style={{background: promoBackground(c.paper, brand), color: c.ink, fontFamily: 'Arial, sans-serif'}}>
         <div style={{position: 'absolute', left: PROMO_TEXT_X, top: 140, width: PROMO_W - 2 * (PROMO_TEXT_X - PROMO_X), display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end'}}>
           <div>
             <div style={{display: 'flex', alignItems: 'baseline', gap: 16}}>

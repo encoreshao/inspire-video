@@ -11,12 +11,13 @@ export type ShowcaseBeat = {id: string; en: string; zh: string; zhUnits?: string
   callout?: string; audio?: string | null; startFrame: number; frames: number;
   // promo style only
   shot?: string; box?: {x: number; y: number; w: number; h: number}; page?: {w: number; h: number}; imageScale?: number;
-  statement?: string; statementUnits?: string[];
+  statement?: string; statementUnits?: string[]; backdrop?: string; backdropSize?: {w: number; h: number}; facts?: string[];
   // both styles: an optional topic label (promo shows it; a topic change is detected from it, else from `asset`)
   topic?: string};
 export type ShowcaseProps = {headline: string; subtitle: string; category?: string; theme?: string; name: string; nameZh?: string;
   tagline?: string; taglineZh?: string; sourceLabel: string; beats: ShowcaseBeat[]; durationSeconds: number;
-  template?: string; transition?: string};   // a recipe's name and its transition between topics (promo only)
+  template?: string; transition?: string;
+  brand?: string};      // the site's accent colour (#rrggbb): the promo frame's background is tinted and lit with it   // a recipe's name and its transition between topics (promo only)
 
 const DEV_H = 488;     // device zone height = the speaker layout's video window
 

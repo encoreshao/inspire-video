@@ -2,24 +2,24 @@ import React from 'react';
 import {AbsoluteFill} from 'remotion';
 import {HeadlineLines, SERIF, ThemeCtx, pickTheme} from '../Video';
 import {PROMO_TEXT_X, PROMO_W, PROMO_X} from './PromoFrame';
-import {promoShadow} from './promo.mjs';
+import {promoBackground, promoShadow} from './promo.mjs';
 import {PageCam} from './PageCam';
 import {Statement} from './Statement';
 import type {ShowcaseBeat} from './ShowcaseShort';
 
-export type PromoCoverProps = {headline: string; subtitle: string; category?: string; theme?: string; name: string; nameZh?: string;
+export type PromoCoverProps = {headline: string; subtitle: string; category?: string; theme?: string; brand?: string; name: string; nameZh?: string;
   tagline?: string; sourceLabel: string; beat: ShowcaseBeat};
 
 const STAGE_H = 760;
 
 // The promo cover: the headline large on the dark frame, the hero framing of the first beat in a big rounded stage,
 // and the brand and address below. Nothing here is the editorial info card.
-export const PromoCover: React.FC<PromoCoverProps> = ({headline, subtitle, category, theme, name, nameZh, tagline, sourceLabel, beat}) => {
+export const PromoCover: React.FC<PromoCoverProps> = ({headline, subtitle, category, theme, brand, name, nameZh, tagline, sourceLabel, beat}) => {
   const c = pickTheme(theme);
   const stage = {w: PROMO_W, h: STAGE_H};
   return (
     <ThemeCtx.Provider value={c}>
-      <AbsoluteFill style={{backgroundColor: c.paper, color: c.ink, fontFamily: 'Arial, sans-serif'}}>
+      <AbsoluteFill style={{background: promoBackground(c.paper, brand), color: c.ink, fontFamily: 'Arial, sans-serif'}}>
         <div style={{position: 'absolute', left: PROMO_TEXT_X, top: 120, width: PROMO_W - 2 * (PROMO_TEXT_X - PROMO_X)}}>
           <div style={{fontSize: 26, letterSpacing: 3, color: c.accent, marginBottom: 22}}>{category || 'PROMO / 产品宣传'}</div>
           <div style={{fontFamily: SERIF, fontSize: 92, lineHeight: 1.14, fontWeight: 700, letterSpacing: 1}}>
@@ -29,7 +29,8 @@ export const PromoCover: React.FC<PromoCoverProps> = ({headline, subtitle, categ
         </div>
         <div style={{position: 'absolute', left: PROMO_X, top: 640, width: PROMO_W, height: STAGE_H, borderRadius: 36, overflow: 'hidden', boxShadow: promoShadow(c.paper)}}>
           {beat.shot === 'statement' ? (
-            <Statement text={beat.statement ?? ''} units={beat.statementUnits ?? [beat.statement ?? '']} stage={stage} frame={9999} />
+            <Statement text={beat.statement ?? ''} units={beat.statementUnits ?? [beat.statement ?? '']} stage={stage} frame={9999}
+              backdrop={beat.backdrop} facts={beat.facts} />
           ) : beat.box && beat.page && beat.shot ? (
             <PageCam src={beat.asset} page={beat.page} scale={beat.imageScale ?? 1} box={beat.box}
               shot={beat.shot === 'spotlight-focus' ? 'hero-push' : beat.shot} progress={1} seconds={beat.frames / 30} stage={stage} />

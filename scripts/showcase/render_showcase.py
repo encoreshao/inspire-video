@@ -20,9 +20,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from zh_break import with_units, zh_units  # noqa: E402
 from showcase.assets import image_size  # noqa: E402
+from showcase.brand import first_accent  # noqa: E402
 from showcase.checks import check_video  # noqa: E402
 from showcase.timing import MAX_TOTAL, MIN_TOTAL  # noqa: E402
-from showcase.manifest import FPS, ManifestError, beat_seconds_list, beat_target, crop_warnings, frame_windows, template_warnings, validate_showcase  # noqa: E402
+from showcase.manifest import FPS, ManifestError, beat_seconds_list, beat_target, crop_warnings, frame_windows, pacing_warnings, template_warnings, validate_showcase  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -45,6 +46,10 @@ def stage(project: Path, public: Path, m: dict, timings: dict | None) -> dict:
             audio = f"{pid}-{b['id']}.wav"
             shutil.copy2(wav, public / audio)
         out[b["id"]] = {"asset": asset, "audio": audio}
+        if b.get("backdrop"):                              # a statement's peek of a capture
+            src = project / b["backdrop"]
+            out[b["id"]]["backdrop"] = f"{pid}-{b['id']}-backdrop{src.suffix.lower()}"
+            shutil.copy2(src, public / out[b["id"]]["backdrop"])
     return out
 
 
@@ -78,6 +83,11 @@ def build_props(m: dict, project: Path, timings: dict | None, staged: dict, zh_b
             entry["topic"] = b["topic"]                    # the transitions and the topic label key off it
         if promo and b.get("shot") == "statement":
             entry.update({"shot": "statement", "statement": b["statement"], "statementUnits": statement_units(b["statement"])})
+            if b.get("backdrop"):
+                bw, bh = image_size(project / b["backdrop"])
+                entry.update({"backdrop": staged[b["id"]]["backdrop"], "backdropSize": {"w": bw, "h": bh}})
+            if b.get("facts"):
+                entry["facts"] = list(b["facts"])
         elif promo:
             box, info = beat_target(b, project)
             entry.update({"shot": b.get("shot", "hero-push"), "box": box, "page": info["page"], "imageScale": info["scale"]})
@@ -88,6 +98,11 @@ def build_props(m: dict, project: Path, timings: dict | None, staged: dict, zh_b
              "theme": m.get("theme") or ("ink" if promo else "light"), "name": p["name"], "nameZh": p.get("name_zh", ""),
              "tagline": p.get("tagline", ""), "taglineZh": p.get("tagline_zh", ""), "sourceLabel": m["source"]["label"],
              "beats": beats, "durationSeconds": round(sum(w["frames"] for w in windows) / FPS, 2)}
+    if promo:
+        assets = list(dict.fromkeys(b["asset"] for b in m["beats"] if b.get("asset")))[:4]
+        brand = m.get("brand_color") or first_accent(project / a for a in assets)
+        if brand:
+            props["brand"] = brand                         # the frame's background is tinted and lit with the site's accent
     if m.get("template"):
         from showcase import templates as T
         props["template"] = m["template"]
@@ -97,7 +112,7 @@ def build_props(m: dict, project: Path, timings: dict | None, staged: dict, zh_b
 
 def cover_props(props: dict) -> dict:
     keys = ("headline", "subtitle", "category", "theme", "name", "nameZh", "tagline", "taglineZh", "sourceLabel")
-    return {**{k: props[k] for k in keys}, "beat": props["beats"][0]}
+    return {**{k: props[k] for k in keys}, **({"brand": props["brand"]} if "brand" in props else {}), "beat": props["beats"][0]}
 
 
 def _load(path: Path):
@@ -123,7 +138,7 @@ def main(argv=None, run=subprocess.run) -> int:
             m["theme"] = a.theme
         timings = _load(project / "timings.json")
         validate_showcase(m, project, timings)
-        for w in template_warnings(m):
+        for w in template_warnings(m) + pacing_warnings(m, timings):
             print(f"warning: {w}", file=sys.stderr)
         brief = _load(project / "brief.json")
         if brief and brief.get("rights_unresolved") and not a.preview and not a.allow_unresolved_rights:

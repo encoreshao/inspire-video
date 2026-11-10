@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  PROMO_STAGE_H, STAGE_W, baseScale, clampCenter, fitZoom, maxZoom, minZoom, placeImage, promoCamera, promoShadow, stageRect, viewSize,
+  PROMO_STAGE_H, STAGE_W, baseScale, clampCenter, fitZoom, maxZoom, minZoom, placeImage, promoBackground, promoCamera, promoGlows, promoShadow, stageRect, viewSize,
 } from './promo.mjs';
 import META from './shots.json' with {type: 'json'};
 import {SHOTS, shotMeta,statementDoneFrame, statementFontSize, statementReveal} from './shots.mjs';
@@ -248,4 +248,22 @@ test('the stage shadow is soft on a light theme (it must not trip the side-strip
   for (const paper of ['#F4EBDD', '#EAF0EF', '#ffffff']) assert.ok(alpha(promoShadow(paper)) <= 0.12, paper);
   assert.equal(promoShadow('#1c1612'), '0 10px 24px rgba(0,0,0,0.35)');
   assert.ok(alpha(promoShadow('#1c1612')) > alpha(promoShadow('#F4EBDD')));
+});
+
+test('the background glows stay inside the side margins and above the bottom strip, so the safe-area check sees a flat margin', () => {
+  for (const g of promoGlows()) {
+    assert.ok(g.cx - g.rx >= 100 && g.cx + g.rx <= 980, `${JSON.stringify(g)} reaches the 100 px side strips`);
+    assert.ok(g.cy + g.ry <= 1590, `${JSON.stringify(g)} reaches the bottom strip`);
+    assert.ok(g.alpha > 0 && g.alpha <= 0.7);
+  }
+});
+
+test('the background is the plain paper colour without a brand colour, and a tinted base with glows with one', () => {
+  assert.equal(promoBackground('#1D1814', undefined), '#1D1814');
+  assert.equal(promoBackground('#1D1814', 'nope'), '#1D1814');
+  const dark = promoBackground('#1D1814', '#7c3aed');
+  assert.equal((dark.match(/radial-gradient/g) || []).length, promoGlows().length);
+  assert.ok(!dark.includes('#1D1814'), 'the base is the paper tinted by the brand, not the paper itself');
+  const alpha = (css) => Math.max(...[...css.matchAll(/rgba\(\d+,\d+,\d+,([\d.]+)\)/g)].map((m) => Number(m[1])));
+  assert.ok(alpha(promoBackground('#EDF1F3', '#7c3aed')) < alpha(dark), 'a light theme gets fainter glows');
 });
