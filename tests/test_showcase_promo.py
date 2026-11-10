@@ -110,6 +110,12 @@ def test_the_device_checks_do_not_apply_to_a_promo_manifest(tmp_path):
     assert M.crop_warnings(m, p) == []
 
 
+def test_the_python_shot_table_is_the_shared_json_file_and_not_a_copy():
+    table = json.loads((ROOT / "video" / "src" / "showcase" / "shots.json").read_text(encoding="utf-8"))
+    assert M.PROMO_SHOTS == table
+    assert "\"needsTallPage\": " not in (ROOT / "scripts" / "showcase" / "manifest.py").read_text(encoding="utf-8")
+
+
 @pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
 def test_the_python_shot_table_matches_the_javascript_registry():
     code = "import('./video/src/showcase/shots.mjs').then((m) => console.log(JSON.stringify(m.shotMeta())))"

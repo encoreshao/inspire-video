@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {
   PROMO_STAGE_H, STAGE_W, baseScale, clampCenter, fitZoom, maxZoom, minZoom, placeImage, promoCamera, stageRect, viewSize,
 } from './promo.mjs';
-import {SHOTS, shotMeta, statementDoneFrame, statementFontSize, statementReveal} from './shots.mjs';
+import META from './shots.json' with {type: 'json'};
+import {SHOTS, shotMeta,statementDoneFrame, statementFontSize, statementReveal} from './shots.mjs';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) <= eps, `${a} vs ${b}`);
 const EPS = 1e-6;
@@ -235,4 +236,13 @@ test('framing helpers: fit, limits and centre clamping', () => {
   const c = clampCenter(tall, stage, 2, {cx: 0, cy: 0});
   near(c.cx, viewSize(tall, stage, 2).w / 2);
   near(c.cy, viewSize(tall, stage, 2).h / 2);
+});
+
+test('every shot in the registry has its metadata in shots.json, and the reverse', () => {
+  assert.deepEqual(Object.keys(SHOTS).sort(), Object.keys(META).sort());
+  for (const [id, meta] of Object.entries(META)) {
+    for (const key of ['minSeconds', 'maxPerVideo', 'needsTallPage', 'needsTarget']) {
+      assert.equal(SHOTS[id][key], meta[key], `${id}.${key}`);
+    }
+  }
 });

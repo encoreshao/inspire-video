@@ -1,6 +1,7 @@
 // The promo shots: frozen presets. Each camera is a pure function of {target, page, stage, scale, progress, seconds}.
 // Techniques are written from scratch after reading the named video-shotcraft cards (Apache-2.0); no demo code is reused.
 import {clamp, easeInOut} from './geometry.mjs';
+import META from './shots.json' with {type: 'json'};
 import {clampCenter, fitZoom, lerp, maxZoom, minZoom, targetCenter, viewSize} from './promo.mjs';
 
 const PUSH_END = 0.65;      // the push arrives at 65% of the beat; the camera is then dead still (no drift: the card forbids it)
@@ -93,15 +94,15 @@ export const SHOTS = Object.freeze({
   // Card studied: spotlight-hero-card (opening). Borrowed: a single hero target, and a hold that is dead still (the card
   // forbids tail drift). Not borrowed: its action arc, dark theatre, light beam, hover and outline light.
   'hero-push': Object.freeze({
-    id: 'hero-push', summary: 'Slow push from the page-width framing onto the target, then a hold.',
-    minSeconds: 4, maxPerVideo: null, needsTallPage: false, needsTarget: true, settle: 0.1,
+    id: 'hero-push', ...META['hero-push'], summary: 'Slow push from the page-width framing onto the target, then a hold.',
+    settle: 0.1,
     camera: (a) => ({...push(a, fitZoom(a.page, a.stage, a.target)), dim: 0}),
   }),
   // Card studied: spotlight-hero-card (opening). Borrowed: only the target is lit, by a card-shaped soft hole and not a
   // circle (the card's pitfall), the camera still at the end. Not borrowed: the theatre, beam, hover and outline light.
   'spotlight-focus': Object.freeze({
-    id: 'spotlight-focus', summary: 'A gentler push while everything outside the target dims to 55%.',
-    minSeconds: 4, maxPerVideo: null, needsTallPage: false, needsTarget: true, settle: 0.1,
+    id: 'spotlight-focus', ...META['spotlight-focus'], summary: 'A gentler push while everything outside the target dims to 55%.',
+    settle: 0.1,
     camera: (a) => {
       const z0 = minZoom(a.page, a.stage);
       const fit = fitZoom(a.page, a.stage, a.target);
@@ -111,21 +112,21 @@ export const SHOTS = Object.freeze({
   }),
   // Card studied: crash-zoom-punch.
   'crash-zoom-punch': Object.freeze({
-    id: 'crash-zoom-punch', summary: 'A wide hold, then a 6-frame punch onto the target with a small overshoot, then still.',
-    minSeconds: 4, maxPerVideo: 1, needsTallPage: false, needsTarget: true, settle: 0.1,
+    id: 'crash-zoom-punch', ...META['crash-zoom-punch'], summary: 'A wide hold, then a 6-frame punch onto the target with a small overshoot, then still.',
+    settle: 0.1,
     camera: (a) => crash(a),
   }),
   // No card: a plain vertical travel, written for pages taller than one screen.
   'pan-reveal': Object.freeze({
-    id: 'pan-reveal', summary: 'Travel down a tall page from its top to the target, then rest.',
-    minSeconds: 5, maxPerVideo: null, needsTallPage: true, needsTarget: true, settle: 0.25, reveals: true,
+    id: 'pan-reveal', ...META['pan-reveal'], summary: 'Travel down a tall page from its top to the target, then rest.',
+    settle: 0.25, reveals: true,
     camera: (a) => ({...pan(a), dim: 0}),
   }),
   // No card: a plain staggered fade and rise. No capture and no camera: large text on the theme background, for the
   // hook and the call to action.
   'statement': Object.freeze({
-    id: 'statement', summary: 'The statement text large on the theme background, words arriving 4 frames apart, then a hold.',
-    minSeconds: 4, maxPerVideo: 2, needsTallPage: false, needsTarget: false, settle: 0, camera: null,
+    id: 'statement', ...META['statement'], summary: 'The statement text large on the theme background, words arriving 4 frames apart, then a hold.',
+    settle: 0, camera: null,
   }),
 });
 
@@ -141,6 +142,5 @@ export const statementDoneFrame = (count) => (count - 1) * STATEMENT_STAGGER + S
 // Type size in px for a statement of `widthUnits` (a Chinese character counts 2): bigger when there is less to say.
 export const statementFontSize = (widthUnits) => (widthUnits <= 14 ? 88 : widthUnits <= 20 ? 76 : 66);   // longer lines wrap onto two or three
 
-// Plain data for the Python validator (scripts/showcase/manifest.py keeps a copy; a test compares the two).
-export const shotMeta = () => Object.fromEntries(Object.values(SHOTS).map((s) =>
-  [s.id, {minSeconds: s.minSeconds, maxPerVideo: s.maxPerVideo, needsTallPage: s.needsTallPage, needsTarget: s.needsTarget}]));
+// Plain data for the Python validator: the same table scripts/showcase/manifest.py loads.
+export const shotMeta = () => JSON.parse(JSON.stringify(META));

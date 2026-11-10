@@ -1,0 +1,7 @@
+{
+  "hero-push": {"minSeconds": 4, "maxPerVideo": null, "needsTallPage": false, "needsTarget": true},
+  "spotlight-focus": {"minSeconds": 4, "maxPerVideo": null, "needsTallPage": false, "needsTarget": true},
+  "crash-zoom-punch": {"minSeconds": 4, "maxPerVideo": 1, "needsTallPage": false, "needsTarget": true},
+  "pan-reveal": {"minSeconds": 5, "maxPerVideo": null, "needsTallPage": true, "needsTarget": true},
+  "statement": {"minSeconds": 4, "maxPerVideo": 2, "needsTallPage": false, "needsTarget": false}
+}

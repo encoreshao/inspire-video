@@ -22,14 +22,9 @@ from showcase.timing import LengthError, MAX_TOTAL, MIN_TOTAL, check_total  # no
 
 THEMES = ("light", "mist", "ivory", "ink", "sage")
 STYLES = ("device", "promo")
-# The promo shots. Keep equal to shotMeta() in video/src/showcase/shots.mjs (tests/test_showcase_promo.py compares them).
-PROMO_SHOTS = {
-    "hero-push": {"minSeconds": 4, "maxPerVideo": None, "needsTallPage": False, "needsTarget": True},
-    "spotlight-focus": {"minSeconds": 4, "maxPerVideo": None, "needsTallPage": False, "needsTarget": True},
-    "crash-zoom-punch": {"minSeconds": 4, "maxPerVideo": 1, "needsTallPage": False, "needsTarget": True},
-    "pan-reveal": {"minSeconds": 5, "maxPerVideo": None, "needsTallPage": True, "needsTarget": True},
-    "statement": {"minSeconds": 4, "maxPerVideo": 2, "needsTallPage": False, "needsTarget": False},
-}
+# The promo shots' metadata, shared with video/src/showcase/shots.mjs (one JSON file read by both).
+PROMO_SHOTS = json.loads((Path(__file__).resolve().parents[2] / "video" / "src" / "showcase" / "shots.json")
+                         .read_text(encoding="utf-8"))
 # The punch rule below mirrors the camera in video/src/showcase/shots.mjs (a test compares them over a grid): the stage
 # width, the zoom cap, and the punch's fill (0.7), overshoot (3%) and smallest move (5% above the page-fitting zoom).
 STAGE_W = 880
