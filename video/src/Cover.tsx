@@ -3,15 +3,18 @@ import {AbsoluteFill, Img, staticFile} from 'remotion';
 import {SERIF, HeadlineLines, ThemeCtx, pickTheme, Person} from './Video';
 import {DEFAULT_PROFILE, panelWidth} from './layout.mjs';
 import type {Profile} from './layout.mjs';
+import {CoverBold} from './CoverBold';
 
 export type CoverProps = {
   headline: string; subtitle: string; speaker: string; source: string;
   poster: string | null; talkTitle?: string; category?: string;
   speakerZh?: string; role?: string; roleZh?: string; theme?: string; people?: Person[];
-  profile?: Profile;
+  profile?: Profile; variant?: 'classic' | 'split' | 'blur';
 };
 
-export const InspireCover: React.FC<CoverProps> = ({headline, subtitle, speaker, speakerZh, role, roleZh, source, poster, talkTitle, category, theme, people, profile = DEFAULT_PROFILE}) => {
+export const InspireCover: React.FC<CoverProps> = ({headline, subtitle, speaker, speakerZh, role, roleZh, source, poster, talkTitle, category, theme, people, profile = DEFAULT_PROFILE, variant = 'split'}) => {
+  if (variant !== 'classic') return <CoverBold headline={headline} subtitle={subtitle} speaker={speaker} speakerZh={speakerZh} source={source} poster={poster}
+    category={category} theme={theme} profile={profile} variant={variant} />;
   const c = pickTheme(theme);
   const k = !!profile.compact;           // compact (4:5, 3:4): smaller type
   const pad = k ? 80 : 150;
