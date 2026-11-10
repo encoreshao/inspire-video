@@ -282,7 +282,7 @@ The agent ingests the source, writes a short script from facts it found (never i
 
 ```bash
 python3 scripts/showcase/ingest.py https://example.com/ --project output/projects/demo
-python3 scripts/showcase/templates.py list                              # promo only: the video recipes to choose from (--json for tools)
+python3 scripts/showcase/templates.py list                              # promo only: the video recipes to choose from (--json gives covers and sample clips)
 python3 scripts/showcase/manifest.py scaffold output/projects/demo      # then fill in the beats: headline, project name, and per beat en, zh, focus
                                                                         # add --template cinematic|punchy|calm|minimal to start from a recipe
 python3 scripts/showcase/manifest.py validate output/projects/demo

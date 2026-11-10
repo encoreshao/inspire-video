@@ -81,3 +81,15 @@ def test_the_skill_and_the_promo_reference_document_templates():
     assert "templates/<id>.yaml" in STYLE and "shots.json" in STYLE
     for tid in T.load_templates():
         assert f"`{tid}`" in STYLE, tid
+
+
+def test_the_skill_shows_the_template_previews_when_the_user_chooses():
+    assert "--json" in SKILL and "cover" in SKILL and "preview" in SKILL and "templates.py preview" in SKILL
+    assert "ask" in SKILL.lower()
+
+
+def test_every_shipped_template_has_a_cover_and_a_sample_clip():
+    from showcase import templates as T
+    for row in T.catalogue():
+        assert row["cover"] and row["preview"], f"{row['id']}: run `python3 scripts/showcase/templates.py preview {row['id']}`"
+        assert (ROOT / row["cover"]).stat().st_size > 1000 and (ROOT / row["preview"]).stat().st_size > 10000
