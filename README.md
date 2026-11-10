@@ -158,7 +158,8 @@ Everything is written under `~/.inspire-video/output/`:
 | `projects/<slug>/` | transcript, selected segments, copy, `video_manifest.json`, `review.md`, `assets/` (clip, poster) |
 | `final/<slug>/` | everything to publish, in one folder per project: |
 | `final/<slug>/<slug>.mp4` | the finished video |
-| `final/<slug>/cover.png` | the cover image (rendered with every final video) |
+| `final/<slug>/cover.png` | the cover image (rendered with every final video): category, title, subtitle, the poster and the speaker name only |
+| `final/<slug>/cover-3x4.png` | the same cover at 3:4 (1080 by 1440), rendered with the 9:16 cover |
 | `final/<slug>/publish.md` | title, description and hashtags for each target platform (plus one `publish_<platform>.txt` each) |
 | `cache/` | downloaded URL sources |
 

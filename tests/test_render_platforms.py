@@ -94,7 +94,7 @@ def test_another_profile_gets_its_own_files_and_props(run):
     assert "profile" not in json.loads((proj / "props.json").read_text())
     cover_props = json.loads((proj / "cover_props-portrait-4x5.json").read_text())
     assert cover_props["profile"]["height"] == 1350
-    assert any(a == f"--props={proj / 'props-portrait-4x5.json'}" for a in calls[2])
+    assert any(a == f"--props={proj / 'props-portrait-4x5.json'}" for a in calls[3])
 
 
 def test_an_unsupported_profile_falls_back_with_a_visible_warning(run, capsys):
