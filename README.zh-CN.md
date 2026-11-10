@@ -282,7 +282,9 @@ python3 scripts/publish_meta.py output/projects/<slug> --init --platform douyin,
 
 ```bash
 python3 scripts/showcase/ingest.py https://example.com/ --project output/projects/demo
+python3 scripts/showcase/templates.py list                              # 仅 promo：可选的视频模板（工具可用 --json）
 python3 scripts/showcase/manifest.py scaffold output/projects/demo      # 然后填写镜头：标题、项目名，以及每个镜头的 en、zh、focus
+                                                                        # 加 --template cinematic|punchy|calm|minimal 从模板开始
 python3 scripts/showcase/manifest.py validate output/projects/demo
 python3 scripts/showcase/narrate.py output/projects/demo --engine say   # 可选；也可以用 cosyvoice 加你自己的声音档案
 python3 scripts/render.py output/projects/demo --preview                # 半尺寸草稿

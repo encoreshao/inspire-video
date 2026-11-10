@@ -99,6 +99,15 @@ Run `python3 scripts/showcase/manifest.py validate output/projects/<slug>`; ever
 - `tilt-glide`: the card behind it, `steep-tilt-glide`, defines the technique by a 60 degree angle with the camera fixed and the page sliding past it, and says that leaving 55 to 65 degrees means a different technique. A gentle 8 degree tilt would carry the name without the technique, and a 3D layer softens text. It is left out until it can be built faithfully and sharp.
 - Sound design, beat sync and sound-effect sourcing, the JianYing export and the Motion Workbench from video-shotcraft.
 
+## Templates
+
+A template is a whole-video recipe: the look (theme), the shot palette with weights and limits, an opening and closing shot, a transition and pacing advice. Pick one per video; the manifest names it with `"template": "<id>"`.
+
+- Recipes are `templates/<id>.yaml`; the shots they use are defined in `video/src/showcase/shots.json` (the one table read by both the renderer and the validator).
+- Shipped: `cinematic` (default), `punchy`, `calm`, `minimal`. List them with `python3 scripts/showcase/templates.py list [--json]`, inspect one with `show <id>`, and check all with `validate`.
+- Add a recipe by adding a file: `id` equal to the file name, `style: promo`, at least three shots of which two are unlimited camera shots (`hero-push`, `spotlight-focus`), a `weight` of 1 or more for each, and optionally `max`, `theme`, `opening`, `closing`, `pacing.beat_seconds` and `transition`. Run `templates.py validate`.
+- The recipe suggests, the beat decides: a beat may use a shot outside the palette (validate warns), but a template `max` is an error.
+
 ## Credits
 
 Written from scratch after reading the named cards of video-shotcraft (Apache-2.0); no code, copy, UI or colours are reused, and each shot's source comment says what it borrowed.

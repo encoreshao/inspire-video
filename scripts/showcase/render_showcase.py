@@ -22,7 +22,7 @@ from zh_break import with_units, zh_units  # noqa: E402
 from showcase.assets import image_size  # noqa: E402
 from showcase.checks import check_video  # noqa: E402
 from showcase.timing import MAX_TOTAL, MIN_TOTAL  # noqa: E402
-from showcase.manifest import FPS, ManifestError, beat_seconds_list, beat_target, crop_warnings, frame_windows, validate_showcase  # noqa: E402
+from showcase.manifest import FPS, ManifestError, beat_seconds_list, beat_target, crop_warnings, frame_windows, template_warnings, validate_showcase  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -88,6 +88,10 @@ def build_props(m: dict, project: Path, timings: dict | None, staged: dict, zh_b
              "theme": m.get("theme") or ("ink" if promo else "light"), "name": p["name"], "nameZh": p.get("name_zh", ""),
              "tagline": p.get("tagline", ""), "taglineZh": p.get("tagline_zh", ""), "sourceLabel": m["source"]["label"],
              "beats": beats, "durationSeconds": round(sum(w["frames"] for w in windows) / FPS, 2)}
+    if m.get("template"):
+        from showcase import templates as T
+        props["template"] = m["template"]
+        props["transition"] = T.get_template(m["template"])["transition"]
     return props
 
 
@@ -119,6 +123,8 @@ def main(argv=None, run=subprocess.run) -> int:
             m["theme"] = a.theme
         timings = _load(project / "timings.json")
         validate_showcase(m, project, timings)
+        for w in template_warnings(m):
+            print(f"warning: {w}", file=sys.stderr)
         brief = _load(project / "brief.json")
         if brief and brief.get("rights_unresolved") and not a.preview and not a.allow_unresolved_rights:
             raise ManifestError("some assets have unresolved rights: confirm you may reuse them, then pass "

@@ -73,3 +73,11 @@ def test_the_promo_reference_describes_its_own_look():
 def test_the_skills_readme_tells_the_two_styles_apart():
     text = (ROOT / "skills" / "README.md").read_text(encoding="utf-8")
     assert "editorial" in text and "cinematic" in text
+
+
+def test_the_skill_and_the_promo_reference_document_templates():
+    from showcase import templates as T
+    assert "templates.py list" in SKILL and "--template" in SKILL
+    assert "templates/<id>.yaml" in STYLE and "shots.json" in STYLE
+    for tid in T.load_templates():
+        assert f"`{tid}`" in STYLE, tid

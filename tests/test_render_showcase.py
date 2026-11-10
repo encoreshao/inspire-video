@@ -340,3 +340,18 @@ def test_a_scaffold_turned_promo_gets_the_dark_theme(tmp_path, sandbox):
     staged = R.stage(p, sandbox / "video" / "public", m, None)
     m.pop("theme", None)
     assert R.build_props(m, p, None, staged)["theme"] == "ink"
+
+
+def test_props_carry_the_template_and_its_transition(tmp_path, sandbox):
+    from promo_fixtures import promo_project
+    p, m = promo_project(tmp_path)
+    m = {**m, "template": "cinematic"}
+    props = R.build_props(m, p, None, R.stage(p, sandbox / "video" / "public", m, None))
+    assert props["template"] == "cinematic" and props["transition"] == "dissolve"
+
+
+def test_props_without_a_template_have_neither_key(tmp_path, sandbox):
+    from promo_fixtures import promo_project
+    p, m = promo_project(tmp_path)
+    props = R.build_props(m, p, None, R.stage(p, sandbox / "video" / "public", m, None))
+    assert "template" not in props and "transition" not in props
