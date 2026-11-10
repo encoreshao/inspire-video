@@ -58,3 +58,31 @@ def test_cache_key_is_stable_and_sensitive_to_every_field():
         changed = list(base)
         changed[i] = other
         assert timing.cache_key(*changed) != k, f"field {i} not part of the key"
+
+
+def test_a_pause_is_between_four_tenths_and_a_second_and_grows_with_the_line():
+    short, long_ = timing.pause_after(2.5), timing.pause_after(7.0)
+    assert short == timing.PAUSE_MIN == 0.4 and long_ == 0.7
+    mid = [timing.pause_after(a) for a in (3.0, 4.0, 5.0, 6.0, 6.5)]
+    assert mid == sorted(mid) and all(0.4 <= p <= 0.7 for p in mid)        # monotonic, and inside the no-topic-change range
+
+
+def test_a_change_of_topic_adds_a_longer_pause_capped_at_one_second():
+    assert timing.pause_after(2.5, topic_change=True) == 0.7
+    assert timing.pause_after(4.5, topic_change=True) == pytest.approx(timing.pause_after(4.5) + 0.3)
+    assert timing.pause_after(7.0, topic_change=True) == timing.PAUSE_MAX == 1.0
+    assert timing.pause_after(30.0, topic_change=True) == 1.0
+
+
+def test_beat_seconds_takes_the_pause_it_is_given():
+    assert timing.beat_seconds(3.0, 0.9) == 3.9
+    assert timing.beat_seconds(3.0) == 3.4          # the old fixed pad is the default
+
+
+def test_a_topic_break_follows_the_rule_the_transitions_use():
+    # the topics differ when either beat names one; otherwise the capture differs (a title card has no capture)
+    assert timing.topic_break({"topic": "A"}, {"topic": "B"}) and not timing.topic_break({"topic": "A"}, {"topic": "A"})
+    assert timing.topic_break({"topic": "A"}, {}) and timing.topic_break({}, {"topic": "A"})
+    assert timing.topic_break({"asset": "x.png"}, {"asset": "y.png"}) and not timing.topic_break({"asset": "x.png"}, {"asset": "x.png"})
+    assert timing.topic_break({"shot": "statement"}, {"asset": "y.png"})
+    assert not timing.topic_break({"asset": "x.png"}, {"asset": "x.png", "target": "card-1"})

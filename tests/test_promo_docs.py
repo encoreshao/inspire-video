@@ -101,3 +101,8 @@ def test_the_references_document_title_cards_the_brand_background_and_pacing():
         assert needle in STYLE, needle
     assert "80 to 100 characters" in beat and "silence" in beat
     assert "title card" in STYLE
+
+
+def test_the_beat_writing_reference_explains_the_pauses():
+    beat = (SKILL_DIR / "references" / "beat-writing.md").read_text(encoding="utf-8")
+    assert "0.4 s after a short line" in beat and "at most 1 s" in beat and "new block" in beat

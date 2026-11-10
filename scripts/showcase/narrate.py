@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))   # so `python scri
 
 from showcase import engines  # noqa: E402
 from showcase.engines import Item  # noqa: E402
-from showcase.timing import MAX_TOTAL, MIN_TOTAL, LengthError, beat_seconds, cache_key, check_total, wav_seconds  # noqa: E402
+from showcase.timing import MAX_TOTAL, MIN_TOTAL, PAUSE_MIN, LengthError, beat_seconds, cache_key, check_total, pause_after, topic_break, wav_seconds  # noqa: E402
 from showcase.voices import VoiceError, load_voice  # noqa: E402
 
 BEAT_ID = re.compile(r"^[a-z0-9][a-z0-9_-]{0,47}$")
@@ -113,10 +113,13 @@ def narrate(project, engine, voice=None, lang=None, min_total=MIN_TOTAL, max_tot
     # video length, and the camera move needs the time anyway. The audio itself is never stretched.
     floor = math.ceil(min_total / len(plan) * 100) / 100
     rows = []
-    for bid, text in plan:
+    for i, (bid, text) in enumerate(plan):
         secs = wav_seconds(audio_dir / f"{bid}.wav")
-        rows.append({"id": bid, "audio": f"audio/{bid}.wav", "audio_seconds": round(secs, 2),
-                     "seconds": max(beat_seconds(secs), floor),
+        # The pause after a line depends on the line and on where it sits: longer after a long line and where a block ends.
+        nxt = beats[i + 1] if i + 1 < len(beats) else None
+        pause = pause_after(secs, topic_break(beats[i], nxt)) if nxt is not None else PAUSE_MIN
+        rows.append({"id": bid, "audio": f"audio/{bid}.wav", "audio_seconds": round(secs, 2), "pause": pause,
+                     "seconds": max(beat_seconds(secs, pause), floor),
                      "text_sha": hashlib.sha256(text.encode("utf-8")).hexdigest()})   # lets render notice stale audio
     total = check_total([r["seconds"] for r in rows], lo=min_total, hi=max_total)
     timings = {"engine": engine.name, "voice": voice.name if voice else None, "lang": lang,

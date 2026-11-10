@@ -241,7 +241,7 @@ def test_the_hold_floor_never_rounds_below_the_minimum(tmp_path):
 def test_long_narration_is_not_shortened_by_the_floor(tmp_path):
     p = project(tmp_path, [{"id": "a", "en": "x" * 100}, {"id": "b", "en": "x" * 100}])
     t = run(p, FakeEngine(), min_total=5.0)
-    assert [b["seconds"] for b in t["beats"]] == [10.4, 10.4]
+    assert [b["seconds"] for b in t["beats"]] == [10.7, 10.4]      # a full line earns a longer pause; the last beat just holds
 
 
 def test_timings_record_a_hash_of_each_narrated_text(tmp_path):
@@ -264,3 +264,14 @@ def test_delivery_or_style_change_invalidates_the_cached_audio(tmp_path, make_wa
     other = voices.VoiceProfile(**{**v.__dict__, "style": "Speak slowly."})
     zero = voices.VoiceProfile(**{**v.__dict__, "delivery": "zero_shot"})
     assert len({narrate._voice_id(v), narrate._voice_id(other), narrate._voice_id(zero)}) == 3
+
+
+def test_the_pause_after_a_line_depends_on_its_length_and_on_whether_a_block_ends(tmp_path):
+    beats = [{"id": "a", "en": "Hi", "topic": "One"}, {"id": "b", "en": "x" * 100, "topic": "One"},
+             {"id": "c", "en": "x" * 100, "topic": "One"}, {"id": "d", "en": "Hi", "topic": "Two"}, {"id": "e", "en": "Hi", "topic": "Three"}]
+    t = run(project(tmp_path, beats), FakeEngine(), min_total=5.0)
+    pauses = {b["id"]: b["pause"] for b in t["beats"]}
+    # a: short, same block. b: long, same block. c: long, and block One ends. d: short, and block Two ends. e: the last beat.
+    assert pauses == {"a": 0.4, "b": 0.7, "c": 1.0, "d": 0.7, "e": 0.4}
+    for b in t["beats"]:
+        assert b["seconds"] == max(round(b["audio_seconds"] + b["pause"], 2), 1.0)      # 1.0 is the hold floor: 5 s over 5 beats
