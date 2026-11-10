@@ -10,7 +10,7 @@ from pathlib import Path
 
 HUES = 24                    # hue buckets
 MIN_SAT, MIN_VAL, MAX_VAL = 0.35, 0.30, 0.95
-MIN_SHARE = 0.002            # the winning hue must cover at least this share of the pixels (weighted), or it is noise
+MIN_SHARE = 0.0004           # the winning hue must cover at least this share of the pixels (weighted), or it is noise: a clean page has a small accent
 
 
 def dominant_accent(path, width: int = 160) -> str | None:

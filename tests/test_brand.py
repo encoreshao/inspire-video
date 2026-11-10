@@ -45,3 +45,15 @@ def test_the_first_image_with_an_accent_is_used(tmp_path):
     blue = save(tmp_path, "u.png", (100, 100), "#ffffff", [((0, 0, 100, 60), (20, 80, 200))])
     assert hue_close(B.first_accent([grey, blue]), (20, 80, 200))
     assert B.first_accent([grey]) is None and B.first_accent([]) is None
+
+
+def test_a_small_accent_on_a_mostly_white_page_still_counts(tmp_path):
+    # thin purple headline words and one small button: about 0.12% of the page, the way a clean marketing page looks
+    p = save(tmp_path, "d.png", (1440, 6000), "#fafafa", [((100, 300, 220, 330), (124, 58, 237)), ((100, 2000, 220, 2030), (124, 58, 237)),
+                                                           ((100, 4000, 220, 4030), (124, 58, 237))])
+    assert hue_close(B.dominant_accent(p), (124, 58, 237))
+
+
+def test_a_handful_of_stray_coloured_pixels_is_not_an_accent(tmp_path):
+    p = save(tmp_path, "e.png", (1440, 6000), "#fafafa", [((10, 10, 14, 14), (230, 60, 40))])
+    assert B.dominant_accent(p) is None

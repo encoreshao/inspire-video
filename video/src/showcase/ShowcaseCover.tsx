@@ -5,13 +5,13 @@ import {DeviceFrame} from './DeviceFrame';
 import {PromoCover} from './PromoCover';
 import type {ShowcaseBeat} from './ShowcaseShort';
 
-export type ShowcaseCoverProps = {headline: string; subtitle: string; category?: string; theme?: string; name: string; nameZh?: string;
+export type ShowcaseCoverProps = {headline: string; subtitle: string; category?: string; theme?: string; brand?: string; name: string; nameZh?: string;
   tagline?: string; taglineZh?: string; sourceLabel: string; beat: ShowcaseBeat};
 
 // The device style's cover (the editorial layout). A promo project (its beats carry a shot) gets its own cover.
-export const ShowcaseCover: React.FC<ShowcaseCoverProps> = ({headline, subtitle, category, theme, name, nameZh, tagline, taglineZh, sourceLabel, beat}) => {
+export const ShowcaseCover: React.FC<ShowcaseCoverProps> = ({headline, subtitle, category, theme, brand, name, nameZh, tagline, taglineZh, sourceLabel, beat}) => {
   if (beat.shot) {
-    return <PromoCover headline={headline} subtitle={subtitle} category={category} theme={theme} name={name} nameZh={nameZh}
+    return <PromoCover headline={headline} subtitle={subtitle} category={category} theme={theme} brand={brand} name={name} nameZh={nameZh}
       tagline={tagline} sourceLabel={sourceLabel} beat={beat} />;
   }
   const c = pickTheme(theme);
