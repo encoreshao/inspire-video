@@ -278,7 +278,7 @@ def _check_promo_beat(b: dict, project: Path) -> None:
                             f"{info['page']['h']} px; use hero-push or spotlight-focus instead")
 
 
-def _check_promo_sequence(beats: list, seconds: list) -> None:
+def _check_promo_sequence(beats: list, seconds: list, template: dict | None = None) -> None:
     shots = [b.get("shot", "hero-push") for b in beats]
     for before, after, a, c in zip(beats, beats[1:], shots, shots[1:]):
         if a == c:
@@ -288,10 +288,35 @@ def _check_promo_sequence(beats: list, seconds: list) -> None:
         limit = meta["maxPerVideo"]
         if limit is not None and shots.count(name) > limit:
             raise ManifestError(f"shot {name!r} is used {shots.count(name)} times; use it at most {limit} time(s) per video")
+    for entry in (template or {}).get("shots", []):
+        if entry["max"] is not None and shots.count(entry["id"]) > entry["max"]:
+            raise ManifestError(f"shot {entry['id']!r} is used {shots.count(entry['id'])} times; the {template['id']!r} template "
+                                f"allows it at most {entry['max']} time(s) per video")
     for beat, secs, shot in zip(beats, seconds, shots):
         if secs < PROMO_SHOTS[shot]["minSeconds"]:
             raise ManifestError(f"beat {beat['id']!r} is {secs:g} s but shot {shot!r} needs at least "
                                 f"{PROMO_SHOTS[shot]['minSeconds']} s")
+
+
+def _template_for(m: dict) -> dict | None:
+    """The template a manifest names, or None when it names none. An unknown id is an error that lists the valid ones."""
+    if "template" not in m:
+        return None
+    from showcase import templates as T          # imported here: templates.py imports this module
+    try:
+        return T.get_template(m["template"])
+    except T.TemplateError as e:
+        raise ManifestError(str(e)) from None
+
+
+def template_warnings(m: dict) -> list[str]:
+    """Beats whose shot is not in the manifest's template palette. Allowed (the writer may deviate on purpose), so a warning."""
+    template = _template_for(m)
+    if template is None or m.get("style", "device") != "promo":
+        return []
+    palette = {s["id"] for s in template["shots"]}
+    return [f"beat {b.get('id')!r} uses shot {b.get('shot', 'hero-push')!r}, which is not in the {template['id']!r} template's palette "
+            f"({', '.join(sorted(palette))})" for b in m.get("beats", []) if b.get("shot", "hero-push") not in palette]
 
 
 def validate_showcase(m: dict, project, timings: dict | None = None) -> None:
@@ -305,6 +330,10 @@ def validate_showcase(m: dict, project, timings: dict | None = None) -> None:
         raise ManifestError(f"style must be one of {STYLES}")
     if m.get("theme", "light") not in THEMES:
         raise ManifestError(f"theme must be one of {THEMES}")
+    template = _template_for(m)
+    if template is not None and template["style"] != style:
+        raise ManifestError(f"the template {template['id']!r} is a {template['style']} template: set \"style\": \"{template['style']}\" "
+                            f"in the manifest (it is {style!r})")
     _text(m, "headline")
     _text(m, "subtitle")
     proj = m.get("project")
@@ -344,14 +373,15 @@ def validate_showcase(m: dict, project, timings: dict | None = None) -> None:
             if sha and sha != hashlib.sha256((b.get(lang) or "").strip().encode("utf-8")).hexdigest():
                 raise ManifestError(f"narration for beat {b['id']!r} is out of date (its text changed): run narrate again")
     if style == "promo":
-        _check_promo_sequence(beats, beat_seconds_list(m, timings))
+        _check_promo_sequence(beats, beat_seconds_list(m, timings), template)
     try:
         check_total(beat_seconds_list(m, timings), MIN_TOTAL, MAX_TOTAL)
     except LengthError as e:
         raise ManifestError(str(e)) from None
 
 
-def scaffold_manifest(brief: dict, project_id: str, n_beats: int = 16) -> dict:
+def scaffold_manifest(brief: dict, project_id: str, n_beats: int = 16, template: str | None = None) -> dict:
+    t = _template_for({"template": template}) if template is not None else None
     assets = [a["path"] for a in brief.get("assets", []) if a.get("role") != "promo-page"]
     if not assets:
         raise ManifestError("the brief has no assets: provide screenshots (or use the terminal style when it exists)")
@@ -364,11 +394,22 @@ def scaffold_manifest(brief: dict, project_id: str, n_beats: int = 16) -> dict:
     ids = beat_ids(n)
     beats = [{"id": ids[i], "en": "", "zh": "", "asset": assets[i % len(assets)],
               "focus": {"x": 0, "y": 0, "w": 1, "h": 1}} for i in range(n)]
-    return {"type": "showcase", "project_id": project_id, "style": "device",
-            "headline": "", "subtitle": "", "project": {"name": "", "tagline": ""},
-            "source": {"kind": src["kind"], "url": src["url"], "label": label},
-            "beats": beats, "provenance": {"rights_confirmed": False, "source_reference": src["url"],
-                                           "review_status": "pending"}}
+    m = {"type": "showcase", "project_id": project_id, "style": "device",
+         "headline": "", "subtitle": "", "project": {"name": "", "tagline": ""},
+         "source": {"kind": src["kind"], "url": src["url"], "label": label},
+         "beats": beats, "provenance": {"rights_confirmed": False, "source_reference": src["url"],
+                                        "review_status": "pending"}}
+    if t is not None:
+        from showcase import templates as T
+        m["template"], m["style"] = t["id"], t["style"]
+        if t["theme"]:
+            m["theme"] = t["theme"]
+        for b, shot in zip(beats, T.suggest_shots(t, n)):
+            b["shot"] = shot
+            if not PROMO_SHOTS[shot]["needsTarget"]:         # a statement shows text and no capture
+                del b["asset"], b["focus"]
+                b["statement"] = ""
+    return m
 
 
 def main(argv=None) -> int:
@@ -377,6 +418,7 @@ def main(argv=None) -> int:
     sc = sub.add_parser("scaffold")
     sc.add_argument("project_dir")
     sc.add_argument("--beats", type=int, default=16)
+    sc.add_argument("--template", help="a template id from `templates.py list`")
     va = sub.add_parser("validate")
     va.add_argument("project_dir")
     a = ap.parse_args(argv)
@@ -389,14 +431,17 @@ def main(argv=None) -> int:
             brief = json.loads((project / "brief.json").read_text(encoding="utf-8"))
             slug = re.sub(r"[^a-z0-9]+", "-", project.name.lower()).strip("-")[:64] \
                 or "showcase-" + hashlib.sha1(project.name.encode("utf-8")).hexdigest()[:8]
-            m = scaffold_manifest(brief, slug, a.beats)
+            m = scaffold_manifest(brief, slug, a.beats, a.template)
             target.write_text(json.dumps(m, ensure_ascii=False, indent=1), encoding="utf-8")
-            print(f"scaffold written to {target}: fill in headline, subtitle, project, and each beat's en, zh, focus")
+            how = f" from the {a.template!r} template" if a.template else ""
+            print(f"scaffold written to {target}{how}: fill in headline, subtitle, project, and each beat's en, zh, focus")
         else:
             m = json.loads(target.read_text(encoding="utf-8"))
             tfile = project / "timings.json"
             timings = json.loads(tfile.read_text(encoding="utf-8")) if tfile.exists() else None
             validate_showcase(m, project, timings)
+            for w in template_warnings(m):
+                print(f"warning: {w}", file=sys.stderr)
             print("manifest is valid")
     except (ValueError, OSError) as e:
         print(f"error: {e}", file=sys.stderr)
