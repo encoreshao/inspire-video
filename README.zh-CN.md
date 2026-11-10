@@ -284,7 +284,7 @@ python3 scripts/publish_meta.py output/projects/<slug> --init --platform douyin,
 python3 scripts/showcase/ingest.py https://example.com/ --project output/projects/demo
 python3 scripts/showcase/templates.py list                              # 仅 promo：可选的视频模板（工具可用 --json）
 python3 scripts/showcase/manifest.py scaffold output/projects/demo      # 然后填写镜头：标题、项目名，以及每个镜头的 en、zh、focus
-                                                                        # 加 --template cinematic|punchy|calm|minimal 从模板开始
+                                                                        # 加 --template cinematic|punchy|calm|minimal|tour 从模板开始
 python3 scripts/showcase/manifest.py validate output/projects/demo
 python3 scripts/showcase/narrate.py output/projects/demo --engine say   # 可选；也可以用 cosyvoice 加你自己的声音档案
 python3 scripts/render.py output/projects/demo --preview                # 半尺寸草稿
@@ -317,7 +317,7 @@ python3 scripts/render.py output/projects/demo                          # 视频
 
 镜头时长跟随旁白音频，但不少于 `120 / 镜头数` 秒；没有旁白时每个镜头为 `max(4, 120 / 镜头数)` 秒。整支视频必须在 120 到 300 秒（2 到 5 分钟）之间。完整字段说明见 `skills/inspire-showcase/references/beat-writing.md`。
 
-**Promo 风格（实验性）**：在 manifest 里设置 `"style": "promo"`，镜头会飞过真实页面的 2 倍截图并落在指定元素上（`python3 scripts/showcase/capture_page.py <url> --project output/projects/<slug> --nav 8`，同时截取页眉导航所链接的页面；需要 Chrome 和 `pip install '.[promo]'`）。共五种镜头：`hero-push`、`spotlight-focus`、`crash-zoom-punch`、`pan-reveal`、`statement`，详见 `skills/inspire-showcase/references/promo-style.md`。方法改编自 [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft)（Apache-2.0，见 `NOTICE`）。
+**Promo 风格（实验性）**：在 manifest 里设置 `"style": "promo"`，镜头会飞过真实页面的 2 倍截图并落在指定元素上（`python3 scripts/showcase/capture_page.py <url> --project output/projects/<slug> --nav 8`，同时截取页眉导航所链接的页面；需要 Chrome 和 `pip install '.[promo]'`）。共九种镜头：`hero-push`、`spotlight-focus`、`crash-zoom-punch`、`pan-reveal`、`pull-back-isolate`、`crane-rise`、`cursor-tour`、`scroll-brake`、`statement`，由模板成套选用（自带五个模板，各有示例视频：`python3 scripts/showcase/templates.py list`），详见 `skills/inspire-showcase/references/promo-style.md`。方法改编自 [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft)（Apache-2.0，见 `NOTICE`）。
 
 中文字幕按词换行，不会把一个词拆在两行（`scripts/zh_break.py`）；给 `render.py` 或展示类渲染器传 `--no-zh-breaks` 可恢复为任意两字之间换行。
 

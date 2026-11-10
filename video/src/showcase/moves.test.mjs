@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {PROMO_STAGE_H, STAGE_W, clampCenter, maxZoom, minZoom, promoCamera} from './promo.mjs';
+import {PROMO_STAGE_H, STAGE_W, clampCenter, maxZoom, minZoom, placeImage, promoCamera, stageRect} from './promo.mjs';
 import {SHOTS} from './shots.mjs';
 
 const stage = {w: STAGE_W, h: PROMO_STAGE_H};
@@ -74,4 +74,14 @@ test('scroll-brake brakes: fast at first, nearly stopped at the end, and the ret
   assert.ok(early > late * 3, `${early} vs ${late}`);
   assert.ok(cam('scroll-brake', page, t, 0).reticle === 0 && cam('scroll-brake', page, t, 1).reticle === 1);
   assert.equal(SHOTS['scroll-brake'].needsTallPage, true);
+});
+
+test('cursor-tour: the cursor tip is on the stage for the whole move (the arrow body may be clipped at an edge), even for a target at the bottom or a corner of the page', () => {
+  const cases = [[{w: 1440, h: 1500}, {x: 300, y: 1400, w: 60, h: 40}], [tall, {x: 0, y: 5900, w: 20, h: 10}],
+    [tall, {x: 1420, y: 5990, w: 20, h: 10}], [{w: 1440, h: 1500}, {x: 0, y: 0, w: 30, h: 20}], [{w: 1440, h: 1500}, {x: 1000, y: 700, w: 300, h: 80}]];
+  for (const [page, t] of cases) for (let i = 0; i <= 140; i++) {
+    const c = cam('cursor-tour', page, t, i / 200);
+    const at = stageRect({x: c.cursor.x, y: c.cursor.y, w: 0, h: 0}, placeImage(page, stage, c));
+    assert.ok(at.left >= -0.5 && at.left <= stage.w + 0.5 && at.top >= -0.5 && at.top <= stage.h - 4, `tip off the stage at ${i / 200}: ${at.left},${at.top} for ${JSON.stringify(t)}`);
+  }
 });

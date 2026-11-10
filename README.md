@@ -284,7 +284,7 @@ The agent ingests the source, writes a short script from facts it found (never i
 python3 scripts/showcase/ingest.py https://example.com/ --project output/projects/demo
 python3 scripts/showcase/templates.py list                              # promo only: the video recipes to choose from (--json gives covers and sample clips)
 python3 scripts/showcase/manifest.py scaffold output/projects/demo      # then fill in the beats: headline, project name, and per beat en, zh, focus
-                                                                        # add --template cinematic|punchy|calm|minimal to start from a recipe
+                                                                        # add --template cinematic|punchy|calm|minimal|tour to start from a recipe
 python3 scripts/showcase/manifest.py validate output/projects/demo
 python3 scripts/showcase/narrate.py output/projects/demo --engine say   # optional; or cosyvoice with your own voice profile
 python3 scripts/render.py output/projects/demo --preview                # half-scale draft
@@ -317,7 +317,7 @@ The agent writes 10 to 40 beats: a hook, the problem, a few topics of two to fou
 
 Beat length follows the narration audio but is never less than `120 / number of beats` seconds; without narration each beat lasts `max(4, 120 / beats)` seconds. The whole video must be 120 to 300 seconds (2 to 5 minutes). The full field list is in `skills/inspire-showcase/references/beat-writing.md`.
 
-**Promo style (experimental).** `"style": "promo"` in the manifest makes the camera fly over a 2x capture of the real page (`python3 scripts/showcase/capture_page.py <url> --project output/projects/<slug> --nav 8`, which also captures the pages the header navigation links to; needs Chrome and `pip install '.[promo]'`) and land on named elements. Five shots: `hero-push`, `spotlight-focus`, `crash-zoom-punch`, `pan-reveal` and `statement`; see `skills/inspire-showcase/references/promo-style.md`. The method is adapted from [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft) (Apache-2.0, see `NOTICE`).
+**Promo style (experimental).** `"style": "promo"` in the manifest makes the camera fly over a 2x capture of the real page (`python3 scripts/showcase/capture_page.py <url> --project output/projects/<slug> --nav 8`, which also captures the pages the header navigation links to; needs Chrome and `pip install '.[promo]'`) and land on named elements. Nine shots: `hero-push`, `spotlight-focus`, `crash-zoom-punch`, `pan-reveal`, `pull-back-isolate`, `crane-rise`, `cursor-tour`, `scroll-brake` and `statement`, picked as a set by a template (five ship with it, each with a sample clip: `python3 scripts/showcase/templates.py list`); see `skills/inspire-showcase/references/promo-style.md`. The method is adapted from [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft) (Apache-2.0, see `NOTICE`).
 
 Before delivery the skill self-checks the preview against `skills/inspire-showcase/references/aesthetic-rules.md` and runs an independent clean-context review (`skills/inspire-showcase/references/final-review.md`; `python3 scripts/showcase/checks.py <video> --sheet sheet.png` writes the contact sheet it needs). Both files are adapted from [video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft) (Apache-2.0, see `NOTICE`).
 

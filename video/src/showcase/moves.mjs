@@ -54,6 +54,23 @@ function crane(a) {
 // borrowed: the four-station tour, the interface that answers each click, the motion blur and the 40 px screen-space
 // size is kept but its path is one hop to the beat's target. The cursor position is in page px (the stage places it).
 const TOUR = Object.freeze({go: [0.1, 0.45], press: [0.5, 0.56], ripple: [0.5, 0.7]});
+// Where the cursor starts: lower left of the target, but inside every view the camera shows until the click, with room for the
+// 40 px arrow, so it is on screen from the first frame (a target near the bottom or a corner of the page would otherwise put
+// it outside the stage while the camera is still travelling).
+function startPoint(a, medium, c, v) {
+  const base = a.stage.w / a.page.w;
+  let lo = {x: 0, y: 0}, hi = {x: a.page.w, y: a.page.h};
+  for (let k = 0; k <= 8; k++) {
+    const cam = push({...a, progress: TOUR.go[1] * k / 8}, medium);
+    const vw = viewSize(a.page, a.stage, cam.zoom);
+    const m = 48 / (base * cam.zoom);
+    lo = {x: Math.max(lo.x, cam.cx - vw.w / 2 + m), y: Math.max(lo.y, cam.cy - vw.h / 2 + m)};
+    hi = {x: Math.min(hi.x, cam.cx + vw.w / 2 - m), y: Math.min(hi.y, cam.cy + vw.h / 2 - m)};
+  }
+  if (lo.x > hi.x || lo.y > hi.y) return {x: c.cx, y: c.cy};              // no room to travel: the cursor starts on the target
+  return {x: clamp(c.cx - 0.36 * v.w, lo.x, hi.x), y: clamp(c.cy + 0.3 * v.h, lo.y, hi.y)};
+}
+
 function tour(a) {
   const {z0} = framings(a);
   const fit = fitZoom(a.page, a.stage, a.target);
@@ -62,7 +79,7 @@ function tour(a) {
   const p = clamp(a.progress, 0, 1);
   const c = targetCenter(a.target);
   const v = viewSize(a.page, a.stage, medium);
-  const from = {x: clamp(c.cx - 0.36 * v.w, 0, a.page.w), y: clamp(c.cy + 0.3 * v.h, 0, a.page.h)};
+  const from = startPoint(a, medium, c, v);
   const e = ease01((p - TOUR.go[0]) / (TOUR.go[1] - TOUR.go[0]));
   const dx = c.cx - from.x, dy = c.cy - from.y, len = Math.hypot(dx, dy) || 1;
   const arc = Math.sin(Math.PI * e) * 0.06 * len;                       // a light arc, zero at both ends
