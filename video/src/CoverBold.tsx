@@ -22,7 +22,7 @@ export const CoverBold: React.FC<CoverProps & {variant: 'split' | 'blur'}> = ({h
   const X = 72, W = 1080 - 2 * X;
   const lines = splitTitle(headline, 8);
   const longest = Math.max(...lines.map((l) => l.length));
-  const size = Math.min(tall ? 104 : 88, Math.floor(W / longest) - 2);
+  const size = Math.min(tall ? 73 : 62, Math.floor(W / longest) - 2);
   const src = poster ? (/^https?:/.test(poster) ? poster : staticFile(poster)) : null;
   const name = [speaker, speakerZh && speakerZh !== speaker ? speakerZh : ''].filter(Boolean).join('  ');
   const dark = '#17120F', cream = '#FFF6EA';
@@ -42,7 +42,7 @@ export const CoverBold: React.FC<CoverProps & {variant: 'split' | 'blur'}> = ({h
         <div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: photoH, overflow: 'hidden'}}>
           {src && <Img src={src} style={{width: '100%', height: '100%', objectFit: 'cover'}} />}
           <div style={{position: 'absolute', inset: 0, background: `linear-gradient(180deg, rgba(23,18,15,0) 60%, ${dark} 100%)`}} />
-          <div style={{position: 'absolute', left: X, bottom: 80}}>{tag}</div>
+          <div style={{position: 'absolute', left: X, bottom: 110}}>{tag}</div>
         </div>
         <div style={{position: 'absolute', left: X, top: photoH + 10, width: W}}>
           <div style={{marginBottom: 26}}>{chip}</div>
