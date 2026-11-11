@@ -22,7 +22,7 @@ export const CoverBold: React.FC<CoverProps & {variant: 'split' | 'blur'}> = ({h
   const X = 72, W = 1080 - 2 * X;
   const lines = splitTitle(headline, 8);
   const longest = Math.max(...lines.map((l) => l.length));
-  const size = Math.min(tall ? 132 : 112, Math.floor(W / longest) - 2);
+  const size = Math.min(tall ? 104 : 88, Math.floor(W / longest) - 2);
   const src = poster ? (/^https?:/.test(poster) ? poster : staticFile(poster)) : null;
   const name = [speaker, speakerZh && speakerZh !== speaker ? speakerZh : ''].filter(Boolean).join('  ');
   const dark = '#17120F', cream = '#FFF6EA';
@@ -33,16 +33,16 @@ export const CoverBold: React.FC<CoverProps & {variant: 'split' | 'blur'}> = ({h
   );
   const chip = <div style={{display: 'inline-block', fontSize: 28, letterSpacing: 3, color: dark, background: c.accent, borderRadius: 999, padding: '8px 24px', fontWeight: 700}}>{category || 'INSPIRATION / 向上生长'}</div>;
   const tag = name ? <div style={{display: 'inline-block', fontSize: 34, fontWeight: 700, color: cream, background: 'rgba(23,18,15,0.72)', borderRadius: 14, padding: '10px 22px'}}>{name}</div> : null;
-  const sub = <div style={{fontSize: 34, lineHeight: 1.3, color: 'rgba(255,246,234,0.78)', marginTop: 26, textWrap: 'balance' as any}}>{subtitle}</div>;
+  const sub = <div style={{fontSize: 28, lineHeight: 1.3, color: 'rgba(255,246,234,0.78)', marginTop: 22, textWrap: 'balance' as any}}>{subtitle}</div>;
 
   if (variant === 'split') {
-    const photoH = tall ? 1180 : 800;
+    const photoH = tall ? 1120 : 760;
     return (
       <AbsoluteFill style={{background: dark, fontFamily: 'Arial, sans-serif'}}>
         <div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: photoH, overflow: 'hidden'}}>
           {src && <Img src={src} style={{width: '100%', height: '100%', objectFit: 'cover'}} />}
           <div style={{position: 'absolute', inset: 0, background: `linear-gradient(180deg, rgba(23,18,15,0) 60%, ${dark} 100%)`}} />
-          <div style={{position: 'absolute', left: X, bottom: 50}}>{tag}</div>
+          <div style={{position: 'absolute', left: X, bottom: 80}}>{tag}</div>
         </div>
         <div style={{position: 'absolute', left: X, top: photoH + 10, width: W}}>
           <div style={{marginBottom: 26}}>{chip}</div>
