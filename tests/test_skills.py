@@ -177,6 +177,18 @@ def test_uninstall_removes_only_links_into_this_clone(tmp_path):
     assert [p.name for p in sorted(skills.iterdir())] == ["plain-folder", "someone-elses"]
 
 
+def test_uninstall_removes_a_link_that_passes_through_another_removed_link(tmp_path):
+    claude, agents = tmp_path / ".claude" / "skills", tmp_path / ".agents" / "skills"
+    claude.mkdir(parents=True)
+    agents.mkdir(parents=True)
+    (claude / "inspire-video").symlink_to(ROOT)                           # the previous layout
+    (agents / "inspire-video").symlink_to(claude / "inspire-video" / "skills" / "inspire-video")
+    r = subprocess.run(["bash", "scripts/uninstall.sh"], cwd=ROOT, env=clean_env(tmp_path), capture_output=True,
+                       text=True, timeout=60)
+    assert r.returncode == 0 and not os.path.lexists(claude / "inspire-video")
+    assert not os.path.lexists(agents / "inspire-video")
+
+
 def test_the_installer_and_uninstaller_follow_claude_config_dir(tmp_path):
     profile = tmp_path / ".claude-loopx"                                 # a second Claude Code profile
     install(tmp_path, CLAUDE_CONFIG_DIR=str(profile))
