@@ -65,7 +65,7 @@ curl -fsSL https://raw.githubusercontent.com/encoreshao/inspire-video/main/insta
 curl -fsSL https://raw.githubusercontent.com/encoreshao/inspire-video/main/install.sh | bash -s -- codex --no-deps
 ```
 
-Prefer to read it first? Open [`install.sh`](install.sh), or download it and run `bash install.sh`. Set `INSPIRE_VIDEO_HOME` to install somewhere other than `~/.inspire-video` (the skills refer to `~/.inspire-video`, so the default is simplest).
+Prefer to read it first? Open [`install.sh`](install.sh), or download it and run `bash install.sh`. Set `INSPIRE_VIDEO_HOME` to install somewhere other than `~/.inspire-video`. For Claude Code the skills are linked into `~/.claude/skills`, or into `$CLAUDE_CONFIG_DIR/skills` when `CLAUDE_CONFIG_DIR` is set (a second profile such as `~/.claude-loopx`).
 
 **Update:** run the same command again; it pulls the latest version and re-links.
 **Uninstall:** `bash ~/.inspire-video/scripts/uninstall.sh` removes the links (your outputs stay; delete the folder yourself to remove everything).
@@ -111,9 +111,28 @@ git clone https://github.com/encoreshao/inspire-video.git ~/.inspire-video
 bash ~/.inspire-video/scripts/install.sh claude    # or: codex | both   (add --no-deps to skip dependencies)
 ```
 
+### Option 4: Claude Code plugin
+
+In Claude Code, add this repository as a plugin marketplace and install the plugin:
+
+```text
+/plugin marketplace add encoreshao/inspire-video
+/plugin install inspire-video@inspire-video
+```
+
+On Claude Code 2.1.275 or later one line does both: `/plugin install inspire-video --marketplace encoreshao/inspire-video`. Start a new session; the skills are then `/inspire-video:inspire-video` and `/inspire-video:inspire-showcase`.
+
+- **Dependencies:** on first use the skill runs `bash scripts/prepare.sh`, which installs the Python packages and runs `npm install` when they are missing. You still need Python 3.11+, Node.js 20+ and FFmpeg.
+- **Your files:** a plugin lives in a versioned folder that Claude Code replaces on every update, so `scripts/prepare.sh` links `output/` and `voices/` to `~/.inspire-video` (set `INSPIRE_VIDEO_HOME` to move it). Videos are still written to `~/.inspire-video/output/final/`, an update never removes them, and an existing script install's projects are picked up as they are.
+- **Update:** `/plugin marketplace update inspire-video`, then `/plugin update inspire-video@inspire-video`, or turn on auto-update for the marketplace in `/plugin`. No version number is pinned, so every commit on `main` is an update. After an update the first run takes about a minute longer, because `npm install` runs again in the new folder.
+- **Other profiles (LoopX):** plugins are installed per Claude Code profile. For a profile started with `CLAUDE_CONFIG_DIR` (for example `CLAUDE_CONFIG_DIR=~/.claude-loopx`), run the same two commands in a session of that profile. Every profile shares the one data folder, so the LoopX Creator page keeps finding videos and `project.json` under `~/.inspire-video/output/final/`.
+- **Do not mix:** if the script install is also present, every skill is listed twice. Run `bash ~/.inspire-video/scripts/uninstall.sh` to remove its links (the folder and your outputs stay). Uninstall the plugin with `/plugin uninstall inspire-video@inspire-video`.
+
+Codex has no plugin install; use Option 1, 2 or 3.
+
 ### What the installer does
 
-1. symlinks every skill folder under `skills/` into `~/.claude/skills` and/or `~/.agents/skills` (an older install that linked the repository root is switched to the per-skill links);
+1. symlinks every skill folder under `skills/` into `~/.claude/skills` (or `$CLAUDE_CONFIG_DIR/skills`) and/or `~/.agents/skills` (an older install that linked the repository root is switched to the per-skill links);
 2. installs the Python dependencies (`faster-whisper`, `yt-dlp[default]` with `yt-dlp-ejs`, `pydantic`, `jsonschema`, `PyYAML`) with `pip install -e`;
 3. runs `npm install` for the Remotion project;
 4. runs the environment check.

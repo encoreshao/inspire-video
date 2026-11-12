@@ -63,6 +63,8 @@ Ask only for missing information that blocks the task. Defaults:
 
 ### 1. Environment and input validation
 
+- Find the engine root: the folder two levels above this skill's own folder, which holds `scripts/`, `video/` and `config/`. Resolve it through any symlink with `cd -P "<this skill's folder>/../.." && pwd`. It is `~/.inspire-video` after a script install and a versioned folder in the plugin cache after a plugin install. Run every `scripts/` command from there.
+- Run `bash scripts/prepare.sh` once per session. In a plugin install it links `output/` and `voices/` to the data folder (`~/.inspire-video`, or `INSPIRE_VIDEO_HOME`), which survives plugin updates, and installs missing dependencies; in a clone it changes nothing. It prints the data folder: give the user file paths under that folder, not under the plugin cache.
 - Read `README.md` and `config/default.yaml`.
 - Run `python scripts/check_env.py`.
 - Confirm Python, Node.js, npm, FFmpeg and ffprobe availability.
@@ -70,7 +72,6 @@ Ask only for missing information that blocks the task. Defaults:
 - Confirm the Remotion project dependencies are installed.
 - For URLs, first ask the user to confirm they own the video or have permission to reuse it. Then run `python scripts/fetch.py <url> --yes-rights`. It caches each video under `output/cache/<extractor>-<id>/` and never downloads the same video twice; its last stdout line is the source path and `source_metadata.json` sits beside it (use it for attribution). Never pass `--yes-rights` without the user's confirmation. Do not bypass DRM, paywalls, login restrictions, geo-restrictions, or platform safeguards; if fetch fails (for example YouTube's "confirm you're not a bot" check), ask for a local file and import it with `python scripts/fetch.py --file <path> --yes-rights` (add `--source-url <url>` for attribution). The opt-in `--cookies-from-browser <browser>` flag uses the user's own signed-in browser session and may violate the platform's terms or flag their account: use it only when the user explicitly asks for it after being told this, never by default.
 - Before transcribing, run `python scripts/precheck.py <source> [--has-subtitles]`. It refuses a source with under 120 s of material (`source_too_short`) or no audio and no subtitles (`source_no_audio`); tell the user the printed sentence and ask for another source instead of continuing.
-- Skill root is `~/.inspire-video`; run all `scripts/` commands from there.
 - Create a unique project directory under `output/projects/<slug>/`.
 - Copy or reference the source; do not overwrite it.
 

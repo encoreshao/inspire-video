@@ -65,7 +65,7 @@ curl -fsSL https://raw.githubusercontent.com/encoreshao/inspire-video/main/insta
 curl -fsSL https://raw.githubusercontent.com/encoreshao/inspire-video/main/install.sh | bash -s -- codex --no-deps
 ```
 
-想先看脚本？可以打开 [`install.sh`](install.sh)，或下载后运行 `bash install.sh`。设置 `INSPIRE_VIDEO_HOME` 可以安装到 `~/.inspire-video` 以外的位置（技能里写的是 `~/.inspire-video`，所以用默认位置最省事）。
+想先看脚本？可以打开 [`install.sh`](install.sh)，或下载后运行 `bash install.sh`。设置 `INSPIRE_VIDEO_HOME` 可以安装到 `~/.inspire-video` 以外的位置。Claude Code 的技能会链接到 `~/.claude/skills`；如果设置了 `CLAUDE_CONFIG_DIR`（例如第二个配置目录 `~/.claude-loopx`），则链接到 `$CLAUDE_CONFIG_DIR/skills`。
 
 **更新：** 再运行一次同样的命令即可，它会拉取最新版本并重新链接。
 **卸载：** `bash ~/.inspire-video/scripts/uninstall.sh` 会移除链接（你的输出文件保留；要彻底删除请自己删掉整个文件夹）。
@@ -111,9 +111,28 @@ git clone https://github.com/encoreshao/inspire-video.git ~/.inspire-video
 bash ~/.inspire-video/scripts/install.sh claude    # 或：codex | both（加 --no-deps 可跳过依赖安装）
 ```
 
+### 方式四：Claude Code 插件
+
+在 Claude Code 里把本仓库添加为插件市场，然后安装插件：
+
+```text
+/plugin marketplace add encoreshao/inspire-video
+/plugin install inspire-video@inspire-video
+```
+
+Claude Code 2.1.275 及以上版本可以一行完成：`/plugin install inspire-video --marketplace encoreshao/inspire-video`。开一个新会话后，技能名是 `/inspire-video:inspire-video` 和 `/inspire-video:inspire-showcase`。
+
+- **依赖：** 首次使用时技能会运行 `bash scripts/prepare.sh`，缺少 Python 包或 npm 依赖时自动安装。Python 3.11+、Node.js 20+ 和 FFmpeg 仍需自己装好。
+- **你的文件：** 插件放在带版本号的文件夹里，每次更新都会被 Claude Code 替换，所以 `scripts/prepare.sh` 会把 `output/` 和 `voices/` 链接到 `~/.inspire-video`（可用 `INSPIRE_VIDEO_HOME` 改位置）。视频仍然写到 `~/.inspire-video/output/final/`，更新不会删除它们，已有脚本安装里的项目也会原样沿用。
+- **更新：** 先 `/plugin marketplace update inspire-video`，再 `/plugin update inspire-video@inspire-video`；也可以在 `/plugin` 里为这个市场打开自动更新。插件没有固定版本号，`main` 上的每次提交都是一次更新。更新后的第一次运行会多花约一分钟，因为要在新文件夹里重新执行 `npm install`。
+- **其他配置目录（LoopX）：** 插件按 Claude Code 配置目录分别安装。用 `CLAUDE_CONFIG_DIR` 启动的配置（例如 `CLAUDE_CONFIG_DIR=~/.claude-loopx`），请在该配置的会话里运行同样的两条命令。所有配置共用同一个数据文件夹，所以 LoopX Creator 页面仍然能在 `~/.inspire-video/output/final/` 下找到视频和 `project.json`。
+- **不要混用：** 如果脚本安装也在，每个技能会出现两次。运行 `bash ~/.inspire-video/scripts/uninstall.sh` 移除它的链接（文件夹和输出都保留）。卸载插件用 `/plugin uninstall inspire-video@inspire-video`。
+
+Codex 没有插件安装方式，请用方式一、二或三。
+
 ### 安装脚本做了什么
 
-1. 把 `skills/` 下的每个技能文件夹以符号链接放进 `~/.claude/skills` 和/或 `~/.agents/skills`（之前链接仓库根目录的旧安装会被切换为按技能链接）；
+1. 把 `skills/` 下的每个技能文件夹以符号链接放进 `~/.claude/skills`（或 `$CLAUDE_CONFIG_DIR/skills`）和/或 `~/.agents/skills`（之前链接仓库根目录的旧安装会被切换为按技能链接）；
 2. 用 `pip install -e` 安装 Python 依赖（`faster-whisper`、带 `yt-dlp-ejs` 的 `yt-dlp[default]`、`pydantic`、`jsonschema`、`PyYAML`）；
 3. 为 Remotion 项目运行 `npm install`；
 4. 运行环境检查。

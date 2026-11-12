@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Install the InspireVideo skills (symlinks into this clone) and set up dependencies.
 # Every folder under skills/ that holds a SKILL.md is linked, so a new skill needs no installer change.
+# Claude Code skills go to $CLAUDE_CONFIG_DIR/skills when that variable is set (a second profile such as
+# ~/.claude-loopx), otherwise to ~/.claude/skills.
 # Usage: bash scripts/install.sh [claude|codex|both] [--no-deps]
 set -euo pipefail
 
@@ -8,6 +10,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TARGET="${1:-both}"
 DEPS=1
 [[ "${2:-}" == "--no-deps" ]] && DEPS=0
+CLAUDE_SKILLS="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills"
 
 link_skill() {   # link_skill <skills-folder> <skill-folder>
   local name dest
@@ -35,9 +38,9 @@ link_all() {     # link_all <skills-folder>
 }
 
 case "$TARGET" in
-  claude) link_all "$HOME/.claude/skills" ;;
+  claude) link_all "$CLAUDE_SKILLS" ;;
   codex)  link_all "$HOME/.agents/skills" ;;
-  both)   link_all "$HOME/.claude/skills"; link_all "$HOME/.agents/skills" ;;
+  both)   link_all "$CLAUDE_SKILLS"; link_all "$HOME/.agents/skills" ;;
   *) echo "Usage: $0 [claude|codex|both] [--no-deps]" >&2; exit 2 ;;
 esac
 

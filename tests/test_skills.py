@@ -120,8 +120,14 @@ def test_cli_exit_codes(tmp_path, capsys):
 
 # ---- the installer links every skill ---------------------------------------------------------------------------------
 
-def install(home, *args):
-    env = {**os.environ, "HOME": str(home)}
+def clean_env(home, **extra):
+    """The caller's environment with HOME moved and no CLAUDE_CONFIG_DIR, so a test never touches a real profile."""
+    env = {k: v for k, v in os.environ.items() if k not in ("CLAUDE_CONFIG_DIR", "INSPIRE_VIDEO_HOME")}
+    return {**env, "HOME": str(home), **extra}
+
+
+def install(home, *args, **extra):
+    env = clean_env(home, **extra)
     return subprocess.run(["bash", "scripts/install.sh", "claude", "--no-deps", *args], cwd=ROOT, env=env,
                           capture_output=True, text=True, timeout=120)
 
@@ -165,10 +171,20 @@ def test_uninstall_removes_only_links_into_this_clone(tmp_path):
     other.mkdir()
     (skills / "someone-elses").symlink_to(other)                          # must survive
     (skills / "plain-folder").mkdir()                                     # must survive
-    env = {**os.environ, "HOME": str(tmp_path)}
+    env = clean_env(tmp_path)
     r = subprocess.run(["bash", "scripts/uninstall.sh"], cwd=ROOT, env=env, capture_output=True, text=True, timeout=60)
     assert r.returncode == 0
     assert [p.name for p in sorted(skills.iterdir())] == ["plain-folder", "someone-elses"]
+
+
+def test_the_installer_and_uninstaller_follow_claude_config_dir(tmp_path):
+    profile = tmp_path / ".claude-loopx"                                 # a second Claude Code profile
+    install(tmp_path, CLAUDE_CONFIG_DIR=str(profile))
+    assert all((profile / "skills" / d.name).resolve() == d.resolve() for d in SKILL_DIRS)
+    assert not (tmp_path / ".claude").exists()
+    r = subprocess.run(["bash", "scripts/uninstall.sh"], cwd=ROOT, env=clean_env(tmp_path, CLAUDE_CONFIG_DIR=str(profile)),
+                       capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0 and list((profile / "skills").iterdir()) == []
 
 
 def test_the_content_extraction_reference_has_a_rubric_for_each_content_type_and_credits_its_source():

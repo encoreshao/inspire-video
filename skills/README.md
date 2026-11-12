@@ -23,7 +23,7 @@ schemas/                        machine-read schemas
 - `description` is third person, starts with "This skill should be used when", says what the user asks for, and stays under 1024 characters. It is the only text loaded before the skill triggers, so it decides when the skill is used.
 - Write the body as imperative steps ("Run", "Write", "Ask"), never second person. Keep it under 2,500 words (hard limit 5,000); put the full rules, field lists and long checklists in `references/`.
 - Mention every reference file in `SKILL.md` and say when to read it. A file that is never mentioned is never loaded.
-- Say that commands run from the repo root and use `scripts/...` paths, so one script serves every skill.
+- Say that commands run from the repo root and use `scripts/...` paths, so one script serves every skill. Never write a fixed install folder such as `~/.inspire-video` for the code: a plugin install lives in a versioned cache folder. Tell the agent to find the root two levels above the skill's own folder and to run `bash scripts/prepare.sh`, which links `output/` and `voices/` to the data folder.
 - Keep rights, honesty and safety rules in `SKILL.md` itself (a short list), with the details in a reference.
 
 ## Add a skill
@@ -31,7 +31,7 @@ schemas/                        machine-read schemas
 1. Create `skills/<name>/SKILL.md` with the frontmatter above, and `references/` files for detail.
 2. Put any new code in `scripts/` (with tests in `tests/`), not in the skill folder.
 3. Run `python3 scripts/check_skills.py` and `python3 -m pytest tests -q`. The checks cover every folder under `skills/` automatically: frontmatter, third-person description, second person, size, links and unmentioned reference files.
-4. Run `bash scripts/install.sh`. It links every folder under `skills/` into `~/.claude/skills` and `~/.agents/skills`, so the installer needs no change. `bash scripts/uninstall.sh` removes those links.
+4. Run `bash scripts/install.sh`. It links every folder under `skills/` into `~/.claude/skills` (or `$CLAUDE_CONFIG_DIR/skills`) and `~/.agents/skills`, so the installer needs no change. `bash scripts/uninstall.sh` removes those links. A plugin install (`.claude-plugin/`) picks up every folder under `skills/` by itself.
 
 ## Migration note
 

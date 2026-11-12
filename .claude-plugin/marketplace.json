@@ -1,0 +1,15 @@
+{
+  "name": "inspire-video",
+  "owner": { "name": "Encore Shao" },
+  "metadata": {
+    "description": "Marketplace for InspireVideo: bilingual Chinese-English short videos from talks, websites and repositories."
+  },
+  "plugins": [
+    {
+      "name": "inspire-video",
+      "source": "./",
+      "description": "Two skills, inspire-video and inspire-showcase, with the shared Remotion renderer and tools.",
+      "category": "media"
+    }
+  ]
+}

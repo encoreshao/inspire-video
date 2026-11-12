@@ -5,7 +5,7 @@ description: This skill should be used when the user asks to make a promo, demo 
 
 # InspireShowcase: product and project showcase videos
 
-A second skill of the InspireVideo repo (`~/.inspire-video`), separate from the speaker-footage skill `inspire-video`; it needs no footage or transcript. It has two styles: `promo`, a cinematic website promo with a look of its own, and `device`, a framed walkthrough that uses the same editorial layout as `inspire-video`. Run every command from the repo root.
+A second skill of the InspireVideo repo, separate from the speaker-footage skill `inspire-video`; it needs no footage or transcript. It has two styles: `promo`, a cinematic website promo with a look of its own, and `device`, a framed walkthrough that uses the same editorial layout as `inspire-video`. Run every command from the repo root: the folder two levels above this skill's own folder (resolve it through any symlink with `cd -P "<this skill's folder>/../.." && pwd`; it is `~/.inspire-video` after a script install and a versioned folder in the plugin cache after a plugin install). Run `bash scripts/prepare.sh` there once per session: in a plugin install it links `output/` and `voices/` to the data folder (`~/.inspire-video`, or `INSPIRE_VIDEO_HOME`), which survives plugin updates, and installs missing dependencies. It prints the data folder: give the user file paths under that folder, not under the plugin cache.
 
 ## Core rules
 

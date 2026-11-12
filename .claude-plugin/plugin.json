@@ -1,0 +1,9 @@
+{
+  "name": "inspire-video",
+  "description": "Turn a talk, interview or podcast into a 9:16 bilingual Chinese-English short video, or make a promo video for a website, repository or screenshots.",
+  "author": { "name": "Encore Shao" },
+  "homepage": "https://github.com/encoreshao/inspire-video",
+  "repository": "https://github.com/encoreshao/inspire-video",
+  "license": "MIT",
+  "keywords": ["video", "short-video", "remotion", "bilingual", "subtitles", "promo"]
+}
