@@ -20,8 +20,19 @@
 - **输出：** 1080×1920 MP4（H.264 + AAC，30 fps），时长 2 到 5 分钟（120 到 300 秒），另有一张 1080×1920 的封面 PNG。面向 LinkedIn 和 Facebook 时，同一视频还会渲染一份 1080×1350（4:5）的版本并附带封面，详见“平台与视频格式”。
 - **同步双语字幕：** 一次只显示一句短句（或长句中的一个分句），先英文后中文，随说话同步出现。每条字幕最多 100 个英文字符，且绝不会把两句话放在同一条里。
 - **适配平台安全区：** 微信视频号和抖音在较高的手机上会裁掉 9:16 视频的两侧（每侧约 100 px）。所有内容都距左右边缘至少 114 px；标题固定在距顶部的某个位置（不会偏高）；最下方的内容止于底部按钮区之上（y = 1590）。4:5 版本有自己的安全区（两侧 60 px，内容止于 y = 1200 之上）。
-- **分隔线与层次：** 标题与视频之间有一条居中的线，视频之后还有同样的一条；线条中间亮、向两端渐隐，上下各留一小段间距；视频面板周围有与主题协调的柔和阴影。
-- **一体式面板：** 视频与字幕区合成一个圆角面板，中间没有缝隙，字幕区的高度随文字自动变化。
+- **六种版式，各配一张封面：** 用清单里的 `layout` 字段或 `--layout` 选择。内容（标题、同步字幕、讲者信息、进度条）和安全区不变，变的是版面结构。
+
+  | 版式 | 外观 |
+  | --- | --- |
+  | `classic`（默认） | 纸色背景、标题区、视频与字幕合成一个带框面板、讲者信息卡。 |
+  | `backdrop` | 毛玻璃悬浮：视频是悬浮在自身模糊光晕之上的圆角卡片，字幕在毛玻璃卡片里，整体居中。 |
+  | `cinema` | 视频铺满全屏，标题在上，字幕在下三分之一处，叠在柔和的暗色渐变上。最适合单人近景。 |
+  | `quote` | 文字优先的引语卡片：巨大的引号和超大字幕，视频缩成署名旁的方形小图。 |
+  | `split` | 双色块海报：视频占满上半屏，下半屏是主题强调色的实色块，承载标题、字幕和讲者信息。 |
+  | `banner` | 抖音式三段版式，近黑背景：通栏强调色标题条、通栏视频、居中大字幕。 |
+
+- **分隔线与层次（`classic`）：** 标题与视频之间有一条居中的线，视频之后还有同样的一条；线条中间亮、向两端渐隐，上下各留一小段间距；视频面板周围有与主题协调的柔和阴影。
+- **一体式面板（`classic`）：** 视频与字幕区合成一个圆角面板，中间没有缝隙，字幕区的高度随文字自动变化。
 - **标题区：** 分类标签、中文主标题和英文副标题，字号相同。
 - **底部信息：** 说话人的中英文姓名、职位、公司、演讲标题、来源、年份、节选区间和进度条。
 - **多人出镜：** 在 `copy.speakers` 里列出所有人，并给每条字幕标注 `speaker` 编号；底部显示所有人的名字，并高亮当前说话的人。
@@ -252,6 +263,7 @@ python3 scripts/publish_meta.py output/projects/<slug> --init --platform douyin,
 {
   "project_id": "my-clip",
   "theme": "light",
+  "layout": "classic",
   "settings": {"width": 1080, "height": 1920, "fps": 30},
   "source": {"path": "assets/source.mp4", "start_seconds": 699.6, "end_seconds": 756.4},
   "copy": {
@@ -371,7 +383,7 @@ CosyVoice 默认保留你录音的音色，但语气由一条“自然讲述”�
 ## 自定义
 
 - **主题：** 使用清单里的 `theme` 字段或 `--theme`。颜色定义在 `video/src/Video.tsx` 的 `themes` 中。
-- **版式：** 使用清单里的 `layout` 字段或 `--layout`（`classic` 经典、`backdrop` 模糊背景、`cinema` 全屏电影感、`quote` 杂志引语、`split` 上下分屏、`banner` 抖音三段式），每种版式都有配套封面。代码在 `video/src/layouts/`，说明见 `skills/inspire-video/references/visual-style.md`。
+- **版式：** 使用清单里的 `layout` 字段或 `--layout`（`classic` 经典、`backdrop` 毛玻璃悬浮、`cinema` 全屏电影感、`quote` 引语卡片、`split` 双色块海报、`banner` 抖音三段式），每种版式都有配套封面。代码在 `video/src/layouts/`，说明见 `skills/inspire-video/references/visual-style.md`。
 - **字号与版式：** 在 `config/platforms.yaml` 中对应 profile 的 `safe` 与 `title_top`（9:16 的数值在 `video/src/layout.mjs` 的 `DEFAULT_PROFILE` 中有镜像，由测试保证二者一致）、`video/src/layout.mjs` 的 `cardLimits`（字幕字号）以及 `video/src/Video.tsx` 顶部和 `video/src/Cover.tsx` 中的其余常量（`HEAD`、面板与间距数值）里调整。
 - **快速预览版式改动：** `cd video && npx remotion still src/index.ts InspireShort out.png --props=../output/projects/<slug>/props.json --frame=750 --scale=0.5`。`npm run preview` 会打开 Remotion Studio。
 - `config/default.yaml` 只是记录默认值，代码不会读取它。`config/platforms.yaml` 由 `publish_meta.py` 和 `render.py` 读取。

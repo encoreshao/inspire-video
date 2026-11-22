@@ -20,8 +20,19 @@ The agent follows each skill's `SKILL.md` (in `skills/<name>/`) to do the thinki
 - **Output:** 1080×1920 MP4 (H.264 + AAC, 30 fps), 2 to 5 minutes (120 to 300 seconds), plus a 1080×1920 cover PNG. For LinkedIn and Facebook the same video is also rendered as 1080×1350 (4:5) with its own cover; see Platforms and video formats.
 - **Synced bilingual captions:** one short sentence (or one clause of a long sentence) at a time, English first and Chinese second, appearing as it is spoken. Each cue is at most 100 English characters, and two sentences never share a cue.
 - **Platform-safe layout:** WeChat Channels and Douyin crop the sides of 9:16 video on tall phones (about 100 px per side). All content stays 114 px inside the left and right edges, the title is anchored at a fixed distance from the top (so it is never too high), and the lowest content ends above the bottom button zone (y = 1590). The 4:5 version has its own safe area (60 px sides, content ends above y = 1200).
-- **Divider lines and depth:** a centered line between the title and the video and the same line after the video, bright in the middle and fading out toward both ends, with a small margin above and below each; plus a soft theme-matched shadow around the video panel.
-- **Joined panel:** the video and its caption area form one rounded panel with no gap. The caption area is only as tall as its text.
+- **Six layouts, each with a matching cover:** pick one with the manifest `layout` field or `--layout`. The content (title, synced captions, speaker credit, progress bar) and the safe area stay the same; the structure changes.
+
+  | Layout | Look |
+  | --- | --- |
+  | `classic` (default) | Paper background, title block, the video and captions joined in one framed panel, a speaker info card. |
+  | `backdrop` | Floating glass: the video as a rounded card over a blurred, glowing copy of itself, captions in a frosted-glass card, centered. |
+  | `cinema` | The video fills the screen; title on top and captions in the lower third over soft dark shading. Best for single-speaker close-ups. |
+  | `quote` | Text-first quote card: a huge quotation mark and a very large caption, with the video as a square thumbnail beside the byline. |
+  | `split` | Two-block poster: the video fills the top half, a solid accent-colored block below carries the headline, captions and credit. |
+  | `banner` | Douyin-style three-part frame on near-black: headline on a full-width accent bar, full-width video, large centered captions. |
+
+- **Divider lines and depth (`classic`):** a centered line between the title and the video and the same line after the video, bright in the middle and fading out toward both ends, with a small margin above and below each; plus a soft theme-matched shadow around the video panel.
+- **Joined panel (`classic`):** the video and its caption area form one rounded panel with no gap. The caption area is only as tall as its text.
 - **Title block:** category label, Chinese headline and English subtitle at the same size.
 - **Bottom block:** speaker name in English and Chinese, job title, company, talk title, source, year, excerpt range and a progress bar.
 - **Several people on screen:** list them in `copy.speakers` and tag cues with a `speaker` id. All names show at the bottom and the current speaker is highlighted.
@@ -253,6 +264,7 @@ Most platform limits are unverified defaults (each platform has a `verified` fla
 {
   "project_id": "my-clip",
   "theme": "light",
+  "layout": "classic",
   "settings": {"width": 1080, "height": 1920, "fps": 30},
   "source": {"path": "assets/source.mp4", "start_seconds": 699.6, "end_seconds": 756.4},
   "copy": {
