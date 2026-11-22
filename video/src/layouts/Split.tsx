@@ -1,51 +1,55 @@
 import React from 'react';
 import {AbsoluteFill} from 'remotion';
-import {ThemeCtx, onDark, pickTheme, useCaption} from '../Video';
-import type {Props} from '../Video';
+import {ThemeCtx, pickTheme, useCaption} from '../Video';
+import type {Props, Theme} from '../Video';
 import type {CoverProps} from '../Cover';
 import {DEFAULT_PROFILE, cardHeight, fit, panelWidth, scaleOf} from '../layout.mjs';
-import {CaptionText, Clip, Credit, Headline, Progress, coverBandBottom, coverBandTop, headSize} from './kit';
+import {CaptionText, Clip, Credit, Headline, Progress, coverBandBottom, coverBandTop, headSize, readableOn} from './kit';
 
-const SHADOW = '0 2px 12px rgba(0,0,0,0.7)';
-const TopScrim = () => <AbsoluteFill style={{background: 'linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 32%, rgba(0,0,0,0) 55%)'}} />;
+// The theme recolored for text on the solid accent block: every text color is the one that reads on the accent.
+const onBlock = (c: Theme): Theme => {
+  const fg = readableOn(c.accent);
+  const soft = fg === '#FFF8EF' ? 'rgba(255,248,239,' : 'rgba(29,24,20,';
+  return {...c, paper: c.accent, ink: fg, accent: fg, muted: `${soft}0.78)`, border: `${soft}0.4)`, cardBorder: `${soft}0.3)`, track: `${soft}0.25)`};
+};
 
-// Poster grid: footage edge to edge in the top half with the title over it, a solid theme block below
-// holding left-aligned captions behind an accent rule, the credit and the progress bar.
+const Tag: React.FC<{text: string; c: Theme; size: number}> = ({text, c, size}) => (
+  <div style={{display: 'inline-block', fontSize: size, letterSpacing: 3, fontWeight: 700, color: c.ink, background: c.paper,
+    padding: `${size * 0.35}px ${size * 0.8}px`}}>{text}</div>
+);
+
+// Two-block poster: the footage fills the top half edge to edge with nothing over it but a tag; the bottom half is a
+// solid block in the theme accent that carries the headline, captions and credit.
 export const SplitShort: React.FC<Props> = (props) => {
   const {headline, subtitle, category, cues, quoteEn, quoteZh, quoteZhUnits, theme, profile = DEFAULT_PROFILE} = props;
-  const c = pickTheme(theme);
-  const dark = onDark(c);
+  const c = onBlock(pickTheme(theme));
   const {cue, active, alpha, synced, progress} = useCaption(cues, {start: 0, end: 0, en: quoteEn, zh: quoteZh, zhUnits: quoteZhUnits});
   const s = scaleOf(profile);
   const W = panelWidth(profile);
-  const H = Math.round(profile.height * 0.52);
-  const limits = {maxH: profile.compact ? 210 : 290, maxEn: 34, minEn: 26, padX: 30, zhOffset: 4};
-  const reserve = synced ? cardHeight(cues!, W, limits) : Math.round(170 * s);
+  const H = Math.round(profile.height * 0.46);
+  const limits = {maxH: profile.compact ? 200 : 270, maxEn: 34, minEn: 26, padX: 0, zhOffset: 4};
+  const reserve = synced ? cardHeight(cues!, W, limits) : Math.round(160 * s);
   const size = cue ? fit(cue, W, limits) : {en: 32, zh: 36};
-  const head = headSize(headline, Math.round(48 * s), W);
   return (
     <ThemeCtx.Provider value={c}>
     <AbsoluteFill style={{background: c.paper, color: c.ink, fontFamily: 'Arial, sans-serif'}}>
       <div style={{position: 'absolute', top: 0, left: 0, width: profile.width, height: H, overflow: 'hidden', background: c.videoBg}}>
         <Clip media={{...props, videoFit: 'cover'}} />
-        <TopScrim />
       </div>
-      <div style={{position: 'absolute', top: H, left: 0, width: profile.width, height: 6, background: c.accent}} />
-      <div style={{position: 'absolute', top: profile.titleTop, left: profile.safeX, width: W, color: dark.ink, textShadow: SHADOW}}>
-        <div style={{fontSize: Math.round(22 * s), letterSpacing: 3, color: dark.accent, fontWeight: 700, marginBottom: Math.round(14 * s)}}>
-          {category || 'INSPIRATION / 向上生长'}
-        </div>
-        <Headline text={headline} size={head} width={W} />
-        <div style={{fontSize: Math.round(30 * s), lineHeight: 1.25, fontWeight: 600, color: dark.muted, marginTop: Math.round(8 * s)}}>{subtitle}</div>
+      <div style={{position: 'absolute', top: Math.max(profile.titleTop, Math.round(H * 0.18)), left: profile.safeX}}>
+        <Tag text={category || 'INSPIRATION / 向上生长'} c={c} size={Math.round(22 * s)} />
       </div>
-      <div style={{position: 'absolute', top: H + Math.round(44 * s), bottom: profile.safeBottom, left: profile.safeX, width: W,
+      <div style={{position: 'absolute', top: H + Math.round(40 * s), bottom: profile.safeBottom, left: profile.safeX, width: W,
         display: 'flex', flexDirection: 'column'}}>
-        <div style={{height: reserve, flexShrink: 0, borderLeft: `6px solid ${c.accent}`, paddingLeft: 24}}>
-          <CaptionText cue={cue} alpha={alpha} size={size} align="left" zhColor={c.accent} />
+        <Headline text={headline} size={headSize(headline, Math.round(50 * s), W)} width={W} style={{lineHeight: 1.22, flexShrink: 0}} />
+        <div style={{fontSize: Math.round(26 * s), lineHeight: 1.3, color: c.muted, marginTop: Math.round(6 * s), flexShrink: 0}}>{subtitle}</div>
+        <div style={{height: 2, background: c.border, margin: `${Math.round(24 * s)}px 0`, flexShrink: 0}} />
+        <div style={{height: reserve, flexShrink: 0}}>
+          <CaptionText cue={cue} alpha={alpha} size={size} align="left" zhStyle={{fontWeight: 700}} />
         </div>
         <div style={{flex: 1}} />
         <div style={{flexShrink: 0}}>
-          <Credit info={props} activeId={active?.speaker} scale={s * 0.9} />
+          <Credit info={{...props, roleZh: ''}} activeId={active?.speaker} scale={s * 0.85} />
           <Progress value={progress} scale={s} />
         </div>
       </div>
@@ -56,26 +60,23 @@ export const SplitShort: React.FC<Props> = (props) => {
 
 export const SplitCover: React.FC<CoverProps> = (props) => {
   const {headline, subtitle, category, theme, profile = DEFAULT_PROFILE} = props;
-  const c = pickTheme(theme);
+  const c = onBlock(pickTheme(theme));
   const s = scaleOf(profile);
   const W = panelWidth(profile);
-  const H = Math.round(profile.height * (profile.compact ? 0.5 : 0.54));
-  const head = headSize(headline, Math.round(78 * s), W);
+  const H = Math.round(profile.height * 0.5);
   return (
     <ThemeCtx.Provider value={c}>
     <AbsoluteFill style={{background: c.paper, color: c.ink, fontFamily: 'Arial, sans-serif'}}>
       <div style={{position: 'absolute', top: 0, left: 0, width: profile.width, height: H, overflow: 'hidden', background: c.videoBg}}>
         <Clip media={props} />
       </div>
-      <div style={{position: 'absolute', top: H, left: 0, width: profile.width, height: 8, background: c.accent}} />
-      <div style={{position: 'absolute', top: Math.max(coverBandTop(profile), Math.round(H * 0.16)), left: profile.safeX}}>
-        <div style={{display: 'inline-block', fontSize: Math.round(26 * s), letterSpacing: 3, fontWeight: 700, color: '#17120F',
-          background: c.bright, borderRadius: 999, padding: `${8 * s}px ${22 * s}px`}}>{category || 'INSPIRATION / 向上生长'}</div>
+      <div style={{position: 'absolute', top: Math.max(coverBandTop(profile), Math.round(H * 0.2)), left: profile.safeX}}>
+        <Tag text={category || 'INSPIRATION / 向上生长'} c={c} size={Math.round(26 * s)} />
       </div>
-      <div style={{position: 'absolute', top: H + Math.round(48 * s), bottom: profile.height - coverBandBottom(profile), left: profile.safeX, width: W,
+      <div style={{position: 'absolute', top: H + Math.round(52 * s), bottom: profile.height - coverBandBottom(profile), left: profile.safeX, width: W,
         display: 'flex', flexDirection: 'column'}}>
-        <Headline text={headline} size={head} width={W} style={{lineHeight: 1.18}} />
-        <div style={{fontSize: Math.round(32 * s), lineHeight: 1.3, color: c.muted, marginTop: 14 * s}}>{subtitle}</div>
+        <Headline text={headline} size={headSize(headline, Math.round(84 * s), W)} width={W} style={{lineHeight: 1.16, fontWeight: 900}} />
+        <div style={{fontSize: Math.round(32 * s), lineHeight: 1.3, color: c.muted, marginTop: 16 * s}}>{subtitle}</div>
         <div style={{flex: 1}} />
         <Credit info={{...props, role: '', roleZh: '', source: ''}} scale={s * 1.1} />
       </div>

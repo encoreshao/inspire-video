@@ -18,10 +18,10 @@ The manifest `layout` field (or `render.py --layout`) picks the frame. Every lay
 | Layout | Look | Use it for |
 |---|---|---|
 | `classic` (default) | Paper background; title, joined video + caption panel, info card (described in detail below). | Any talk; the safest choice. |
-| `backdrop` | Full-width footage over a blurred, darkened copy of itself; title above, white captions below. | Wide stage shots; a polished feed look. |
+| `backdrop` | Floating glass: the footage as a rounded card over a blurred, glowing copy of itself, captions in a frosted-glass card, everything centered. | Wide stage shots; a soft, polished feed look. |
 | `cinema` | The footage fills the screen (crop around `crop_x` / `crop_y`); title on top and captions in the lower third over soft dark scrims. | Single-speaker close-ups only: a 16:9 frame keeps about a third of its width, so group shots get cut off. |
-| `quote` | Paper background; smaller framed video, the caption set large as a left-aligned pull quote under a big quotation mark, byline at the bottom. | Text-first, reflective quotes. |
-| `split` | Footage edge to edge in the top half with the title over it, an accent rule, a solid theme block below with left-aligned captions and the credit. | A modern poster grid; medium shots. |
+| `quote` | Text-first quote card on paper: a masthead, a huge quotation mark, the caption set very large (English serif italic, Chinese bold serif), the footage only as a square thumbnail beside the byline. | Reflective quotes where the words matter more than the picture. |
+| `split` | Two-block poster: the footage fills the top half edge to edge with only a category tag over it; the bottom half is a solid block in the theme accent with the headline, captions and credit in the color that reads on it. | A bold, graphic look; medium shots. |
 | `banner` | Near-black three-part frame: headline on a full-width accent band, full-width footage, large centered captions. | The common Douyin style; launches and punchy quotes. |
 
 Layouts on dark grounds (`backdrop`, `cinema`, `split` title, `banner`) use the theme's `bright` accent so the accent stays readable. Covers keep their text inside the middle 3:4 band of a 9:16 cover. Always check a still of `cinema` and `split` for the crop.

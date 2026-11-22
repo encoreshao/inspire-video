@@ -21,12 +21,20 @@ export const Headline:React.FC<{text: string; size: number; width: number; style
   </div>
 );
 
+// Text color that reads on a solid `hex` background: cream on dark colors, ink on light ones.
+export const readableOn = (hex: string) => {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.55 ? '#1D1814' : '#FFF8EF';
+};
+
 // The footage in a video layout, or the poster photo on a cover.
 export type Media = {clip?: string | null; poster?: string | null; videoFit?: 'cover' | 'contain'; cropX?: number; cropY?: number};
 
-export const Clip: React.FC<{media: Media; muted?: boolean; style?: React.CSSProperties}> = ({media, muted, style}) => {
-  const css: React.CSSProperties = {width: '100%', height: '100%', objectFit: media.videoFit ?? 'cover',
-    objectPosition: `${(media.cropX ?? 0.5) * 100}% ${(media.cropY ?? 0.5) * 100}%`, display: 'block', ...style};
+// `zoom` > 1 scales the footage up around the crop point, for small frames such as a thumbnail.
+export const Clip: React.FC<{media: Media; muted?: boolean; zoom?: number; style?: React.CSSProperties}> = ({media, muted, zoom = 1, style}) => {
+  const at = `${(media.cropX ?? 0.5) * 100}% ${(media.cropY ?? 0.5) * 100}%`;
+  const css: React.CSSProperties = {width: '100%', height: '100%', objectFit: media.videoFit ?? 'cover', objectPosition: at, display: 'block',
+    ...(zoom !== 1 ? {transform: `scale(${zoom})`, transformOrigin: at} : {}), ...style};
   if (media.clip) return <OffthreadVideo src={resolve(media.clip)} muted={muted} style={css} />;
   if (media.poster) return <Img src={resolve(media.poster)} style={{...css, objectFit: 'cover'}} />;
   return <div style={{...css, background: 'linear-gradient(135deg, #2a2420, #121010)'}} />;
@@ -34,14 +42,17 @@ export const Clip: React.FC<{media: Media; muted?: boolean; style?: React.CSSPro
 
 // English line then Chinese line of the current cue, in the sizes `fit` picked.
 export const CaptionText: React.FC<{cue: Cue | null; alpha: number; size: {en: number; zh: number}; align?: 'left' | 'center';
-  enColor?: string; zhColor?: string; shadow?: string}> = ({cue, alpha, size, align = 'center', enColor, zhColor, shadow}) => {
+  enColor?: string; zhColor?: string; shadow?: string; enStyle?: React.CSSProperties; zhStyle?: React.CSSProperties; gap?: number}> = ({
+  cue, alpha, size, align = 'center', enColor, zhColor, shadow, enStyle, zhStyle, gap = 8,
+}) => {
   const c = useTheme();
   if (!cue) return null;
   return (
-    <div style={{opacity: alpha, display: 'flex', flexDirection: 'column', gap: 8, textAlign: align, textShadow: shadow}}>
-      <div style={{fontSize: size.en, fontWeight: 600, lineHeight: 1.28, color: enColor ?? c.ink, overflowWrap: 'break-word', textWrap: 'balance' as any}}>{cue.en}</div>
+    <div style={{opacity: alpha, display: 'flex', flexDirection: 'column', gap, textAlign: align, textShadow: shadow}}>
+      <div style={{fontSize: size.en, fontWeight: 600, lineHeight: 1.28, color: enColor ?? c.ink, overflowWrap: 'break-word', textWrap: 'balance' as any,
+        ...enStyle}}>{cue.en}</div>
       <div style={{fontFamily: SERIF, fontSize: size.zh, fontWeight: 600, lineHeight: 1.38, color: zhColor ?? c.accent,
-        overflowWrap: 'break-word', textWrap: 'balance' as any}}><ZhText text={cue.zh} units={cue.zhUnits} /></div>
+        overflowWrap: 'break-word', textWrap: 'balance' as any, ...zhStyle}}><ZhText text={cue.zh} units={cue.zhUnits} /></div>
     </div>
   );
 };
