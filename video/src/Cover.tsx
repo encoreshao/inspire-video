@@ -10,6 +10,7 @@ export type CoverProps = {
   poster: string | null; talkTitle?: string; category?: string;
   speakerZh?: string; role?: string; roleZh?: string; theme?: string; people?: Person[];
   profile?: Profile; variant?: 'classic' | 'split' | 'blur';
+  layout?: string; cropX?: number; cropY?: number;
 };
 
 export const InspireCover: React.FC<CoverProps> = ({headline, subtitle, speaker, speakerZh, role, roleZh, source, poster, talkTitle, category, theme, people, profile = DEFAULT_PROFILE, variant = 'split'}) => {

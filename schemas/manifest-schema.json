@@ -6,6 +6,7 @@
   "properties": {
     "project_id": {"type": "string", "minLength": 1},
     "theme": {"enum": ["light", "mist", "ivory", "ink", "sage"]},
+    "layout": {"enum": ["classic", "backdrop", "cinema", "quote", "split", "banner"]},
     "settings": {
       "type": "object",
       "required": ["width", "height", "fps"],

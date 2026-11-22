@@ -237,3 +237,12 @@ def test_the_clip_must_be_two_to_five_minutes_long(tmp_path):
     for seconds in (119.9, 300.1):
         with pytest.raises(ValueError, match="120-300"):
             render.validate(clip_manifest(tmp_path, seconds), seconds)
+
+
+def test_layout_names_match_schema_and_compositions():
+    import re
+    schema = json.loads((REAL_ROOT / "schemas/manifest-schema.json").read_text())
+    index = (REAL_ROOT / "video/src/layouts/index.tsx").read_text()
+    block = index[index.index("export const LAYOUTS"):index.index("} as const")]
+    assert schema["properties"]["layout"]["enum"] == render.LAYOUTS
+    assert re.findall(r"^  (\w+): \{Short", block, re.M) == render.LAYOUTS

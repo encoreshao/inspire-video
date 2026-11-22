@@ -45,34 +45,38 @@ export type Props = {
   cropX?: number;
   cropY?: number;
   profile?: Profile;
+  layout?: string;
 };
 
 export const themes = {
   // Warm ivory / parchment (original look)
   ivory: {paper: '#F4EBDD', card: '#FFF9F0', cardBorder: '#D7C9B5', ink: '#2F251F', accent: '#A64F3D',
-    muted: '#68664F', border: '#B8A58B', track: '#E3D6C1', videoBg: '#171717',
+    muted: '#68664F', border: '#B8A58B', track: '#E3D6C1', videoBg: '#171717', bright: '#F0A88C',
     shadow: '0 24px 48px rgba(80,55,30,0.26), 0 4px 12px rgba(80,55,30,0.15)'},
   // Light, soft off-white (default): easy on the eyes
   light: {paper: '#F7F4EE', card: '#FFFFFF', cardBorder: '#E5DED2', ink: '#2B2623', accent: '#B5533C',
-    muted: '#6F695E', border: '#D3CABB', track: '#E7E0D4', videoBg: '#1A1714',
+    muted: '#6F695E', border: '#D3CABB', track: '#E7E0D4', videoBg: '#1A1714', bright: '#F2A285',
     shadow: '0 24px 48px rgba(70,50,30,0.24), 0 4px 12px rgba(70,50,30,0.14)'},
   // Light cool gray-blue
   mist: {paper: '#EDF1F3', card: '#FBFCFD', cardBorder: '#D5DDE1', ink: '#232B2E', accent: '#B0523D',
-    muted: '#5E6B70', border: '#BFCBD1', track: '#D9E1E5', videoBg: '#171B1D',
+    muted: '#5E6B70', border: '#BFCBD1', track: '#D9E1E5', videoBg: '#171B1D', bright: '#9FC6D8',
     shadow: '0 24px 48px rgba(30,50,60,0.26), 0 4px 12px rgba(30,50,60,0.15)'},
   // Deep warm ink with cream text and a light terracotta accent
   ink: {paper: '#1D1814', card: '#2A231D', cardBorder: '#42372D', ink: '#F4EADB', accent: '#E8956F',
-    muted: '#B9AB95', border: '#54473B', track: '#3A3028', videoBg: '#0E0B09',
+    muted: '#B9AB95', border: '#54473B', track: '#3A3028', videoBg: '#0E0B09', bright: '#E8956F',
     shadow: '0 24px 52px rgba(0,0,0,0.6), 0 4px 14px rgba(0,0,0,0.45)'},
   // Soft sage green
   sage: {paper: '#DDE3D3', card: '#F3F6EC', cardBorder: '#BCC7AB', ink: '#243026', accent: '#9A4A36',
-    muted: '#566451', border: '#9FAE8E', track: '#C4CEB4', videoBg: '#141814',
+    muted: '#566451', border: '#9FAE8E', track: '#C4CEB4', videoBg: '#141814', bright: '#BFD49A',
     shadow: '0 24px 48px rgba(40,60,40,0.26), 0 4px 12px rgba(40,60,40,0.15)'},
 };
 export type Theme = typeof themes.ivory;
 export const ThemeCtx = React.createContext<Theme>(themes.light);
 export const useTheme = () => React.useContext(ThemeCtx);
 export const pickTheme = (name?: string): Theme => (themes as Record<string, Theme>)[name ?? ''] ?? themes.light;
+// The theme's colors for text set over footage or a dark backdrop: light ink, the bright accent.
+export const onDark = (c: Theme): Theme => ({...c, ink: '#F6F1E9', muted: 'rgba(246,241,233,0.72)', accent: c.bright,
+  border: 'rgba(246,241,233,0.28)', cardBorder: 'rgba(246,241,233,0.22)', track: 'rgba(246,241,233,0.22)', paper: '#1D1814'});
 export const SERIF = '"Noto Serif CJK SC", "Songti SC", Georgia, serif';
 
 // Break a long headline after the first Chinese comma only when it would not fit on one line.
@@ -167,15 +171,28 @@ export const Divider: React.FC<{gap?: number}> = ({gap = LINE_GAP}) => {
   );
 };
 
-export const InspireShort: React.FC<Props> = ({
+// The caption on screen at the current frame: the sentence being spoken, held until the next one starts.
+export const useCaption = (cues: Cue[] | undefined, quote: Cue) => {
+  const frame = useCurrentFrame();
+  const {durationInFrames, fps} = useVideoConfig();
+  const t = frame / fps;
+  const synced = !!cues && cues.length > 0;
+  let active: Cue | null = null;
+  if (synced) for (const q of cues!) if (t >= q.start - 0.05) active = q;
+  const cue = synced ? active : quote;
+  const alpha = !synced ? 1 : active
+    ? interpolate(t - active.start, [-0.05, 0.12], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'})
+    : 0;
+  return {cue, active, alpha, synced, progress: Math.min(1, frame / durationInFrames)};
+};
+
+export const ClassicShort: React.FC<Props> = ({
   headline, subtitle, quoteEn, quoteZh, quoteZhUnits, speaker, source, clip, category,
   cues, talkTitle, excerptLabel, speakerZh, role, roleZh, theme, people, videoFit = 'cover', cropX = 0.5, cropY = 0.5,
   profile = DEFAULT_PROFILE,
 }) => {
   const c = pickTheme(theme);
-  const frame = useCurrentFrame();
-  const {durationInFrames, fps} = useVideoConfig();
-  const t = frame / fps;
+  const {cue, active, alpha: cueAlpha, synced, progress} = useCaption(cues, {start: 0, end: 0, en: quoteEn, zh: quoteZh, zhUnits: quoteZhUnits});
 
   // Density: 1 for the default 9:16 layout, smaller for the compact (4:5) layout.
   const s = scaleOf(profile);
@@ -184,16 +201,6 @@ export const InspireShort: React.FC<Props> = ({
   const panelW = panelWidth(profile);
   const limits = cardLimits(profile);
 
-  // Synced captions: show the sentence being spoken; hold until the next one starts.
-  const synced = cues && cues.length > 0;
-  let active: Cue | null = null;
-  if (synced) {
-    for (const q of cues!) if (t >= q.start - 0.05) active = q;
-  }
-  const cue = synced ? active : {start: 0, end: 0, en: quoteEn, zh: quoteZh, zhUnits: quoteZhUnits};
-  const cueAlpha = !synced ? 1 : active
-    ? interpolate(t - active.start, [-0.05, 0.12], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'})
-    : 0;
   const size = cue ? fit(cue, panelW, limits) : {en: 34, zh: 36};
   const cardReserve = synced ? cardHeight(cues!, panelW, limits) : Math.round(160 * s);
   const headWidth = profile.compact ? panelW : 984;
@@ -261,7 +268,7 @@ export const InspireShort: React.FC<Props> = ({
         </InfoCard>
         <div style={{marginTop: 24 * s, height: 6, flexShrink: 0, borderRadius: 3, background: c.track}}>
           <div style={{height: '100%', borderRadius: 3, background: c.accent,
-            width: `${Math.min(100, (frame / durationInFrames) * 100)}%`}} />
+            width: `${progress * 100}%`}} />
         </div>
       </div>
     </AbsoluteFill>

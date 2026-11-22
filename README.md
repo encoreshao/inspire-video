@@ -232,7 +232,7 @@ python3 scripts/publish_meta.py output/projects/<slug>          # validate, then
 
 `publish.json` lists the target platforms under `platforms` (platform id → `title`, `description`, `hashtags`), a `credit` line (required when a Chinese platform is listed), `credit_en` (required when an English platform such as `linkedin` or `facebook` is listed) and optional `notes`; see `skills/inspire-video/references/publishing.md`. Old files with top-level `wechat_channels` / `douyin` keys still work. Hashtags are written without `#`. The credit is appended to every description. If the project's `review_status` is not `approved`, `publish.md` carries a "NOT CLEARED FOR PUBLICATION" banner. Limits live in `config/platforms.yaml`; each platform has a `verified` flag and most are unverified defaults: check each platform's publish page and edit the file.
 
-Add `--force` to overwrite an existing final file, and `--theme light|mist|ivory|sage|ink` to override the theme. `fetch.py --yes-rights` skips the interactive rights prompt; only use it when you have confirmed the rights.
+Add `--force` to overwrite an existing final file, `--theme light|mist|ivory|sage|ink` to override the theme, and `--layout classic|backdrop|cinema|quote|split|banner` to pick the video and cover layout. `fetch.py --yes-rights` skips the interactive rights prompt; only use it when you have confirmed the rights.
 
 ### Platforms and video formats
 
@@ -374,6 +374,7 @@ Screenshots you supply count as yours. Images captured from a page or taken from
 ## Customizing
 
 - **Theme:** the `theme` manifest field or `--theme`. Colors are defined in `video/src/Video.tsx` (`themes`).
+- **Layout:** the `layout` manifest field or `--layout` (`classic`, `backdrop`, `cinema`, `quote`, `split`, `banner`); each has a matching cover. Code in `video/src/layouts/`; see `skills/inspire-video/references/visual-style.md`.
 - **Sizes and layout:** the profile's `safe` and `title_top` in `config/platforms.yaml` (the 9:16 values are mirrored in `DEFAULT_PROFILE` in `video/src/layout.mjs`, and a test keeps the two equal), caption font sizes in `cardLimits` in `video/src/layout.mjs`, and the other constants (`HEAD`, panel and spacing values) at the top of `video/src/Video.tsx` and in `video/src/Cover.tsx`.
 - **Preview a layout change quickly:** `cd video && npx remotion still src/index.ts InspireShort out.png --props=../output/projects/<slug>/props.json --frame=750 --scale=0.5`. `npm run preview` opens Remotion Studio.
 - `config/default.yaml` documents the defaults but is not read by the code. `config/platforms.yaml` is read by `publish_meta.py` and `render.py`.

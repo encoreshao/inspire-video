@@ -22,6 +22,7 @@ def quiet_log() -> list[str]:
 
 ROOT = Path(__file__).resolve().parent.parent
 # Cover-only format: 3:4, the ratio WeChat Channels asks for besides the video's own cover.
+LAYOUTS = ["classic", "backdrop", "cinema", "quote", "split", "banner"]  # video/src/layouts/index.tsx
 COVER_3X4 = {"id": "cover-3x4", "width": 1080, "height": 1440, "safeX": 80, "safeTop": 90, "safeBottom": 150, "titleTop": 110, "compact": True}
 
 
@@ -84,6 +85,7 @@ def main() -> int:
     ap.add_argument("project_dir")
     ap.add_argument("--preview", action="store_true", help="half-scale draft render")
     ap.add_argument("--theme", choices=["light", "mist", "ivory", "ink", "sage"], help="background theme (default: manifest theme, else light)")
+    ap.add_argument("--layout", choices=LAYOUTS, help="video and cover layout (default: manifest layout, else classic)")
     ap.add_argument("--cover", action="store_true", help="render the cover image only")
     ap.add_argument("--force", action="store_true", help="overwrite existing final file")
     ap.add_argument("--no-zh-breaks", action="store_true", help="wrap Chinese captions between any two characters, as before")
@@ -129,6 +131,7 @@ def main() -> int:
         "cues": with_units([{k: c[k] for k in ("start", "end", "en", "zh", "speaker") if k in c} for c in m["subtitles"]], not a.no_zh_breaks),
         "people": cp.get("speakers", []),
         "theme": a.theme or m.get("theme", "light"), "videoFit": m["video"].get("fit", "cover"), "cropX": m["video"].get("crop_x", 0.5), "cropY": m["video"].get("crop_y", 0.5),
+        "layout": a.layout or m.get("layout", "classic"),
         "talkTitle": cp.get("talk_title", ""), "excerptLabel": cp.get("excerpt_label", ""),
     }
     for line in (role_en, role_zh):
@@ -164,7 +167,7 @@ def main() -> int:
         if out.exists() and not (a.force or overwrite):
             raise FileExistsError(f"{out} exists; use --force to overwrite")
         out.parent.mkdir(parents=True, exist_ok=True)
-        cprops = {k: props.get(k) for k in ("headline", "subtitle", "theme", "people", "speaker", "speakerZh", "role", "roleZh", "source", "poster", "talkTitle", "category")}
+        cprops = {k: props.get(k) for k in ("headline", "subtitle", "theme", "people", "speaker", "speakerZh", "role", "roleZh", "source", "poster", "talkTitle", "category", "layout", "cropX", "cropY")}
         if profile.id != default_id:
             cprops["profile"] = profile.props()
         cfile = proj / suffixed("cover_props.json", profile)

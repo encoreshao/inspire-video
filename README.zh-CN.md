@@ -231,7 +231,7 @@ python3 scripts/publish_meta.py output/projects/<slug>          # 校验，然�
 
 `publish.json` 在 `platforms` 下列出目标平台（平台 id → `title`、`description`、`hashtags`），另有 `credit` 署名行（列出中文平台时必填）、`credit_en`（列出 LinkedIn、Facebook 等英文平台时必填）以及可选的 `notes`，详见 `skills/inspire-video/references/publishing.md`。带顶层 `wechat_channels` / `douyin` 的旧文件仍可使用。话题标签不带 `#`，脚本会自动加上。署名行会追加到每个描述末尾。若项目的 `review_status` 不是 `approved`，`publish.md` 会带上“NOT CLEARED FOR PUBLICATION”（未获准发布）的警示。字数上限写在 `config/platforms.yaml` 中，每个平台有 `verified` 标记，多数为未经核实的默认值：请到各平台的发布页面核对并修改该文件。
 
-加 `--force` 可覆盖已有的成品文件，加 `--theme light|mist|ivory|sage|ink` 可覆盖主题。`fetch.py --yes-rights` 会跳过交互式的版权确认，只有在你已确认版权时才使用。
+加 `--force` 可覆盖已有的成品文件，加 `--theme light|mist|ivory|sage|ink` 可覆盖主题，加 `--layout classic|backdrop|cinema|quote|split|banner` 可选择视频与封面的版式。`fetch.py --yes-rights` 会跳过交互式的版权确认，只有在你已确认版权时才使用。
 
 ### 平台与视频格式
 
@@ -371,6 +371,7 @@ CosyVoice 默认保留你录音的音色，但语气由一条“自然讲述”�
 ## 自定义
 
 - **主题：** 使用清单里的 `theme` 字段或 `--theme`。颜色定义在 `video/src/Video.tsx` 的 `themes` 中。
+- **版式：** 使用清单里的 `layout` 字段或 `--layout`（`classic` 经典、`backdrop` 模糊背景、`cinema` 全屏电影感、`quote` 杂志引语、`split` 上下分屏、`banner` 抖音三段式），每种版式都有配套封面。代码在 `video/src/layouts/`，说明见 `skills/inspire-video/references/visual-style.md`。
 - **字号与版式：** 在 `config/platforms.yaml` 中对应 profile 的 `safe` 与 `title_top`（9:16 的数值在 `video/src/layout.mjs` 的 `DEFAULT_PROFILE` 中有镜像，由测试保证二者一致）、`video/src/layout.mjs` 的 `cardLimits`（字幕字号）以及 `video/src/Video.tsx` 顶部和 `video/src/Cover.tsx` 中的其余常量（`HEAD`、面板与间距数值）里调整。
 - **快速预览版式改动：** `cd video && npx remotion still src/index.ts InspireShort out.png --props=../output/projects/<slug>/props.json --frame=750 --scale=0.5`。`npm run preview` 会打开 Remotion Studio。
 - `config/default.yaml` 只是记录默认值，代码不会读取它。`config/platforms.yaml` 由 `publish_meta.py` 和 `render.py` 读取。

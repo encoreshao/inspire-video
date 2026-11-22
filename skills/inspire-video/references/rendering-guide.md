@@ -22,7 +22,7 @@ python3 scripts/render.py output/projects/<slug> --cover --force   # cover only 
 If the designed cover fails to render, `render.py` writes a frame grab (from the finished video, else the clip) as the cover and prints a WARNING, so delivery is never blocked. Tell the user the cover is a frame grab and re-run with `--cover --force` once the cause is fixed.
 
 
-Add `--theme light|mist|ivory|sage|ink` to override the manifest theme.
+Add `--theme light|mist|ivory|sage|ink` to override the manifest theme, and `--layout classic|backdrop|cinema|quote|split|banner` to override the manifest layout (the cover follows the layout; see `visual-style.md`).
 
 Defaults: 1080 x 1920, 30 fps, h264, aac, yuv420p, CRF 18.
 

@@ -11,7 +11,22 @@ A calm, editorial bilingual quote video. The footage is the visual anchor; the c
 - Themes are defined in `video/src/Video.tsx` (`themes`): `light` (soft off-white, default), `mist` (cool light gray-blue), `ivory` (warm parchment), `sage` (soft green) and dark `ink`.
 - Select with the manifest `theme` field or `render.py --theme`. Avoid pure white pages, oversaturated colors and gradients.
 
-## Composition (top to bottom)
+## Layouts
+
+The manifest `layout` field (or `render.py --layout`) picks the frame. Every layout keeps the same content (title, bilingual synced captions, speaker credit, source, progress bar), the theme, the safe area and both platform profiles, and each one has a matching cover. Code: `video/src/layouts/` (`index.tsx` maps the names; `classic` is `ClassicShort` in `Video.tsx` and the cover in `Cover.tsx`).
+
+| Layout | Look | Use it for |
+|---|---|---|
+| `classic` (default) | Paper background; title, joined video + caption panel, info card (described in detail below). | Any talk; the safest choice. |
+| `backdrop` | Full-width footage over a blurred, darkened copy of itself; title above, white captions below. | Wide stage shots; a polished feed look. |
+| `cinema` | The footage fills the screen (crop around `crop_x` / `crop_y`); title on top and captions in the lower third over soft dark scrims. | Single-speaker close-ups only: a 16:9 frame keeps about a third of its width, so group shots get cut off. |
+| `quote` | Paper background; smaller framed video, the caption set large as a left-aligned pull quote under a big quotation mark, byline at the bottom. | Text-first, reflective quotes. |
+| `split` | Footage edge to edge in the top half with the title over it, an accent rule, a solid theme block below with left-aligned captions and the credit. | A modern poster grid; medium shots. |
+| `banner` | Near-black three-part frame: headline on a full-width accent band, full-width footage, large centered captions. | The common Douyin style; launches and punchy quotes. |
+
+Layouts on dark grounds (`backdrop`, `cinema`, `split` title, `banner`) use the theme's `bright` accent so the accent stays readable. Covers keep their text inside the middle 3:4 band of a 9:16 cover. Always check a still of `cinema` and `split` for the crop.
+
+## Composition of `classic` (top to bottom)
 
 1. **Title block**: small category label, Chinese headline (bold serif) and English subtitle. The headline and subtitle share one font size (42 px) so they read as a pair. The Chinese headline stays on one line when it fits.
 2. **Divider**: a 4 px centered line between the title block and the panel, bright accent in the middle fading out to transparent at both ends, with a faint glow and 26 px (`LINE_GAP`) above and below. The same line repeats after the panel, before the bottom block.

@@ -1,7 +1,6 @@
 import React from 'react';
 import {Composition} from 'remotion';
-import {InspireShort} from './Video';
-import {InspireCover} from './Cover';
+import {InspireCover, InspireShort} from './layouts';
 import {ShowcaseShort} from './showcase/ShowcaseShort';
 import {ShowcasePromo} from './showcase/ShowcasePromo';
 import {ShowcaseCover} from './showcase/ShowcaseCover';
@@ -47,6 +46,7 @@ export const Root: React.FC = () => (
       role: '',
       roleZh: '',
       profile: DEFAULT_PROFILE as Profile,
+      layout: 'classic',
     }}
   />
   <Composition
@@ -59,7 +59,7 @@ export const Root: React.FC = () => (
     calculateMetadata={({props}) => ({width: props.profile?.width ?? 1080, height: props.profile?.height ?? 1920})}
     defaultProps={{headline: '先行动，再自信', subtitle: 'Act First', speaker: 'SPEAKER', speakerZh: '', role: '', roleZh: '', source: 'SOURCE · 2025',
       poster: null as string | null, theme: 'light', people: [] as {id: string; name: string}[], talkTitle: '', category: 'INSPIRATION / 向上生长',
-      profile: DEFAULT_PROFILE as Profile}}
+      profile: DEFAULT_PROFILE as Profile, layout: 'classic', cropX: 0.5, cropY: 0.5}}
   />
   <Composition
     id="ShowcaseShort"

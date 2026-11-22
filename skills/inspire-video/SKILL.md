@@ -9,6 +9,7 @@ description: This skill should be used when the user asks to turn a podcast, int
 
 Create a finished vertical MP4 inspired by the supplied visual references:
 - background from a theme (`light` soft off-white default; `mist`, `ivory`, `sage` and dark `ink` also available via manifest `theme` or `--theme`);
+- a layout (`classic` default; `backdrop`, `cinema`, `quote`, `split`, `banner` via manifest `layout` or `--layout`; the cover follows it, see `references/visual-style.md`);
 - editorial Chinese headline with dark brown and terracotta-red emphasis;
 - English subtitle beneath the headline;
 - cinematic podcast/interview footage in a framed horizontal window;
